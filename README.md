@@ -13,12 +13,13 @@ We are part of the [UW Math AI lab](https://ai.math.uw.edu) for Autumn 2026.
 
 ### Graduate Mentors
 
-Shaoda Ji
-Joe Rogge
+- Shaoda Ji
+- Joe Rogge
 
 ### Undergraduates
 
-Nhi Bach
-Anders Lewis
-Liron Shani
-Grant Yang
+- Nhi Bach
+- David Javnozon
+- Anders Lewis
+- Liron Shani
+- Grant Yang
