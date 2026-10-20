@@ -105,18 +105,7 @@ section DiagEquiv
 
 variable {R n : Type*} [Fintype n] [DecidableEq n]
 
-/-- Corrected version of the original `diagInv`. Without `hd`, it is false: for `d = ![0, 1]`
-the left side is `0`, because `Matrix.inv` returns junk `0` on singular matrices. Mathlib's
-general form is `Matrix.inv_diagonal : (diagonal v)⁻¹ = diagonal (Ring.inverse v)`. -/
-theorem diagInv {𝔽 : Type*} [Field 𝔽] {d : n → 𝔽} (hd : ∀ x, d x ≠ 0) :
-    (diagonal d)⁻¹ = diagonal (fun x ↦ (d x)⁻¹) := by
-  apply inv_eq_left_inv
-  rw [diagonal_mul_diagonal, ← diagonal_one]
-  congr 1
-  ext x
-  exact inv_mul_cancel₀ (hd x)
-
-variable [CommRing R]
+variable [CommSemiring R]
 
 /-- `M` and `N` are *diagonally equivalent*: `M = D N D⁻¹` or `M = D Nᵀ D⁻¹` for an invertible
 diagonal `D`.
@@ -138,17 +127,29 @@ theorem diagonal_mul_mul_diagonal_apply (a b : n → R) (N : Matrix n n R) (i j 
   rw [mul_diagonal, diagonal_mul]
 
 theorem DiagEquiv.equivalence : Equivalence (DiagEquiv (R := R) (n := n)) where
-  refl M := ⟨1, by simp⟩
+  refl M := by use 1; simp
   symm := by
     rintro M N ⟨d, h | h⟩
-    · exact ⟨d⁻¹, Or.inl (by ext i j; simp [h, mul_assoc, mul_left_comm])⟩
-    · exact ⟨d, Or.inr (by ext i j; simp [h, mul_assoc, mul_left_comm])⟩
+    · use d⁻¹
+      left; ext i j
+      simp [h, mul_assoc]
+    · use d
+      right; ext i j
+      simp [h, mul_assoc]
   trans := by
-    rintro M N O ⟨d, h₁ | h₁⟩ ⟨e, h₂ | h₂⟩
-    · exact ⟨d * e, Or.inl (by ext i j; simp [h₁, h₂, mul_assoc, mul_left_comm])⟩
-    · exact ⟨d * e, Or.inr (by ext i j; simp [h₁, h₂, mul_assoc, mul_left_comm])⟩
-    · exact ⟨d * e⁻¹, Or.inr (by ext i j; simp [h₁, h₂, mul_assoc, mul_left_comm])⟩
-    · exact ⟨d * e⁻¹, Or.inl (by ext i j; simp [h₁, h₂, mul_assoc, mul_left_comm])⟩
+    rintro M N O ⟨d₁, hl₁ | hr₁⟩ ⟨d₂, hl₂ | hr₂⟩
+    · use d₁ * d₂
+      left; ext i j
+      simp [hl₁, hl₂, mul_assoc]
+    · use d₁ * d₂
+      right; ext i j
+      simp [hl₁, hr₂, mul_assoc]
+    · use d₁ * d₂⁻¹
+      right; ext i j
+      simp [hr₁, hl₂, mul_assoc]
+    · use d₁ * d₂⁻¹
+      left; ext i j
+      simp [hr₁, hr₂, mul_assoc]
 
 /-- So `Quotient DiagEquiv.setoid` is "matrices up to diagonal equivalence". -/
 def DiagEquiv.setoid : Setoid (Matrix n n R) := ⟨DiagEquiv, DiagEquiv.equivalence⟩
@@ -659,23 +660,7 @@ theorem res_mul_left {k : n} {c : MvPolynomial n R} (hc : c ∈ supported R ({k}
   simp only [res, map_mul, setZero_of_mem_supported hc, Derivation.leibniz, hc', smul_eq_mul]
   ring
 
-omit [DecidableEq n] in
-/-- **Lemma 2.2** ([AV22, Prop. 2.2]). How we phrase it:
-* "degree one in `xᵢ` and `xⱼ`" ↦ `f.degreeOf i ≤ 1`, `f.degreeOf j ≤ 1`;
-* "`g ∈ 𝔽[x_k : k ≠ i]`" ↦ `g ∈ supported 𝔽 {i}ᶜ`;
-* the factorization is an *equation in `MvPolynomial n 𝔽`*, `f = g * h`.
-
-Proof sketch in Lean terms: apply `eq_setZero_add_X_mul_pderiv` twice to get
-`f = a xᵢxⱼ + b xᵢ + c xⱼ + d` with `a b c d ∈ supported 𝔽 {i, j}ᶜ`. Then `Δᵢⱼ f = bc - ad`.
-The step "`bc = ad` ⟹ common factorization" is a gcd argument in the UFD `MvPolynomial n 𝔽`
-(Mathlib has the `UniqueFactorizationMonoid` instance; see also `gcd_mul_lcm`,
-`exists_dvd_and_dvd_of_dvd_mul`). `mem_supported_of_dvd` keeps the `gcd`s in
-`supported 𝔽 {i, j}ᶜ`. -/
-theorem rayleighDiff_eq_zero_iff [Field 𝔽] {f : MvPolynomial n 𝔽} {i j : n} (hij : i ≠ j)
-    (hi : f.degreeOf i ≤ 1) (hj : f.degreeOf j ≤ 1) :
-    rayleighDiff i j f = 0 ↔
-      ∃ g ∈ supported 𝔽 ({i}ᶜ : Set n), ∃ h ∈ supported 𝔽 ({j}ᶜ : Set n), f = g * h := by
-  sorry
+-- Lemma 2.2 can be found in DetPoly.LEAN_Warmup.Grant.MvPolynomial.
 
 variable [Fintype n]
 
