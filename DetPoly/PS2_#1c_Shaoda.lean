@@ -1,4 +1,13 @@
-import Mathlib
+/-
+Copyright (c) 2026 University of Washington Math AI Lab. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Shaoda Ji
+-/
+
+module
+
+public import Mathlib
+
 
 /-!
 # Determinant after adding a diagonal matrix
@@ -38,6 +47,8 @@ principal minor of A indexed by Sᶜ.
 
 open scoped BigOperators
 
+public section
+
 namespace DetDiagonal
 
 /-!
@@ -50,7 +61,7 @@ We add `[Fintype ι]` only when the determinant expansion needs it.
 variable {ι R : Type*}
 variable [DecidableEq ι] [CommRing R]
 
-/-!
+/--
 ## 1. Principal minor
 
 `principalMinor A S` is
@@ -59,7 +70,6 @@ variable [DecidableEq ι] [CommRing R]
 
 The subtype `↥S` consists of the indices belonging to `S`.
 -/
-
 def principalMinor
     (A : Matrix ι ι R)
     (S : Finset ι) : R :=
@@ -67,7 +77,7 @@ def principalMinor
       (Subtype.val : (↥S) → ι)
       (Subtype.val : (↥S) → ι)).det
 
-/-!
+/--
 ## 2. Mixing rows of two matrices
 
 `mixRows S M N` uses
@@ -75,7 +85,6 @@ def principalMinor
     row_i(M),  if i ∈ S,
     row_i(N),  if i ∉ S.
 -/
-
 def mixRows
     (S : Finset ι)
     (M N : Matrix ι ι R) : Matrix ι ι R :=
@@ -402,3 +411,5 @@ theorem det_add_diagonal_formula
               (S := S)
 
 end DetDiagonal
+
+end
