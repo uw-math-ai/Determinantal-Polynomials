@@ -375,9 +375,24 @@ theorem mem_supported_compl_singleton_iff {p : MvPolynomial n R} {i : n} :
     p ∈ supported R ({i}ᶜ : Set n) ↔ p.degreeOf i = 0 := by
   simp [mem_supported_iff_degreeOf_eq_zero]
 
-/-- Divisors of a nonzero polynomial in `supported R s` are in `supported R s`. This is the
-fact Lemma 2.2 needs to keep its `gcd`s in the right subalgebra. It is not in Mathlib under
-this name, but it follows directly from `MvPolynomial.degreeOf_mul_eq`
+/-- `p ∈ 𝔽[x_k : k ≠ i, j]` iff `p` is free of `xᵢ` and free of `xⱼ`. -/
+theorem mem_supported_compl_pair_iff {p : MvPolynomial n R} {i j : n} :
+    p ∈ supported R ({i, j}ᶜ : Set n) ↔
+      p ∈ supported R ({i}ᶜ : Set n) ∧ p ∈ supported R ({j}ᶜ : Set n) := by
+  rw [mem_supported_iff_degreeOf_eq_zero, mem_supported_compl_singleton_iff,
+    mem_supported_compl_singleton_iff]
+  simp only [Set.mem_compl_iff, not_not, Set.mem_insert_iff, Set.mem_singleton_iff,
+    forall_eq_or_imp, forall_eq]
+
+/-- An operation that does not raise any `degreeOf` preserves `supported R s`. -/
+theorem mem_supported_of_degreeOf_le {s : Set n} {p q : MvPolynomial n R}
+    (hqp : ∀ i, q.degreeOf i ≤ p.degreeOf i) (hp : p ∈ supported R s) : q ∈ supported R s := by
+  rw [mem_supported_iff_degreeOf_eq_zero] at hp ⊢
+  exact fun i hi ↦ Nat.le_zero.mp ((hqp i).trans (hp i hi).le)
+
+/-- Divisors of a nonzero polynomial in `supported R s` are in `supported R s`. Lemma 2.2 uses
+this to keep the factors it builds in the right subalgebra. It is not in Mathlib under this
+name, but it follows directly from `MvPolynomial.degreeOf_mul_eq`
 (`Algebra/MvPolynomial/NoZeroDivisors.lean`), since degrees add in a domain. -/
 theorem mem_supported_of_dvd [IsDomain R] {s : Set n} {p q : MvPolynomial n R}
     (hpq : p ∣ q) (hq : q ∈ supported R s) (hq0 : q ≠ 0) : p ∈ supported R s := by
@@ -387,6 +402,13 @@ theorem mem_supported_of_dvd [IsDomain R] {s : Set n} {p q : MvPolynomial n R}
   have := hq i hi
   rw [degreeOf_mul_eq (left_ne_zero_of_mul hq0) (right_ne_zero_of_mul hq0)] at this
   omega
+
+/-- A version of `mem_supported_of_dvd` that is convenient after `obtain ⟨q, rfl⟩ := hdvd`. -/
+theorem mem_supported_of_mul_mem [IsDomain R] {s : Set n} {p q : MvPolynomial n R}
+    (hpq : p * q ∈ supported R s) (hp : p ≠ 0) : q ∈ supported R s := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · exact zero_mem _
+  · exact mem_supported_of_dvd (dvd_mul_left q p) hpq (mul_ne_zero hp hq)
 
 /-
 **How to phrase "degree at most 1 in `xᵢ`".** Use `p.degreeOf i ≤ 1`. Lemma 2.2 says "degree
@@ -438,6 +460,25 @@ theorem pderiv_mem_supported {k : n} {p : MvPolynomial n R} (hp : p.degreeOf k �
   have := monomial_le_degreeOf k (mem_support_iff.mpr ht)
   simp only [Finsupp.add_apply, Finsupp.single_eq_same] at this
   omega
+
+/-- The converse of `pderiv_mem_supported`: `∂ₖ` kills anything free of `x_k`. -/
+theorem pderiv_eq_zero_of_mem_supported {k : n} {p : MvPolynomial n R}
+    (hp : p ∈ supported R ({k}ᶜ : Set n)) : pderiv k p = 0 :=
+  pderiv_eq_zero_of_notMem_vars <| by
+    rwa [mem_vars_iff_degreeOf_ne_zero, not_not, ← mem_supported_compl_singleton_iff]
+
+theorem degreeOf_pderiv_le (i j : n) (p : MvPolynomial n R) :
+    (pderiv i p).degreeOf j ≤ p.degreeOf j := by
+  rw [degreeOf_le_iff]
+  intro t ht
+  rw [mem_support_iff, coeff_pderiv] at ht
+  have := monomial_le_degreeOf j (mem_support_iff.mpr (left_ne_zero_of_mul ht))
+  simp only [Finsupp.add_apply] at this
+  omega
+
+theorem pderiv_mem_supported_of_mem {s : Set n} {i : n} {p : MvPolynomial n R}
+    (hp : p ∈ supported R s) : pderiv i p ∈ supported R s :=
+  mem_supported_of_degreeOf_le (degreeOf_pderiv_le i · p) hp
 
 private theorem single_one_le_iff {k : n} {t : n →₀ ℕ} :
     Finsupp.single k 1 ≤ t ↔ t k ≠ 0 := by
@@ -654,13 +695,12 @@ noncomputable def res (k : n) (g h : MvPolynomial n R) : MvPolynomial n R :=
 `res_{x_k}((-1)^i aᵢ bⱼ, f) = (-1)^i bⱼ res_{x_k}(aᵢ, f)`. -/
 theorem res_mul_left {k : n} {c : MvPolynomial n R} (hc : c ∈ supported R ({k}ᶜ : Set n))
     (g h : MvPolynomial n R) : res k (c * g) h = c * res k g h := by
-  have hc' : pderiv k c = 0 := pderiv_eq_zero_of_notMem_vars <| by
-    rw [mem_vars_iff_degreeOf_ne_zero, not_not, ← mem_supported_compl_singleton_iff]
-    exact hc
-  simp only [res, map_mul, setZero_of_mem_supported hc, Derivation.leibniz, hc', smul_eq_mul]
+  simp only [res, map_mul, setZero_of_mem_supported hc, Derivation.leibniz,
+    pderiv_eq_zero_of_mem_supported hc, smul_eq_mul]
   ring
 
--- Lemma 2.2 can be found in DetPoly.LEAN_Warmup.Grant.MvPolynomial.
+-- Lemma 2.2 (`rayleighDiff_eq_zero_iff`) and the rest of the `setZero` API are in
+-- `DetPoly.LEAN_Warmup.Grant.MvPolynomial`.
 
 variable [Fintype n]
 
