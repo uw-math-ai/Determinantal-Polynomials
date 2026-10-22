@@ -3,3 +3,13 @@
 blueprint/print/
 blueprint/web/
 blueprint/src/web.paux
+
+# Jekyll home page: build output, caches, and locally installed gems
+home_page/_site/
+home_page/.jekyll-cache/
+home_page/.bundle/
+home_page/vendor/
+# Copied in by CI (docgen-action); copy them in locally to preview the links
+home_page/blueprint/
+home_page/blueprint.pdf
+home_page/docs/

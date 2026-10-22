@@ -32,3 +32,19 @@ remote_theme: pages-themes/cayman@v0.2.0
 plugins:
   - jekyll-remote-theme
   - jekyll-github-metadata
+
+# Use the theme layout for every page. The `github-pages` gem used to do this implicitly.
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+
+# Minify the CSS, as the `github-pages` gem did.
+sass:
+  style: compressed
+
+# Files in this folder that should not be published. Jekyll already skips Gemfile, vendor/, etc.
+exclude:
+  - flake.nix
+  - flake.lock

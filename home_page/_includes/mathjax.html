@@ -1,0 +1,16 @@
+<!-- MathJax, for pages with `usemathjax: true` in their front matter. -->
+{% if page.usemathjax %}
+  <script>
+    window.MathJax = {
+      tex: {
+        // Accept `$...$` as inline math in addition to `\(...\)`. kramdown turns `$$...$$` into
+        // `\(...\)` or `\[...\]` itself.
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        // Number equations AMS-style.
+        tags: 'ams'
+      }
+    };
+  </script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-mml-chtml.js"></script>
+{% endif %}
