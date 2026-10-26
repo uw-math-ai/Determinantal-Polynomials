@@ -10,17 +10,15 @@ public import DetPoly.LEAN_Warmup.ClaudeMathlib
 /-!
 # `setZero` API and Lemma 2.2
 
-This file completes the API for `setZero k` (`p ↦ p |_{x_k = 0}`) from `ClaudeMathlib` and
-proves **Lemma 2.2** ([AV22, Prop. 2.2]): a polynomial `f` affine in `xᵢ` and `xⱼ` has
-`Δᵢⱼ f = 0` iff `f = g * h` with `g` free of `xᵢ` and `h` free of `xⱼ`.
+API for `setZero k` (`p ↦ p |_{x_k = 0}`), and **Lemma 2.2** ([AV22, Prop. 2.2]): a
+polynomial `f` affine in `xᵢ` and `xⱼ` has `Δᵢⱼ f = 0` iff `f = g * h` with `g` free of `xᵢ`
+and `h` free of `xⱼ`.
 
 ## Main results
 
-* `setZero_comm`, `pderiv_setZero_of_ne`, `setZero_map`, `eval_setZero`: `setZero` commutes
-  with the other operations we use.
 * `exists_eq_X_mul_X_add`: `f = a xᵢxⱼ + b xᵢ + c xⱼ + d` with `a b c d ∈ R[x_k : k ≠ i, j]`.
 * `rayleighDiff_mul_eq_zero`: the "if" half of Lemma 2.2, over any `CommRing`.
-* `rayleighDiff_eq_zero_iff`: Lemma 2.2, over any UFD (in particular any field).
+* `rayleighDiff_eq_zero_iff`: Lemma 2.2, over any UFD.
 -/
 
 public noncomputable section
@@ -68,8 +66,7 @@ theorem degreeOf_setZero_le (j k : n) (p : MvPolynomial n R) :
     (setZero k p).degreeOf j ≤ p.degreeOf j :=
   degreeOf_le_iff.mpr fun _ ht ↦ monomial_le_degreeOf j (support_setZero_subset k p ht)
 
-/-- `setZero k` does not introduce new variables. Compare `setZero_mem_supported`, which says
-it removes `x_k`. -/
+/-- `setZero k` does not introduce new variables. -/
 theorem setZero_mem_supported_of_mem {s : Set n} {k : n} {p : MvPolynomial n R}
     (hp : p ∈ supported R s) : setZero k p ∈ supported R s :=
   mem_supported_of_degreeOf_le (degreeOf_setZero_le · k p) hp
@@ -122,9 +119,8 @@ end SetZero
 
 section Lemma22
 
-/-- The decomposition `f = a xᵢxⱼ + b xᵢ + c xⱼ + d` with `a b c d ∈ R[x_k : k ≠ i, j]`, from
-two applications of `eq_setZero_add_X_mul_pderiv`. Explicitly, `a = ∂ⱼ∂ᵢf`, `b = (∂ᵢf)|_{xⱼ=0}`,
-`c = ∂ⱼ(f|_{xᵢ=0})` and `d = f|_{xᵢ=xⱼ=0}`. -/
+/-- `f = a xᵢxⱼ + b xᵢ + c xⱼ + d` with `a b c d ∈ R[x_k : k ≠ i, j]`, namely `a = ∂ⱼ∂ᵢf`,
+`b = (∂ᵢf)|_{xⱼ=0}`, `c = ∂ⱼ(f|_{xᵢ=0})` and `d = f|_{xᵢ=xⱼ=0}`. -/
 theorem exists_eq_X_mul_X_add {f : MvPolynomial n R} {i j : n} (hi : f.degreeOf i ≤ 1)
     (hj : f.degreeOf j ≤ 1) :
     ∃ a ∈ supported R ({i, j}ᶜ : Set n), ∃ b ∈ supported R ({i, j}ᶜ : Set n),
@@ -154,8 +150,7 @@ theorem rayleighDiff_X_mul_X_add {i j : n} (hij : i ≠ j) {a b c d : MvPolynomi
     pderiv_eq_zero_of_mem_supported, ha, hb, hc, hd]
   ring
 
-/-- The "if" half of Lemma 2.2. It needs no degree hypotheses, works for `i = j`, and holds
-over any commutative ring. -/
+/-- The "if" half of Lemma 2.2. It needs no degree hypotheses. -/
 theorem rayleighDiff_mul_eq_zero {i j : n} {g h : MvPolynomial n R}
     (hg : g ∈ supported R ({i}ᶜ : Set n)) (hh : h ∈ supported R ({j}ᶜ : Set n)) :
     rayleighDiff i j (g * h) = 0 := by
@@ -165,24 +160,14 @@ theorem rayleighDiff_mul_eq_zero {i j : n} {g h : MvPolynomial n R}
     pderiv_eq_zero_of_mem_supported hh, mul_zero, zero_add, add_zero, hgij]
   ring
 
-/-- **Lemma 2.2** ([AV22, Prop. 2.2]). How we phrase it:
-* "degree one in `xᵢ` and `xⱼ`" ↦ `f.degreeOf i ≤ 1`, `f.degreeOf j ≤ 1`;
-* "`g ∈ 𝔽[x_k : k ≠ i]`" ↦ `g ∈ supported R {i}ᶜ`;
-* the factorization is an *equation in `MvPolynomial n R`*, `f = g * h`.
+/-- **Lemma 2.2** ([AV22, Prop. 2.2]). The paper assumes `i ≠ j` and works over a field. The
+statement also holds for `i = j`, and the proof only needs `R` to be a UFD. Some such hypothesis
+is necessary: over `ℤ[√-5]`, `f = 2xᵢxⱼ + (1+√-5)xᵢ + (1-√-5)xⱼ + 3` has `Δᵢⱼ f = 0` but does
+not factor.
 
-The paper has `i ≠ j` implicitly, but the statement also holds for `i = j` (both sides say
-`∂ᵢf = 0`), so we drop that hypothesis.
-
-The paper works over a field, but the proof only needs `R` to be a UFD: then so is
-`MvPolynomial n R` (Mathlib instance), so it is a `DecompositionMonoid`. Some such hypothesis
-is necessary. Over `ℤ[√-5]`, `f = 2xᵢxⱼ + (1+√-5)xᵢ + (1-√-5)xⱼ + 3` has `Δᵢⱼ f = 0` but does
-not factor. Over `ℤ/4`, `f = 2xᵢ + 2xⱼ` has `Δᵢⱼ f = 0` but does not factor.
-
-Proof: write `f = a xᵢxⱼ + b xᵢ + c xⱼ + d` (`exists_eq_X_mul_X_add`), so `Δᵢⱼ f = bc - ad`
-(`rayleighDiff_X_mul_X_add`). If `a ≠ 0`, then `a ∣ bc` splits as `a = γα` with `γ ∣ b` and
-`α ∣ c` (`exists_dvd_and_dvd_of_dvd_mul`), and
-`f = (α xⱼ + β)(γ xᵢ + δ)`. If `a = 0`, then `b = 0` or `c = 0`, and `f` itself is free of `xᵢ`
-or of `xⱼ`. -/
+Proof: write `f = a xᵢxⱼ + b xᵢ + c xⱼ + d`, so `Δᵢⱼ f = bc - ad`. If `a ≠ 0`, split
+`a = γα` with `γ ∣ b` and `α ∣ c`; then `f = (α xⱼ + β)(γ xᵢ + δ)`. If `a = 0`, then `b = 0`
+or `c = 0`, and `f` itself is free of `xᵢ` or of `xⱼ`. -/
 theorem rayleighDiff_eq_zero_iff [IsDomain R] [UniqueFactorizationMonoid R]
     {f : MvPolynomial n R} {i j : n} (hi : f.degreeOf i ≤ 1) (hj : f.degreeOf j ≤ 1) :
     rayleighDiff i j f = 0 ↔
