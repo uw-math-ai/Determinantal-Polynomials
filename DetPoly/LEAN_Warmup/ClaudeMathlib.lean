@@ -333,7 +333,7 @@ theorem isMultiaffine_iff_mem_restrictDegree (p : MvPolynomial n R) :
 
 /-- The exponent vector of `∏_{i ∈ S} xᵢ`. **NAME ONLY**: equal to
 `Multiset.toFinsupp S.val`. -/
-noncomputable def Finset.exponent (S : Finset n) : n →₀ ℕ := ∑ i ∈ S, Finsupp.single i 1
+noncomputable abbrev Finset.exponent (S : Finset n) : n →₀ ℕ := ∑ i ∈ S, Finsupp.single i 1
 
 /-- If `p` is affine in `x_k`, dividing by `x_k` (`divMonomial`) is `∂ₖ`. -/
 theorem divMonomial_single_eq_pderiv {k : n} {p : MvPolynomial n R} (hp : p.degreeOf k ≤ 1) :
