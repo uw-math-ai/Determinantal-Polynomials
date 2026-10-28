@@ -9,6 +9,7 @@ variable {R m n : Type*} [CommRing R] [Fintype m] [Fintype n] [DecidableEq m] [D
 
 namespace Matrix
 
+/-- Equivalence under independent invertible diagonal row and column scalings. -/
 def DiagEquiv (M N : Matrix m n R) : Prop :=
   ∃ (l : m → Rˣ) (r : n → Rˣ), -- Vectors in Lean are just functions from
                                -- finite sets to their data type.

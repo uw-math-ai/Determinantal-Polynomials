@@ -1,7 +1,13 @@
 import DetPoly.Basic
+import DetPoly.CMVPolynomial
+import DetPoly.CMVPolynomial.Examples
+import DetPoly.CMVPolynomial.Matrix
+import DetPoly.LEAN_Warmup.Anders.DesnanotJacobi
+import DetPoly.LEAN_Warmup.Anders.DiagEquiv
 import DetPoly.LEAN_Warmup.ClaudeMathlib
 import DetPoly.LEAN_Warmup.Grant.IrreducibleMatrix
 import DetPoly.LEAN_Warmup.Grant.MvPolynomial
 import DetPoly.LEAN_Warmup.JoeWarmup
+import DetPoly.LEAN_Warmup.LironTest
 import DetPoly.LEAN_Warmup.PS1_P1_Bach
 import DetPoly.«PS2_#1c_Shaoda»
