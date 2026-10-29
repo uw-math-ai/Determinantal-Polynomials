@@ -27,9 +27,10 @@ an integral domain) and specialize.
 
 ## Implementation notes
 
-`principalSubmatrix M S` and `toSquareBlockProp M (· ∈ S)` are the same matrix, but their
-determinants use different `Fintype` instances on the subtype (`Finset.Subtype.fintype` and
-`Subtype.fintype`), so passing between them takes a `convert`.
+The block-triangular steps use Mathlib's `Matrix.twoBlockTriangular_det`, which splits the index
+type by a predicate (here `· ∈ {i, j}ᶜ`) without reindexing to a sum type. Its blocks are
+`toSquareBlockProp`s; `Matrix.det_principalSubmatrix` converts back to `principalSubmatrix`, and
+`Matrix.equiv_block_det` moves between equivalent predicates.
 -/
 
 public section
@@ -38,19 +39,23 @@ variable {R n : Type*} [CommRing R] [Fintype n] [DecidableEq n]
 
 namespace Matrix
 
+/-- The determinant of a block of `N` whose index set is listed without duplicates by `l`, as a
+`Fin l.length`-indexed determinant. The reindexing is `List.Nodup.getEquiv`, sending `a ↦ l[a]`.
+
+The block is given by a predicate `p` rather than as `(· ∈ l)`, so that `det` carries the generic
+`Subtype.fintype` instance that `Matrix.twoBlockTriangular_det` produces. -/
+theorem det_toSquareBlockProp_eq_of_nodup (N : Matrix n n R) {p : n → Prop} [DecidablePred p]
+    {l : List n} (hl : l.Nodup) (hp : ∀ k, p k ↔ k ∈ l) :
+    (N.toSquareBlockProp p).det = (of fun a b : Fin l.length ↦ N l[a] l[b]).det := by
+  rw [← det_submatrix_equiv_self ((hl.getEquiv l).trans (.subtypeEquivRight fun k ↦ (hp k).symm))]
+  rfl
+
 /-- The determinant of the block of `N` on a two-element set `{i, j}`. -/
 theorem det_toSquareBlockProp_pair (N : Matrix n n R) {i j : n} (hij : i ≠ j) {p : n → Prop}
     [DecidablePred p] (hp : ∀ k, p k ↔ k = i ∨ k = j) :
     (N.toSquareBlockProp p).det = N i i * N j j - N i j * N j i := by
-  let e : Fin 2 ≃ {k // p k} :=
-    { toFun := ![⟨i, (hp i).2 (.inl rfl)⟩, ⟨j, (hp j).2 (.inr rfl)⟩]
-      invFun := fun k ↦ if k.1 = i then 0 else 1
-      left_inv := by intro a; fin_cases a <;> simp [hij.symm]
-      right_inv := by
-        rintro ⟨k, hk⟩
-        rcases (hp k).1 hk with rfl | rfl <;> simp [hij.symm] }
-  rw [← det_submatrix_equiv_self e, det_fin_two]
-  rfl
+  rw [det_toSquareBlockProp_eq_of_nodup N (l := [i, j]) (by simpa using hij) (by simpa using hp)]
+  exact det_fin_two _
 
 private theorem notMem_compl_pair_iff {i j : n} (k : n) :
     k ∉ ({i, j}ᶜ : Finset n) ↔ k = i ∨ k = j := by
@@ -93,19 +98,17 @@ private theorem mul_adjugateCols_apply (M : Matrix n n R) (i j k l : n) :
 /-- `M * adjugateCols M i j` is block triangular, with blocks `M[{i, j}ᶜ]` and `det M • 1`. -/
 private theorem det_mul_adjugateCols (M : Matrix n n R) {i j : n} (hij : i ≠ j) :
     (M * adjugateCols M i j).det = M.det ^ 2 * (M.principalSubmatrix {i, j}ᶜ).det := by
-  rw [twoBlockTriangular_det' _ (· ∈ ({i, j}ᶜ : Finset n)),
+  rw [det_principalSubmatrix, twoBlockTriangular_det' _ (· ∈ ({i, j}ᶜ : Finset n)),
     det_toSquareBlockProp_pair _ hij notMem_compl_pair_iff]
   · -- the `{i, j}ᶜ` block is `M[{i, j}ᶜ]`, and the `{i, j}` block is `det M • 1`
     have h1 : (M * adjugateCols M i j).toSquareBlockProp (· ∈ ({i, j}ᶜ : Finset n)) =
-        M.principalSubmatrix {i, j}ᶜ := by
+        M.toSquareBlockProp (· ∈ ({i, j}ᶜ : Finset n)) := by
       ext ⟨a, ha⟩ ⟨b, hb⟩
       simp only [Finset.mem_compl, Finset.mem_insert, Finset.mem_singleton, not_or] at hb
       simp [toSquareBlockProp_def, mul_adjugateCols_apply, hb.1, hb.2]
     simp only [h1, mul_adjugateCols_apply, true_or, or_true, ↓reduceIte, smul_apply,
       one_apply_eq, one_apply_ne hij, one_apply_ne hij.symm, smul_eq_mul, mul_one, mul_zero,
       sub_zero, pow_two, mul_comm]
-    -- the two sides differ only in the `Fintype` instance (see the implementation notes)
-    convert rfl using 3
   · -- block triangularity
     intro k hk l hl
     have hkl : k ≠ l := by rintro rfl; exact hl hk

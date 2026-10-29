@@ -18,7 +18,25 @@ characterizing the fiber of a point in the image of the principal minor map.
 @[expose] public noncomputable section
 open MvPolynomial Matrix
 
-variable {n R : Type*} [CommRing R] [DecidableEq n] [Fintype n]
+variable {n R : Type*}
+
+/-- The principal submatrix `A[S, S]`. -/
+abbrev Matrix.principalSubmatrix (A : Matrix n n R) (S : Finset n) : Matrix S S R :=
+  A.submatrix (↑) (↑)
+
+theorem Matrix.principalSubmatrix_eq_toSquareBlockProp (A : Matrix n n R) (S : Finset n) :
+    A.principalSubmatrix S = A.toSquareBlockProp (· ∈ S) :=
+  rfl
+
+variable [CommRing R] [DecidableEq n] [Fintype n]
+
+/-- hack to work around different instances getting picked up:
+  `Subtype.fintype` vs. `Finset.Subtype.fintype` -/
+theorem Matrix.det_principalSubmatrix (A : Matrix n n R) (S : Finset n) :
+    (A.principalSubmatrix S).det =
+      @det _ _ (Subtype.fintype (· ∈ S)) _ _ (A.toSquareBlockProp (· ∈ S)) := by
+  convert rfl using 2
+  exact (A.principalSubmatrix_eq_toSquareBlockProp S).symm
 
 /-- The Rayleigh difference `Δᵢⱼ(f) = ∂ᵢf ∂ⱼf - f ∂ᵢ∂ⱼf`. -/
 def rayleighDiff (i j : n) (f : MvPolynomial n R) : MvPolynomial n R :=
@@ -31,9 +49,5 @@ abbrev Matrix.mvCharmatrix (A : Matrix n n R) : Matrix n n (MvPolynomial n R) :=
 /-- The determinantal polynomial `f_A = det(diag(x) + A)`. -/
 abbrev Matrix.detpoly (A : Matrix n n R) : MvPolynomial n R :=
   A.mvCharmatrix.det
-
-/-- The principal submatrix `A[S, S]`. -/
-abbrev Matrix.principalSubmatrix (A : Matrix n n R) (S : Finset n) : Matrix S S R :=
-  A.submatrix (↑) (↑)
 
 end
