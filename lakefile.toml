@@ -1,7 +1,7 @@
 name = "DetPoly"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["DetPoly"]
+defaultTargets = ["DetPoly", "LEAN_Warmup"]
 lintDriver = "batteries/runLinter"
 
 [leanOptions]
@@ -27,3 +27,8 @@ rev = "v4.35.0"
 
 [[lean_lib]]
 name = "DetPoly"
+
+# Scratch drafts. A separate library so that `DetPoly.lean` (and anything importing it) never
+# sees these declarations. Files here may import `DetPoly`, but not the other way around.
+[[lean_lib]]
+name = "LEAN_Warmup"

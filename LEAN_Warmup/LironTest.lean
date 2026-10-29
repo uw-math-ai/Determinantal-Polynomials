@@ -1,6 +1,15 @@
-import Mathlib
+/-
+Copyright (c) 2026 University of Washington Math AI Lab. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Liron Shani
+-/
+module
+
+public import Mathlib
 
 /-! # Lean Warmup PS1 2(a): conjugating by a diagonal matrix -/
+
+public section
 
 open Matrix
 
@@ -10,3 +19,5 @@ variable {n : Type*} [Fintype n] [DecidableEq n] {F : Type*} [Field F]
 theorem diag_conj_apply (d : n → F) (A : Matrix n n F) (i j : n) :
     (diagonal d * A * diagonal (fun k => (d k)⁻¹)) i j = d i * A i j * (d j)⁻¹ := by
   rw [mul_diagonal, diagonal_mul]
+
+end

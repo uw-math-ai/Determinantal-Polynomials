@@ -3,12 +3,24 @@ Copyright (c) 2026 University of Washington Math AI Lab. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Anders Lewis
 -/
-import Mathlib
+module
+
+public import Mathlib
+
+/-!
+# Diagonal equivalence of matrices
+
+`M ~ N` iff `M = L N R` for invertible diagonal `L`, `R`. This is two-sided scaling, not the
+paper's diagonal similarity `B = D A D⁻¹`.
+-/
+
+@[expose] public section
 
 variable {R m n : Type*} [CommRing R] [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
 
 namespace Matrix
 
+/-- `M = diag(l) * N * diag(r)` for some vectors of units `l`, `r`. -/
 def DiagEquiv (M N : Matrix m n R) : Prop :=
   ∃ (l : m → Rˣ) (r : n → Rˣ), -- Vectors in Lean are just functions from
                                -- finite sets to their data type.
@@ -34,5 +46,6 @@ theorem DiagEquiv.equivalence : Equivalence (DiagEquiv (R := R) (m := m) (n := n
     ext i j
     simp [mul_assoc]
 
-
 end Matrix
+
+end

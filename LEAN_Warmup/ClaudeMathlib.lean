@@ -6,7 +6,7 @@ Authors: Grant Yang
 
 module
 
-public import DetPoly.LEAN_Warmup.Grant.IrreducibleMatrix
+public import LEAN_Warmup.Grant.IrreducibleMatrix
 
 /-!
 # Definitions and statements for "The fiber of the principal minor map"
@@ -202,7 +202,7 @@ end Minors
 
 /-! ## Cuts and symmetrizability
 
-Reducibility is in `DetPoly.LEAN_Warmup.Grant.IrreducibleMatrix`. -/
+Reducibility is in `LEAN_Warmup.Grant.IrreducibleMatrix`. -/
 
 section Combinatorial
 
@@ -551,7 +551,7 @@ theorem res_mul_left {k : n} {c : MvPolynomial n R} (hc : c ∈ supported R ({k}
   ring
 
 -- Lemma 2.2 (`rayleighDiff_eq_zero_iff`) and the rest of the `setZero` API are in
--- `DetPoly.LEAN_Warmup.Grant.MvPolynomial`.
+-- `LEAN_Warmup.Grant.MvPolynomial`.
 
 variable [Fintype n]
 
