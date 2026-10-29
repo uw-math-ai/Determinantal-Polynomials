@@ -3,79 +3,62 @@ import Mathlib
 /-!
 # Lemma 4.3 — Shaoda Ji
 
-Let A be an n × n irreducible matrix over a field F, n ≥ 4.
-Let
+Let A be an n × n irreducible matrix over a field F, with n ≥ 4.
+Suppose X is a cut.
 
-    M = diag(x₁, ..., xₙ) + A
+Put
 
-and
-
+    M = A + diag(x₁, ..., xₙ),
     G = adj(M).
 
-If X is a cut, then for i ∈ X and j ∈ Xᶜ we want
+For i ∈ X and j ∉ X, we prove that there are polynomials aᵢ and bⱼ such that
 
     Gᵢⱼ = (-1)^i aᵢ bⱼ,
 
-where
+with
 
     aᵢ ∈ F[xₖ : k ∈ X \ {i}],
     bⱼ ∈ F[xₖ : k ∈ Xᶜ \ {j}],
 
-and both aᵢ and bⱼ are nonzero.
+and both factors are nonzero.
 
 ----------------------------------------------------------------------
-Structure of the mathematical proof
+Formalization strategy
 ----------------------------------------------------------------------
 
-After simultaneously permuting rows and columns, the paper assumes that
-X is an initial block and writes
+The handwritten proof writes the upper-right cut block as
 
-             [ A₁ + X₁    u vᵀ ]
-    M =      [                  ].
-             [ p qᵀ       A₂+X₂ ]
+    u vᵀ
 
-Writing
+and then factors the corresponding block of the adjugate over the
+fraction field.
 
-             [ G₁  G₂ ]
-    G =      [        ],
-             [ G₃  G₄ ]
+For Lean it is cleaner to prove a stronger fraction-free identity.
 
-the identity
+For
 
-    M G = det(M) I
+             [ P     u vᵀ ]
+    M =      [             ],
+             [ L       Q   ]
 
-gives in the upper-right block
+we prove
 
-    (A₁ + X₁) G₂ + u vᵀ G₄ = 0.
+    adj(M)_(i,j)
+      =
+    - det(P with column i replaced by u)
+      * det(Q with row j replaced by v).
 
-Over the fraction field this yields
+This is proved by determinant-preserving row and column shears.
 
-         (A₁ + X₁)ᵃᵈʲ u · (vᵀG₄)
-    G₂ = ------------------------- .
-             - det(A₁ + X₁)
+Consequently:
 
-Hence G₂ has rank at most one.
+* the polynomial factorization is constructed explicitly;
+* no fraction field is required;
+* no gcd/common-factor cancellation is required;
+* replacing column i removes xᵢ from the first factor;
+* replacing row j removes xⱼ from the second factor.
 
-The mathematically substantial descent step is then:
-
-    rank-one factorization over Frac(F[x])
-          +
-    all entries actually lie in F[x]
-          +
-    cofactor variable-avoidance
-
-        ==> Gᵢⱼ = (-1)^i aᵢ bⱼ
-
-with aᵢ involving only variables in X \ {i} and
-bⱼ involving only variables in Xᶜ \ {j}.
-
-That descent is isolated below as `CutFactorizationCore`.
-
-The final part of Lemma 4.3 is then completely formal:
-
-* Lemma 4.2 says every entry Gᵢⱼ is nonzero when A is irreducible.
-* Since Gᵢⱼ = (-1)^i aᵢ bⱼ,
-  neither aᵢ nor bⱼ can be zero.
+Irreducibility is used only at the final step through Lemma 4.2.
 -/
 
 open scoped BigOperators
@@ -87,61 +70,28 @@ noncomputable section
 variable {F : Type*} [Field F]
 
 /-!
-## 1. The polynomial ring
-
-Lean uses `Fin n = {0, ..., n-1}` for the indices.
-
-Mathematically our polynomial ring is
-
-    F[x₁, ..., xₙ].
-
-In Lean this is
-
-    MvPolynomial (Fin n) F.
+## 1. Polynomial ring
 -/
 
-abbrev Poly (F : Type*) [CommSemiring F] (n : ℕ) :=
+abbrev Poly
+    (F : Type*)
+    [CommSemiring F]
+    (n : ℕ) :=
   MvPolynomial (Fin n) F
-
-/-!
-## 2. Embed the constant matrix A into the polynomial ring
-
-Every entry of A lies in F.
-
-To add A to the generic diagonal matrix, we first regard its entries
-as constant multivariate polynomials.
--/
 
 def polynomialMatrix
     {n : ℕ}
     (A : Matrix (Fin n) (Fin n) F) :
     Matrix (Fin n) (Fin n) (Poly F n) :=
-  A.map (fun a => MvPolynomial.C a)
-
-/-!
-## 3. The matrix M = A + diag(x)
-
-The diagonal entry at position i is the polynomial variable X i.
-
-Thus this is exactly the generic matrix
-
-    M = A + diag(x₁, ..., xₙ).
--/
+  A.map MvPolynomial.C
 
 def genericShift
     {n : ℕ}
     (A : Matrix (Fin n) (Fin n) F) :
     Matrix (Fin n) (Fin n) (Poly F n) :=
   polynomialMatrix A +
-    Matrix.diagonal (fun i => MvPolynomial.X i)
-
-/-!
-## 4. Its adjugate G
-
-This is the matrix called G in Lemma 4.3:
-
-    G = Mᵃᵈʲ.
--/
+    Matrix.diagonal
+      (fun i => MvPolynomial.X i)
 
 def genericAdjugate
     {n : ℕ}
@@ -150,21 +100,7 @@ def genericAdjugate
   (genericShift A).adjugate
 
 /-!
-## 5. "A polynomial uses only variables in S"
-
-Mathlib already defines
-
-    p.vars : Finset (Fin n),
-
-the finite set of variables actually occurring in p.
-
-Therefore
-
-    UsesOnly p S
-
-is our formal translation of
-
-    p ∈ F[xₖ : k ∈ S].
+`UsesOnly p S` means that every variable occurring in p belongs to S.
 -/
 
 def UsesOnly
@@ -174,38 +110,69 @@ def UsesOnly
   p.vars ⊆ S
 
 /-!
-For example,
-
-    UsesOnly p (X.erase i)
-
-means precisely
-
-    p ∈ F[xₖ : k ∈ X \ {i}].
-
-In particular, p cannot contain xᵢ.
+## 2. The two sides of a cut
 -/
 
-lemma not_mem_vars_of_usesOnly_erase
+abbrev InCut
     {n : ℕ}
-    {p : Poly F n}
-    {S : Finset (Fin n)}
-    {i : Fin n}
-    (h : UsesOnly p (S.erase i)) :
-    i ∉ p.vars := by
-  intro hi
-  have hmem : i ∈ S.erase i := h hi
-  simp at hmem
+    (X : Finset (Fin n)) :=
+  {i : Fin n // i ∈ X}
+
+abbrev OutCut
+    {n : ℕ}
+    (X : Finset (Fin n)) :=
+  {i : Fin n // i ∉ X}
+
+def splitEquiv
+    {n : ℕ}
+    (X : Finset (Fin n)) :
+    InCut X ⊕ OutCut X ≃ Fin n :=
+  Equiv.sumCompl
+    (fun i : Fin n => i ∈ X)
+
+def cutBlock11
+    {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) F)
+    (X : Finset (Fin n)) :
+    Matrix (InCut X) (InCut X) F :=
+  A.submatrix Subtype.val Subtype.val
+
+def cutBlock12
+    {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) F)
+    (X : Finset (Fin n)) :
+    Matrix (InCut X) (OutCut X) F :=
+  A.submatrix Subtype.val Subtype.val
+
+def cutBlock21
+    {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) F)
+    (X : Finset (Fin n)) :
+    Matrix (OutCut X) (InCut X) F :=
+  A.submatrix Subtype.val Subtype.val
+
+def cutBlock22
+    {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) F)
+    (X : Finset (Fin n)) :
+    Matrix (OutCut X) (OutCut X) F :=
+  A.submatrix Subtype.val Subtype.val
 
 /-!
-## 6. Irreducibility of the zero-pattern of A
+A cut has at least two indices on both sides and rank-one cross blocks.
+-/
 
-For the present formalization we encode irreducibility in the standard
-subset form:
+def IsCut
+    {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) F)
+    (X : Finset (Fin n)) : Prop :=
+  2 ≤ Fintype.card (InCut X) ∧
+  2 ≤ Fintype.card (OutCut X) ∧
+  (cutBlock12 A X).rank = 1 ∧
+  (cutBlock21 A X).rank = 1
 
-for every nonempty proper set S of indices, there is a nonzero entry
-going from S to its complement.
-
-Applying the same condition to Sᶜ supplies the reverse direction.
+/-!
+## 3. Irreducibility and Lemma 4.2
 -/
 
 def MatrixIrreducible
@@ -215,49 +182,611 @@ def MatrixIrreducible
     S.Nonempty →
     S ≠ Finset.univ →
     ∃ i, i ∈ S ∧
-      ∃ j, j ∉ S ∧ A i j ≠ 0
+      ∃ j, j ∉ S ∧
+        A i j ≠ 0
+
+def Lemma42Statement
+    {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) F) : Prop :=
+  ∀ i j : Fin n,
+    genericAdjugate A i j ≠ 0
 
 /-!
-## 7. Cross-blocks and cuts
+## 4. A rank-one matrix is an outer product
 
-For finite sets S and T, `crossBlock A S T` is the submatrix
+If B has rank one, then B = u vᵀ.
 
-    A[S,T].
-
-A cut has at least two indices on each side and both cross-blocks
-have rank one.
-
-This matches the rank-one block structure used in the proof.
+Let W be the span of the columns. Since finrank W = 1, W is nontrivial.
+We obtain a nonzero vector u₀ explicitly from the `Nontrivial W`
+instance without introducing a `FiniteDimensional` assumption.
 -/
 
-def crossBlock
-    {n : ℕ}
-    (A : Matrix (Fin n) (Fin n) F)
-    (S T : Finset (Fin n)) :
-    Matrix {i // i ∈ S} {j // j ∈ T} F :=
-  A.submatrix Subtype.val Subtype.val
-
-def IsCut
-    {n : ℕ}
-    (A : Matrix (Fin n) (Fin n) F)
-    (X : Finset (Fin n)) : Prop :=
-  2 ≤ X.card ∧
-  2 ≤ Xᶜ.card ∧
-  (crossBlock A X Xᶜ).rank = 1 ∧
-  (crossBlock A Xᶜ X).rank = 1
+lemma exists_vecMulVec_of_rank_eq_one
+    {m k : Type*}
+    [Fintype k]
+    (B : Matrix m k F)
+    (hB : B.rank = 1) :
+    ∃ u : m → F, ∃ v : k → F,
+      B = Matrix.vecMulVec u v := by
+  classical
+  let W : Submodule F (m → F) :=
+    Submodule.span F (Set.range B.col)
+  have hW :
+      Module.finrank F W = 1 := by
+    change
+      Module.finrank F
+          ↥(Submodule.span F (Set.range B.col)) =
+        1
+    rw [← Matrix.rank_eq_finrank_span_cols]
+    exact hB
+  have hNontrivial :
+      Nontrivial W :=
+    Module.nontrivial_of_finrank_eq_succ hW
+  obtain ⟨u₀, hu₀⟩ :
+      ∃ u₀ : W, u₀ ≠ 0 :=
+    @exists_ne W hNontrivial 0
+  have hcol (j : k) :
+      B.col j ∈ W := by
+    apply Submodule.subset_span
+    exact Set.mem_range_self j
+  have hscalar (j : k) :
+      ∃ c : F,
+        c • u₀ =
+          (⟨B.col j, hcol j⟩ : W) := by
+    exact
+      exists_smul_eq_of_finrank_eq_one
+        hW
+        hu₀
+        (⟨B.col j, hcol j⟩ : W)
+  choose v hv using hscalar
+  let u : m → F :=
+    fun i => (u₀ : m → F) i
+  refine ⟨u, v, ?_⟩
+  funext i j
+  have hij :=
+    congrArg
+      (fun w : W => (w : m → F) i)
+      (hv j)
+  simpa [u, Matrix.vecMulVec_apply, mul_comm] using hij.symm
 
 /-!
-## 8. The sign (-1)^i
+## 5. Determinant-preserving row and column shears
+-/
 
-The paper indexes rows by 1, ..., n.
+def rowShear
+    {ι R : Type*}
+    [CommRing R]
+    (M : Matrix ι ι R)
+    (c : ι → R)
+    (k : ι) :
+    Matrix ι ι R :=
+  fun i j =>
+    M i j + c i * M k j
 
-Lean indexes `Fin n` by 0, ..., n-1.
+lemma det_rowShear
+    {ι R : Type*}
+    [Fintype ι]
+    [DecidableEq ι]
+    [CommRing R]
+    (M : Matrix ι ι R)
+    (c : ι → R)
+    (k : ι)
+    (hk : c k = 0) :
+    (rowShear M c k).det =
+      M.det := by
+  exact
+    Matrix.det_eq_of_forall_row_eq_smul_add_const
+      (A := rowShear M c k)
+      (B := M)
+      c
+      k
+      hk
+      (by
+        intro i j
+        rfl)
 
-Therefore mathematical row i corresponds to Lean exponent
+def colShear
+    {ι R : Type*}
+    [CommRing R]
+    (M : Matrix ι ι R)
+    (c : ι → R)
+    (k : ι) :
+    Matrix ι ι R :=
+  fun i j =>
+    M i j + c j * M i k
 
-    i.val + 1.
+lemma det_colShear
+    {ι R : Type*}
+    [Fintype ι]
+    [DecidableEq ι]
+    [CommRing R]
+    (M : Matrix ι ι R)
+    (c : ι → R)
+    (k : ι)
+    (hk : c k = 0) :
+    (colShear M c k).det =
+      M.det := by
+  have hT :
+      (colShear M c k).transpose =
+        rowShear M.transpose c k := by
+    rfl
+  calc
+    (colShear M c k).det
+        =
+        (colShear M c k).transpose.det := by
+      exact
+        (Matrix.det_transpose
+          (colShear M c k)).symm
+    _ =
+        (rowShear M.transpose c k).det := by
+      rw [hT]
+    _ =
+        M.transpose.det := by
+      exact
+        det_rowShear
+          M.transpose c k hk
+    _ =
+        M.det := by
+      exact Matrix.det_transpose M
 
-We regard the sign as a constant polynomial.
+/-!
+## 6. Fraction-free factorization of an off-diagonal adjugate entry
+
+For
+
+             [ P     u vᵀ ]
+    M =      [             ],
+             [ L       Q   ]
+
+we prove
+
+    adj(M)_(i,j)
+      =
+    -det(P[i ← u]) det(Q[j ← v]).
+-/
+
+lemma adjugate_fromBlocks_vecMulVec_apply₁₂
+    {I J R : Type*}
+    [Fintype I]
+    [DecidableEq I]
+    [Fintype J]
+    [DecidableEq J]
+    [CommRing R]
+    (P : Matrix I I R)
+    (u : I → R)
+    (v : J → R)
+    (L : Matrix J I R)
+    (Q : Matrix J J R)
+    (i : I)
+    (j : J) :
+    (Matrix.fromBlocks
+        P
+        (Matrix.vecMulVec u v)
+        L
+        Q).adjugate
+        (Sum.inl i)
+        (Sum.inr j)
+      =
+    - (P.updateCol i u).det *
+        (Q.updateRow j v).det := by
+  classical
+  let M : Matrix (I ⊕ J) (I ⊕ J) R :=
+    Matrix.fromBlocks
+      P
+      (Matrix.vecMulVec u v)
+      L
+      Q
+  let pivotRow : I ⊕ J :=
+    Sum.inr j
+  let pivotCol : I ⊕ J :=
+    Sum.inl i
+  let e : I ⊕ J → R :=
+    Pi.single pivotCol 1
+  let N₀ : Matrix (I ⊕ J) (I ⊕ J) R :=
+    M.updateRow pivotRow e
+  /-
+  Clear the pivot column below the upper-left block.
+  -/
+  let c₁ : I ⊕ J → R :=
+    Sum.elim
+      (fun _ => 0)
+      (fun r =>
+        if r = j then 0 else -L r i)
+  let N₁ :=
+    rowShear N₀ c₁ pivotRow
+  have hc₁ :
+      c₁ pivotRow = 0 := by
+    simp [c₁, pivotRow]
+  have hdet₁ :
+      N₁.det = N₀.det := by
+    exact
+      det_rowShear
+        N₀ c₁ pivotRow hc₁
+  /-
+  Replace column i of P by u.
+  -/
+  let c₂ : I ⊕ J → R :=
+    Sum.elim
+      (fun r => u r - P r i)
+      (fun _ => 0)
+  let N₂ :=
+    rowShear N₁ c₂ pivotRow
+  have hc₂ :
+      c₂ pivotRow = 0 := by
+    simp [c₂, pivotRow]
+  have hdet₂ :
+      N₂.det = N₁.det := by
+    exact
+      det_rowShear
+        N₁ c₂ pivotRow hc₂
+  /-
+  Clear the upper-right rank-one block.
+  -/
+  let d : I ⊕ J → R :=
+    Sum.elim
+      (fun _ => 0)
+      (fun s => -v s)
+  let N₃ :=
+    colShear N₂ d pivotCol
+  have hd :
+      d pivotCol = 0 := by
+    simp [d, pivotCol]
+  have hdet₃ :
+      N₃.det = N₂.det := by
+    exact
+      det_colShear
+        N₂ d pivotCol hd
+  /-
+  Identify the upper-left block.
+  -/
+  have h₁₁ :
+      N₃.toBlocks₁₁ =
+        P.updateCol i u := by
+    funext a b
+    change
+      N₃ (Sum.inl a) (Sum.inl b) =
+        (P.updateCol i u) a b
+    by_cases hb : b = i
+    · subst b
+      simp [
+        N₃, N₂, N₁, N₀, M,
+        colShear, rowShear,
+        c₁, c₂, d,
+        pivotRow, pivotCol, e,
+        Matrix.updateRow_apply
+      ]
+    · simp [
+        N₃, N₂, N₁, N₀, M,
+        colShear, rowShear,
+        c₁, c₂, d,
+        pivotRow, pivotCol, e,
+        Matrix.updateRow_apply,
+        hb
+      ]
+  /-
+  Identify the zero upper-right block.
+  -/
+  have h₁₂ :
+      N₃.toBlocks₁₂ = 0 := by
+    funext a b
+    change
+      N₃ (Sum.inl a) (Sum.inr b) = 0
+    simp [
+      N₃, N₂, N₁, N₀, M,
+      colShear, rowShear,
+      c₁, c₂, d,
+      pivotRow, pivotCol, e,
+      Matrix.updateRow_apply,
+      Matrix.vecMulVec_apply
+    ]
+    ring
+  /-
+  Identify the lower-right block.
+  -/
+  have h₂₂ :
+      N₃.toBlocks₂₂ =
+        Q.updateRow j (-v) := by
+    funext a b
+    change
+      N₃ (Sum.inr a) (Sum.inr b) =
+        (Q.updateRow j (-v)) a b
+    by_cases ha : a = j
+    · subst a
+      simp [
+        N₃, N₂, N₁, N₀, M,
+        colShear, rowShear,
+        c₁, c₂, d,
+        pivotRow, pivotCol, e,
+        Matrix.updateRow_apply
+      ]
+    · simp [
+        N₃, N₂, N₁, N₀, M,
+        colShear, rowShear,
+        c₁, c₂, d,
+        pivotRow, pivotCol, e,
+        Matrix.updateRow_apply,
+        ha
+      ]
+  /-
+  The resulting matrix is block lower triangular.
+  -/
+  have hN₃ :
+      N₃ =
+        Matrix.fromBlocks
+          (P.updateCol i u)
+          0
+          N₃.toBlocks₂₁
+          (Q.updateRow j (-v)) := by
+    apply (Matrix.ext_iff_blocks).2
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · simpa using h₁₁
+    · simpa using h₁₂
+    · simp
+    · simpa using h₂₂
+  have hdetBlock :
+      N₃.det =
+        (P.updateCol i u).det *
+          (Q.updateRow j (-v)).det := by
+    rw [hN₃]
+    simp
+  /-
+  Negating the replacement row changes the determinant sign.
+  -/
+  have hneg :
+      (Q.updateRow j (-v)).det =
+        -(Q.updateRow j v).det := by
+    calc
+      (Q.updateRow j (-v)).det
+          =
+          Q.transpose.cramer (-v) j := by
+        symm
+        exact
+          Matrix.cramer_transpose_apply
+            Q (-v) j
+      _ =
+          -(Q.transpose.cramer v j) := by
+        simp
+      _ =
+          -(Q.updateRow j v).det := by
+        rw [Matrix.cramer_transpose_apply]
+  calc
+    (Matrix.fromBlocks
+        P
+        (Matrix.vecMulVec u v)
+        L
+        Q).adjugate
+        (Sum.inl i)
+        (Sum.inr j)
+        =
+        N₀.det := by
+      simpa [
+        M, N₀,
+        pivotRow, pivotCol, e
+      ] using
+        Matrix.adjugate_apply
+          M
+          pivotCol
+          pivotRow
+    _ =
+        N₁.det := by
+      exact hdet₁.symm
+    _ =
+        N₂.det := by
+      exact hdet₂.symm
+    _ =
+        N₃.det := by
+      exact hdet₃.symm
+    _ =
+        (P.updateCol i u).det *
+          (Q.updateRow j (-v)).det :=
+      hdetBlock
+    _ =
+        - (P.updateCol i u).det *
+          (Q.updateRow j v).det := by
+      rw [hneg]
+      ring
+
+/-!
+## 7. Split the generic matrix according to X
+-/
+
+def splitGeneric
+    {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) F)
+    (X : Finset (Fin n)) :
+    Matrix
+      (InCut X ⊕ OutCut X)
+      (InCut X ⊕ OutCut X)
+      (Poly F n) :=
+  (genericShift A).submatrix
+    (splitEquiv X)
+    (splitEquiv X)
+
+lemma splitGeneric_toBlocks₁₂
+    {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) F)
+    (X : Finset (Fin n)) :
+    (splitGeneric A X).toBlocks₁₂ =
+      (cutBlock12 A X).map
+        MvPolynomial.C := by
+  classical
+  funext i j
+  have hij :
+      (i.1 : Fin n) ≠ j.1 := by
+    intro h
+    apply j.property
+    simpa [h] using i.property
+  change
+    genericShift A i.1 j.1 =
+      MvPolynomial.C (A i.1 j.1)
+  simp [
+    genericShift,
+    polynomialMatrix,
+    hij
+  ]
+
+lemma splitGeneric₁₁_apply
+    {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) F)
+    (X : Finset (Fin n))
+    (i j : InCut X) :
+    (splitGeneric A X).toBlocks₁₁ i j =
+      MvPolynomial.C (A i.1 j.1) +
+        if i = j
+        then MvPolynomial.X i.1
+        else 0 := by
+  classical
+  change
+    genericShift A i.1 j.1 =
+      MvPolynomial.C (A i.1 j.1) +
+        if i = j
+        then MvPolynomial.X i.1
+        else 0
+  by_cases h : i = j
+  · subst j
+    simp [
+      genericShift,
+      polynomialMatrix
+    ]
+  · have hval :
+        (i.1 : Fin n) ≠ j.1 := by
+      intro h'
+      apply h
+      exact Subtype.ext h'
+    simp [
+      genericShift,
+      polynomialMatrix,
+      h,
+      hval
+    ]
+
+lemma vars_splitGeneric₁₁_subset
+    {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) F)
+    (X : Finset (Fin n))
+    (i j : InCut X) :
+    ((splitGeneric A X).toBlocks₁₁ i j).vars
+      ⊆ {j.1} := by
+  rw [splitGeneric₁₁_apply A X i j]
+  intro z hz
+  have h :=
+    MvPolynomial.vars_add_subset
+      (MvPolynomial.C (A i.1 j.1))
+      (if i = j
+       then MvPolynomial.X i.1
+       else 0)
+      hz
+  by_cases hij : i = j
+  · subst j
+    simpa using h
+  · simp [hij] at h
+
+lemma splitGeneric₂₂_apply
+    {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) F)
+    (X : Finset (Fin n))
+    (i j : OutCut X) :
+    (splitGeneric A X).toBlocks₂₂ i j =
+      MvPolynomial.C (A i.1 j.1) +
+        if i = j
+        then MvPolynomial.X i.1
+        else 0 := by
+  classical
+  change
+    genericShift A i.1 j.1 =
+      MvPolynomial.C (A i.1 j.1) +
+        if i = j
+        then MvPolynomial.X i.1
+        else 0
+  by_cases h : i = j
+  · subst j
+    simp [
+      genericShift,
+      polynomialMatrix
+    ]
+  · have hval :
+        (i.1 : Fin n) ≠ j.1 := by
+      intro h'
+      apply h
+      exact Subtype.ext h'
+    simp [
+      genericShift,
+      polynomialMatrix,
+      h,
+      hval
+    ]
+
+lemma vars_splitGeneric₂₂_subset
+    {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) F)
+    (X : Finset (Fin n))
+    (i j : OutCut X) :
+    ((splitGeneric A X).toBlocks₂₂ i j).vars
+      ⊆ {i.1} := by
+  rw [splitGeneric₂₂_apply A X i j]
+  intro z hz
+  have h :=
+    MvPolynomial.vars_add_subset
+      (MvPolynomial.C (A i.1 j.1))
+      (if i = j
+       then MvPolynomial.X i.1
+       else 0)
+      hz
+  by_cases hij : i = j
+  · subst j
+    simpa using h
+  · simp [hij] at h
+
+/-!
+## 8. Variables in a determinant
+
+If every matrix entry uses only variables in S, so does the determinant.
+-/
+
+lemma vars_det_subset
+    {ι σ : Type*}
+    [Fintype ι]
+    [DecidableEq ι]
+    (M : Matrix ι ι (MvPolynomial σ F))
+    (S : Finset σ)
+    (hM :
+      ∀ i j,
+        (M i j).vars ⊆ S) :
+    M.det.vars ⊆ S := by
+  classical
+  let T :
+      Subalgebra F (MvPolynomial σ F) :=
+    MvPolynomial.supported
+      F
+      (↑S : Set σ)
+  let N : Matrix ι ι T :=
+    fun i j =>
+      ⟨M i j,
+        (MvPolynomial.mem_supported).2
+          (by
+            intro z hz
+            exact hM i j hz)⟩
+  have hmap :
+      T.val.mapMatrix N = M := by
+    funext i j
+    rfl
+  have hdet :
+      T.val N.det = M.det := by
+    rw [AlgHom.map_det]
+    rw [hmap]
+  have hmem :
+      M.det ∈ T := by
+    rw [← hdet]
+    exact (N.det).property
+  have hvars :
+      ↑(M.det.vars) ⊆
+        (↑S : Set σ) :=
+    (MvPolynomial.mem_supported).1 hmem
+  intro z hz
+  exact hvars hz
+
+/-!
+## 9. The cofactor sign
 -/
 
 def cofactorSign
@@ -267,58 +796,32 @@ def cofactorSign
   MvPolynomial.C
     ((-1 : F) ^ (i.val + 1))
 
-/-!
-## 9. Formal statement of Lemma 4.2
-
-Lemma 4.2 is a previously established result.
-
-Its conclusion is:
-
-if A is irreducible, then every entry of
-
-    adj(A + diag(x))
-
-is a nonzero polynomial.
-
-We package only its conclusion here so that Lemma 4.3 can use an
-already-proved Lean version of Lemma 4.2.
--/
-
-def Lemma42Statement
+lemma cofactorSign_mul_self
     {n : ℕ}
-    (A : Matrix (Fin n) (Fin n) F) : Prop :=
-  ∀ i j : Fin n,
-    genericAdjugate A i j ≠ 0
+    (i : Fin n) :
+    cofactorSign (F := F) i *
+        cofactorSign (F := F) i =
+      1 := by
+  change
+    MvPolynomial.C
+        ((-1 : F) ^ (i.val + 1)) *
+      MvPolynomial.C
+        ((-1 : F) ^ (i.val + 1))
+      =
+    1
+  rw [← MvPolynomial.C_mul]
+  rw [← pow_add]
+  rw [
+    show
+      (i.val + 1) + (i.val + 1) =
+        2 * (i.val + 1) by
+      omega
+  ]
+  rw [pow_mul]
+  simp
 
 /-!
-## 10. The fraction-field / rank-one descent step
-
-This is the exact formal interface for the technically difficult middle
-part of the handwritten proof.
-
-Starting from the cut, the block identity
-
-    (A₁ + X₁)G₂ + uvᵀG₄ = 0
-
-shows over the fraction field that G₂ has rank at most one.
-
-The paper then cancels common factors in the two rank-one factors and
-uses two facts:
-
-1. every entry of G₂ is actually a polynomial;
-2. Gᵢⱼ contains neither xᵢ nor xⱼ because it is a cofactor obtained
-   by deleting column i and row j.
-
-The result is the existence of polynomial factors aᵢ and bⱼ satisfying
-
-    Gᵢⱼ = (-1)^i aᵢ bⱼ,
-
-with the required separated variable sets.
-
-This proposition is exactly what that descent step must establish.
-
-It deliberately does NOT include nonvanishing of aᵢ and bⱼ.
-That is proved later from Lemma 4.2, exactly as in Shaoda's proof.
+## 10. The polynomial factorization
 -/
 
 def CutFactorizationCore
@@ -326,50 +829,345 @@ def CutFactorizationCore
     (A : Matrix (Fin n) (Fin n) F)
     (X : Finset (Fin n)) : Prop :=
   ∃ a b : Fin n → Poly F n,
-    /-
-    The rank-one separated factorization.
-    -/
     (∀ i, i ∈ X →
       ∀ j, j ∉ X →
         genericAdjugate A i j =
-          cofactorSign i * a i * b j) ∧
-    /-
-    aᵢ uses only variables in X \ {i}.
-    -/
+          cofactorSign i *
+            a i *
+            b j) ∧
     (∀ i, i ∈ X →
-      UsesOnly (a i) (X.erase i)) ∧
-    /-
-    bⱼ uses only variables in Xᶜ \ {j}.
-    -/
+      UsesOnly
+        (a i)
+        (X.erase i)) ∧
     (∀ j, j ∉ X →
-      UsesOnly (b j) (Xᶜ.erase j))
+      UsesOnly
+        (b j)
+        (Xᶜ.erase j))
 
 /-!
-## 11. Formal statement of Lemma 4.3
+## 11. Derive the factorization directly from `IsCut`
+-/
 
-Lemma 4.3 is a proposition: it asserts the existence of polynomial
-factors aᵢ and bⱼ.
+theorem cutFactorization_of_isCut
+    {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) F)
+    (X : Finset (Fin n))
+    (hcut : IsCut A X) :
+    CutFactorizationCore A X := by
+  classical
+  /-
+  Rank one gives an outer-product decomposition.
+  -/
+  obtain ⟨uF, vF, huvF⟩ :=
+    exists_vecMulVec_of_rank_eq_one
+      (B := cutBlock12 A X)
+      hcut.2.2.1
+  /-
+  Regard these as constant polynomial vectors.
+  -/
+  let u : InCut X → Poly F n :=
+    fun i =>
+      MvPolynomial.C (uF i)
+  let v : OutCut X → Poly F n :=
+    fun j =>
+      MvPolynomial.C (vF j)
+  /-
+  Split the generic matrix.
+  -/
+  let M :=
+    splitGeneric A X
+  let P :=
+    M.toBlocks₁₁
+  let B :=
+    M.toBlocks₁₂
+  let L :=
+    M.toBlocks₂₁
+  let Q :=
+    M.toBlocks₂₂
+  /-
+  The upper-right block is exactly u vᵀ.
+  -/
+  have hB :
+      B =
+        Matrix.vecMulVec u v := by
+    rw [
+      show
+        B =
+          (cutBlock12 A X).map
+            MvPolynomial.C by
+          simpa [B, M] using
+            splitGeneric_toBlocks₁₂
+              A X
+    ]
+    rw [huvF]
+    funext i j
+    simp [
+      u,
+      v,
+      Matrix.vecMulVec_apply
+    ]
+  /-
+  Reconstruct M from its blocks.
+  -/
+  have hM :
+      M =
+        Matrix.fromBlocks
+          P
+          (Matrix.vecMulVec u v)
+          L
+          Q := by
+    have h :=
+      (Matrix.fromBlocks_toBlocks M).symm
+    change
+      M =
+        Matrix.fromBlocks
+          P B L Q
+      at h
+    rw [hB] at h
+    exact h
+  /-
+  Define the two determinant factors.
+  -/
+  let r : InCut X → Poly F n :=
+    fun i =>
+      (P.updateCol i u).det
+  let s : OutCut X → Poly F n :=
+    fun j =>
+      (Q.updateRow j v).det
+  /-
+  Apply the fraction-free adjugate identity.
+  -/
+  have hlocal
+      (i : InCut X)
+      (j : OutCut X) :
+      M.adjugate
+          (Sum.inl i)
+          (Sum.inr j)
+        =
+      -r i * s j := by
+    rw [hM]
+    simpa [r, s] using
+      adjugate_fromBlocks_vecMulVec_apply₁₂
+        P u v L Q i j
+  /-
+  Adjugation commutes with simultaneous reindexing.
+  -/
+  have hadj :
+      M.adjugate =
+        (genericAdjugate A).submatrix
+          (splitEquiv X)
+          (splitEquiv X) := by
+    simp [
+      M,
+      splitGeneric,
+      genericAdjugate
+    ]
+  /-
+  Return to the original Fin n indices.
+  -/
+  have hG
+      (i : Fin n)
+      (hi : i ∈ X)
+      (j : Fin n)
+      (hj : j ∉ X) :
+      genericAdjugate A i j =
+        -r ⟨i, hi⟩ *
+          s ⟨j, hj⟩ := by
+    have h :=
+      hlocal
+        (⟨i, hi⟩ : InCut X)
+        (⟨j, hj⟩ : OutCut X)
+    rw [hadj] at h
+    simpa [splitEquiv] using h
+  /-
+  The first determinant factor uses only variables in X \ {i}.
+  -/
+  have hrVars
+      (i : InCut X) :
+      UsesOnly
+        (r i)
+        (X.erase i.1) := by
+    apply
+      vars_det_subset
+        (M := P.updateCol i u)
+        (S := X.erase i.1)
+    intro p q z hz
+    by_cases hq : q = i
+    · subst q
+      simp [u] at hz
+    · have hzP :
+          z ∈ (P p q).vars := by
+        simpa [
+          Matrix.updateCol_apply,
+          hq
+        ] using hz
+      have hzq :
+          z ∈
+            ({q.1} :
+              Finset (Fin n)) :=
+        vars_splitGeneric₁₁_subset
+          A X p q hzP
+      have hzEq :
+          z = q.1 := by
+        simpa using hzq
+      subst z
+      have hval :
+          (q.1 : Fin n) ≠ i.1 := by
+        intro hval
+        apply hq
+        exact Subtype.ext hval
+      simp [
+        hval,
+        q.property
+      ]
+  /-
+  The second determinant factor uses only variables in Xᶜ \ {j}.
+  -/
+  have hsVars
+      (j : OutCut X) :
+      UsesOnly
+        (s j)
+        (Xᶜ.erase j.1) := by
+    apply
+      vars_det_subset
+        (M := Q.updateRow j v)
+        (S := Xᶜ.erase j.1)
+    intro p q z hz
+    by_cases hp : p = j
+    · subst p
+      simp [
+        Matrix.updateRow_apply,
+        v
+      ] at hz
+    · have hzQ :
+          z ∈ (Q p q).vars := by
+        simpa [
+          Matrix.updateRow_apply,
+          hp
+        ] using hz
+      have hzp :
+          z ∈
+            ({p.1} :
+              Finset (Fin n)) :=
+        vars_splitGeneric₂₂_subset
+          A X p q hzQ
+      have hzEq :
+          z = p.1 := by
+        simpa using hzp
+      subst z
+      have hval :
+          (p.1 : Fin n) ≠ j.1 := by
+        intro hval
+        apply hp
+        exact Subtype.ext hval
+      simp [
+        hval,
+        p.property
+      ]
+  /-
+  Absorb the prescribed sign into the first factor.
+  -/
+  let a : Fin n → Poly F n :=
+    fun i =>
+      if hi : i ∈ X then
+        -(cofactorSign i *
+          r ⟨i, hi⟩)
+      else
+        0
+  let b : Fin n → Poly F n :=
+    fun j =>
+      if hj : j ∉ X then
+        s ⟨j, hj⟩
+      else
+        0
+  refine
+    ⟨a, b, ?_, ?_, ?_⟩
+  /-
+  Prove the factorization.
+  -/
+  · intro i hi j hj
+    have hg :=
+      hG i hi j hj
+    have hsign :=
+      cofactorSign_mul_self
+        (F := F) i
+    have ha :
+        a i =
+          -(cofactorSign i *
+            r ⟨i, hi⟩) := by
+      simp [a, hi]
+    have hb :
+        b j =
+          s ⟨j, hj⟩ := by
+      simp [b, hj]
+    rw [ha, hb]
+    calc
+      genericAdjugate A i j
+          =
+          -r ⟨i, hi⟩ *
+            s ⟨j, hj⟩ :=
+        hg
+      _ =
+          -(1 : Poly F n) *
+            r ⟨i, hi⟩ *
+            s ⟨j, hj⟩ := by
+        ring
+      _ =
+          -(cofactorSign i *
+              cofactorSign i) *
+            r ⟨i, hi⟩ *
+            s ⟨j, hj⟩ := by
+        rw [hsign]
+      _ =
+          cofactorSign i *
+            (-(cofactorSign i *
+              r ⟨i, hi⟩)) *
+            s ⟨j, hj⟩ := by
+        ring
+  /-
+  Prove the variable restriction for a_i.
+  -/
+  · intro i hi
+    have hr :=
+      hrVars
+        (⟨i, hi⟩ : InCut X)
+    intro z hz
+    have hzProd :
+        z ∈
+          (cofactorSign i *
+            r ⟨i, hi⟩).vars := by
+      simpa [a, hi] using hz
+    have hmul :=
+      MvPolynomial.vars_mul
+        (cofactorSign i)
+        (r ⟨i, hi⟩)
+        hzProd
+    rcases
+        Finset.mem_union.mp hmul
+      with hs | hrz
+    · have hsEmpty :
+          z ∈
+            (∅ : Finset (Fin n)) := by
+        simpa only [
+          cofactorSign,
+          MvPolynomial.vars_C
+        ] using hs
+      exact
+        False.elim
+          ((Finset.notMem_empty z)
+            hsEmpty)
+    · exact hr hrz
+  /-
+  Prove the variable restriction for b_j.
+  -/
+  · intro j hj
+    have hs :=
+      hsVars
+        (⟨j, hj⟩ : OutCut X)
+    simpa [b, hj] using hs
 
-Therefore we represent the conclusion by an existential proposition,
-rather than by a data structure.
-
-This distinction matters in Lean:
-
-* `theorem` must prove something in `Prop`;
-* `∃ a, P a` is a proposition;
-* we may unpack such an existential while proving another proposition.
-
-The statement below says that there exist two families of polynomials
-
-    a : Fin n → F[x₁, ..., xₙ],
-    b : Fin n → F[x₁, ..., xₙ]
-
-such that:
-
-1. Gᵢⱼ = (-1)^i aᵢ bⱼ for i ∈ X and j ∉ X;
-2. aᵢ uses only variables in X \ {i};
-3. bⱼ uses only variables in Xᶜ \ {j};
-4. both aᵢ and bⱼ are nonzero.
+/-!
+## 12. Full statement of Lemma 4.3
 -/
 
 def Lemma43Statement
@@ -377,75 +1175,31 @@ def Lemma43Statement
     (A : Matrix (Fin n) (Fin n) F)
     (X : Finset (Fin n)) : Prop :=
   ∃ a b : Fin n → Poly F n,
-    /-
-    The required rank-one factorization.
-    -/
     (∀ i, i ∈ X →
       ∀ j, j ∉ X →
         genericAdjugate A i j =
-          cofactorSign i * a i * b j) ∧
-    /-
-    aᵢ belongs to
-
-        F[xₖ : k ∈ X \ {i}].
-    -/
+          cofactorSign i *
+            a i *
+            b j) ∧
     (∀ i, i ∈ X →
-      UsesOnly (a i) (X.erase i)) ∧
-    /-
-    bⱼ belongs to
-
-        F[xₖ : k ∈ Xᶜ \ {j}].
-    -/
+      UsesOnly
+        (a i)
+        (X.erase i)) ∧
     (∀ j, j ∉ X →
-      UsesOnly (b j) (Xᶜ.erase j)) ∧
-    /-
-    Both factors are nonzero for every relevant pair (i,j).
-    -/
+      UsesOnly
+        (b j)
+        (Xᶜ.erase j)) ∧
     (∀ i, i ∈ X →
       ∀ j, j ∉ X →
-        a i ≠ 0 ∧ b j ≠ 0)
+        a i ≠ 0 ∧
+        b j ≠ 0)
 
 /-!
-## 12. Lemma 4.3
+## 13. Lemma 4.3
 
-We now prove Lemma 4.3.
+The factorization is derived from the cut hypothesis itself.
 
-The proof has exactly the same logical organization as the paper.
-
-### Step 1
-
-Irreducibility of A is used through Lemma 4.2.
-
-Lemma 4.2 gives
-
-    Gᵢⱼ ≠ 0
-
-for every i and j.
-
-### Step 2
-
-The cut gives the rank-one block factorization.
-
-The technically difficult fraction-field descent has already been isolated
-as `CutFactorizationCore`.
-
-It gives polynomial families aᵢ and bⱼ satisfying
-
-    Gᵢⱼ = (-1)^i aᵢ bⱼ
-
-and the required variable restrictions.
-
-### Step 3
-
-Since Gᵢⱼ is nonzero, neither factor can be zero.
-
-Indeed, if aᵢ = 0 or bⱼ = 0, then
-
-    (-1)^i aᵢ bⱼ = 0,
-
-so the factorization would imply Gᵢⱼ = 0, contradicting Lemma 4.2.
-
-This is exactly the final paragraph of Shaoda's proof.
+The only previous-lemma dependency is Lemma 4.2.
 -/
 
 theorem lemma_4_3
@@ -457,36 +1211,24 @@ theorem lemma_4_3
     (hcut : IsCut A X)
     (lemma42 :
       MatrixIrreducible A →
-        Lemma42Statement A)
-    (cutFactorization :
-      IsCut A X →
-        CutFactorizationCore A X) :
+        Lemma42Statement A) :
     Lemma43Statement A X := by
   /-
-  This is the precise point where irreducibility is used.
-
-  Lemma 4.2 says that irreducibility of A implies that every entry
-  of G = adj(A + diag(x)) is a nonzero polynomial.
+  Lemma 4.2 gives nonvanishing of every adjugate entry.
   -/
   have hG :
       Lemma42Statement A :=
     lemma42 hA
   /-
-  Apply the cut-factorization result.
-
-  This produces the two polynomial families a and b, together with:
-
-      hfactor : Gᵢⱼ = (-1)^i aᵢ bⱼ,
-      haVars  : aᵢ has the correct variables,
-      hbVars  : bⱼ has the correct variables.
+  Construct the factors from the cut.
   -/
   obtain
-    ⟨a, b, hfactor, haVars, hbVars⟩ :=
-      cutFactorization hcut
-  /-
-  Use exactly these polynomial families as the witnesses in the
-  existential conclusion of Lemma 4.3.
-  -/
+    ⟨a, b,
+      hfactor,
+      haVars,
+      hbVars⟩ :=
+    cutFactorization_of_isCut
+      A X hcut
   refine
     ⟨a, b,
       hfactor,
@@ -494,139 +1236,46 @@ theorem lemma_4_3
       hbVars,
       ?_⟩
   /-
-  It remains only to prove that aᵢ and bⱼ are nonzero.
+  Fix i ∈ X and j ∉ X.
   -/
   intro i hi j hj
-  /-
-  Lemma 4.2 gives Gᵢⱼ ≠ 0.
-  -/
   have hGij :
       genericAdjugate A i j ≠ 0 :=
     hG i j
   /-
-  Therefore the product
-
-      (-1)^i aᵢ bⱼ
-
-  is nonzero.
-
-  Otherwise the factorization would make Gᵢⱼ zero.
+  The factored product cannot vanish.
   -/
   have hprod :
-      cofactorSign i * a i * b j ≠ 0 := by
+      cofactorSign i *
+          a i *
+          b j ≠ 0 := by
     intro hzero
     apply hGij
     calc
       genericAdjugate A i j
           =
-          cofactorSign i * a i * b j :=
+          cofactorSign i *
+            a i *
+            b j :=
         hfactor i hi j hj
       _ = 0 := hzero
   /-
-  First prove aᵢ ≠ 0.
-
-  If aᵢ were zero, the whole product would be zero.
+  Therefore a_i is nonzero.
   -/
   have hai :
       a i ≠ 0 := by
-    intro haiZero
+    intro hai
     apply hprod
-    simp [haiZero]
+    simp [hai]
   /-
-  Similarly prove bⱼ ≠ 0.
+  Likewise b_j is nonzero.
   -/
   have hbj :
       b j ≠ 0 := by
-    intro hbjZero
+    intro hbj
     apply hprod
-    simp [hbjZero]
+    simp [hbj]
   exact ⟨hai, hbj⟩
-
-/-!
-## 13. A convenient form of the conclusion
-
-The following theorem simply unfolds `Lemma43Statement`.
-
-It is useful later because Lean displays the entire mathematical
-conclusion directly rather than hiding it behind a definition name.
--/
-
-theorem lemma_4_3_explicit
-    {n : ℕ}
-    (A : Matrix (Fin n) (Fin n) F)
-    (X : Finset (Fin n))
-    (hn : 4 ≤ n)
-    (hA : MatrixIrreducible A)
-    (hcut : IsCut A X)
-    (lemma42 :
-      MatrixIrreducible A →
-        Lemma42Statement A)
-    (cutFactorization :
-      IsCut A X →
-        CutFactorizationCore A X) :
-    ∃ a b : Fin n → Poly F n,
-      (∀ i, i ∈ X →
-        ∀ j, j ∉ X →
-          genericAdjugate A i j =
-            cofactorSign i * a i * b j) ∧
-      (∀ i, i ∈ X →
-        UsesOnly (a i) (X.erase i)) ∧
-      (∀ j, j ∉ X →
-        UsesOnly (b j) (Xᶜ.erase j)) ∧
-      (∀ i, i ∈ X →
-        ∀ j, j ∉ X →
-          a i ≠ 0 ∧ b j ≠ 0) := by
-  exact
-    lemma_4_3
-      A X hn hA hcut
-      lemma42 cutFactorization
-
-/-!
-## 14. Reading the variable restrictions
-
-Suppose we are inside another proof and have obtained witnesses
-
-    a, b, hfactor, haVars, hbVars, hnonzero
-
-from Lemma 4.3.
-
-The next two lemmas translate the `UsesOnly` statements into the
-particularly important facts
-
-    xᵢ does not occur in aᵢ,
-
-and
-
-    xⱼ does not occur in bⱼ.
--/
-
-lemma a_avoids_own_variable
-    {n : ℕ}
-    {X : Finset (Fin n)}
-    {a : Fin n → Poly F n}
-    {i : Fin n}
-    (hi : i ∈ X)
-    (ha :
-      ∀ r, r ∈ X →
-        UsesOnly (a r) (X.erase r)) :
-    i ∉ (a i).vars := by
-  exact
-    not_mem_vars_of_usesOnly_erase
-      (ha i hi)
-
-lemma b_avoids_own_variable
-    {n : ℕ}
-    {X : Finset (Fin n)}
-    {b : Fin n → Poly F n}
-    {j : Fin n}
-    (hj : j ∉ X)
-    (hb :
-      ∀ r, r ∉ X →
-        UsesOnly (b r) (Xᶜ.erase r)) :
-    j ∉ (b j).vars := by
-  exact
-    not_mem_vars_of_usesOnly_erase
-      (hb j hj)
 
 end
 
