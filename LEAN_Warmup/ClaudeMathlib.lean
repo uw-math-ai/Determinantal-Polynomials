@@ -6,6 +6,7 @@ Authors: Grant Yang
 
 module
 
+public import DetPoly.Basic
 public import LEAN_Warmup.Grant.IrreducibleMatrix
 
 /-!
@@ -42,7 +43,7 @@ Theorem 4.1. Tags used in docstrings:
 | `A` reducible / irreducible | `A.IsReducible` / `A.IsIrred` |
 | `A` has a cut `X` | `A.HasCut X` |
 | `diag(x₁,…,xₙ) + A` | `A.mvCharmatrix` |
-| `f_A` | `A.detPoly` |
+| `f_A` | `A.detpoly` |
 | `G = (diag(x) + A)^adj` | `A.adjPoly` |
 | `f` multiaffine | `IsMultiaffine f` |
 | `f` has degree `≤ 1` in `xᵢ` | `f.degreeOf i ≤ 1` |
@@ -147,11 +148,6 @@ end DiagEquiv
 section Minors
 
 variable {R n : Type*} [Fintype n] [DecidableEq n] [CommRing R]
-
-/-- The principal submatrix `A[S, S]`. It unfolds to `A.submatrix (↑) (↑)`, the form Mathlib's
-lemmas use (e.g. `Matrix.det_piecewise_one_eq_submatrix_det`). -/
-def Matrix.principalSubmatrix (A : Matrix n n R) (S : Finset n) : Matrix S S R :=
-  A.submatrix (↑) (↑)
 
 omit [Fintype n] [DecidableEq n] [CommRing R] in
 @[simp]
@@ -465,15 +461,6 @@ section DetPoly
 
 variable {R 𝔽 n : Type*} [Fintype n] [DecidableEq n] [CommRing R]
 
-/-- `diag(x₁,…,xₙ) + A`. Compare Mathlib's univariate `Matrix.charmatrix`, which is
-`X • 1 - A`. -/
-noncomputable def Matrix.mvCharmatrix (A : Matrix n n R) : Matrix n n (MvPolynomial n R) :=
-  diagonal X + A.map C
-
-/-- The determinantal polynomial `f_A = det(diag(x) + A)`. -/
-noncomputable def Matrix.detPoly (A : Matrix n n R) : MvPolynomial n R :=
-  A.mvCharmatrix.det
-
 /-- `G = (diag(x) + A)^adj`. -/
 noncomputable def Matrix.adjPoly (A : Matrix n n R) : Matrix n n (MvPolynomial n R) :=
   A.mvCharmatrix.adjugate
@@ -481,29 +468,29 @@ noncomputable def Matrix.adjPoly (A : Matrix n n R) : Matrix n n (MvPolynomial n
 /-- **TODO**: the coefficient of `∏_{i ∈ S} xᵢ` in `f_A` is the complementary minor `A_{Sᶜ}`.
 The expansion is `det_add_diagonal_formula` (`DetPoly/PS2_#1c_Shaoda.lean`). Mathlib's
 univariate analogue is `Matrix.coeff_det_one_add_X_smul_eq_sum_minors`. -/
-theorem Matrix.coeff_detPoly (A : Matrix n n R) (S : Finset n) :
-    A.detPoly.coeff S.exponent = A.principalMinor Sᶜ := by
+theorem Matrix.coeff_detpoly (A : Matrix n n R) (S : Finset n) :
+    A.detpoly.coeff S.exponent = A.principalMinor Sᶜ := by
   sorry
 
 /-- **TODO** -/
-theorem Matrix.detPoly_isMultiaffine (A : Matrix n n R) : IsMultiaffine A.detPoly := by
+theorem Matrix.detpoly_isMultiaffine (A : Matrix n n R) : IsMultiaffine A.detpoly := by
   sorry
 
 /-- The leading coefficient is `1`, the normalization in Theorem 2.1. -/
-theorem Matrix.coeff_univ_detPoly (A : Matrix n n R) :
-    A.detPoly.coeff Finset.univ.exponent = 1 := by
-  rw [coeff_detPoly, Finset.compl_univ, principalMinor_empty]
+theorem Matrix.coeff_univ_detpoly (A : Matrix n n R) :
+    A.detpoly.coeff Finset.univ.exponent = 1 := by
+  rw [coeff_detpoly, Finset.compl_univ, principalMinor_empty]
 
 /-- **TODO**: same fiber iff same determinantal polynomial. -/
-theorem Matrix.detPoly_eq_iff {A B : Matrix n n R} :
-    B.detPoly = A.detPoly ↔ B ∈ A.pmFiber := by
+theorem Matrix.detpoly_eq_iff {A B : Matrix n n R} :
+    B.detpoly = A.detpoly ↔ B ∈ A.pmFiber := by
   sorry
 
 /-- **TODO**, **MISSING** (Jacobi's formula): `∂ᵢ f_A = G_ii`. Mathlib only has univariate
 versions (`Matrix.derivative_det_one_add_X_smul`). Hint: expand along row `i`
 (`det_eq_sum_mul_adjugate_row`); the cofactors along row `i` are free of `xᵢ`. -/
-theorem Matrix.pderiv_detPoly (A : Matrix n n R) (i : n) :
-    pderiv i A.detPoly = A.adjPoly i i := by
+theorem Matrix.pderiv_detpoly (A : Matrix n n R) (i : n) :
+    pderiv i A.detpoly = A.adjPoly i i := by
   sorry
 
 /-- **TODO**: `G_ij ∈ R[x_k : k ≠ i, j]` for `i ≠ j`. -/
@@ -530,10 +517,6 @@ end DetPoly
 section Rayleigh
 
 variable {R 𝔽 n : Type*} [CommRing R]
-
-/-- The Rayleigh difference `Δᵢⱼ(f) = ∂ᵢf ∂ⱼf - f ∂ᵢ∂ⱼf`. -/
-noncomputable def rayleighDiff (i j : n) (f : MvPolynomial n R) : MvPolynomial n R :=
-  pderiv i f * pderiv j f - f * pderiv i (pderiv j f)
 
 variable [DecidableEq n]
 
@@ -564,13 +547,13 @@ theorem Matrix.adjugate_mul_adjugate_sub {M : Matrix n n R} {i j : n} (hij : i �
   sorry
 
 /-- **Theorem 2.3**. It also holds for `i = j`, where both sides are `G_ii²`. -/
-theorem Matrix.rayleighDiff_detPoly (A : Matrix n n R) (i j : n) :
-    rayleighDiff i j A.detPoly = A.adjPoly i j * A.adjPoly j i := by
+theorem Matrix.rayleighDiff_detpoly (A : Matrix n n R) (i j : n) :
+    rayleighDiff i j A.detpoly = A.adjPoly i j * A.adjPoly j i := by
   sorry
 
 /-- **TODO**: condition (b) of Theorem 2.1 for the adjugate ("only if" direction). -/
 theorem Matrix.res_adjPoly (A : Matrix n n R) {i j k : n} (hij : i ≠ j) (hki : k ≠ i)
-    (hkj : k ≠ j) : res k (A.adjPoly i j) A.detPoly = A.adjPoly i k * A.adjPoly k j := by
+    (hkj : k ≠ j) : res k (A.adjPoly i j) A.detpoly = A.adjPoly i k * A.adjPoly k j := by
   sorry
 
 end Rayleigh
@@ -591,13 +574,13 @@ theorem Matrix.adjPoly_ne_zero {A : Matrix n n 𝔽} (hA : A.IsIrred) (i j : n) 
 
 /-- **EXTERNAL**, **Theorem 2.1**, "if" direction ([AV22, Thm 3.1 and Rem 3.4]), in the strong
 form that Lemma 4.5 uses: the off-diagonal entries of `G_B` are the `gᵢⱼ`. -/
-theorem exists_detPoly_eq_of_rayleigh {f : MvPolynomial n 𝔽} (hf : IsMultiaffine f)
+theorem exists_detpoly_eq_of_rayleigh {f : MvPolynomial n 𝔽} (hf : IsMultiaffine f)
     (hlead : f.coeff Finset.univ.exponent = 1) (g : n → n → MvPolynomial n 𝔽)
     (hΔ : ∀ i j, i ≠ j → rayleighDiff i j f = g i j * g j i)
     (hsupp : ∀ i j, i ≠ j → g i j ∈ supported 𝔽 ({i, j}ᶜ : Set n))
     (haff : ∀ i j, IsMultiaffine (g i j))
     (hres : ∀ i j k, i ≠ j → k ≠ i → k ≠ j → res k (g i j) f = g i k * g k j) :
-    ∃ B : Matrix n n 𝔽, B.detPoly = f ∧ ∀ i j, i ≠ j → B.adjPoly i j = g i j := by
+    ∃ B : Matrix n n 𝔽, B.detpoly = f ∧ ∀ i j, i ≠ j → B.adjPoly i j = g i j := by
   sorry
 
 /-- **EXTERNAL** ([Loewy 1986, Thm 1]): irreducible with no cut implies trivial fiber. -/
@@ -651,7 +634,7 @@ theorem Matrix.exists_adjPoly_eq_cutSwap (hn : 4 ≤ Fintype.card n) {A : Matrix
     (hd : ∀ j ∈ X, d j ∈ supported 𝔽 ↑(X.erase j))
     (hR : ∀ i ∈ X, ∀ j ∉ X, A.adjPoly i j = a i * b j)
     (hT : ∀ i ∉ X, ∀ j ∈ X, A.adjPoly i j = c i * d j) :
-    ∃ B : Matrix n n 𝔽, B.detPoly = A.detPoly ∧
+    ∃ B : Matrix n n 𝔽, B.detpoly = A.detpoly ∧
       ∀ i j, i ≠ j → B.adjPoly i j = cutSwap X A.adjPoly a b c d i j := by
   sorry
 
@@ -663,8 +646,8 @@ theorem Matrix.IsReducible.not_hasTrivialFiber {A : Matrix n n 𝔽} (hA : A.IsR
 
 /-- **Lemma 5.1**. `[Nonempty n]` excludes the `0 × 0` matrix, which is irreducible while
 `f = 1` is not. -/
-theorem Matrix.isIrred_iff_irreducible_detPoly [Nonempty n] (A : Matrix n n 𝔽) :
-    A.IsIrred ↔ Irreducible A.detPoly := by
+theorem Matrix.isIrred_iff_irreducible_detpoly [Nonempty n] (A : Matrix n n 𝔽) :
+    A.IsIrred ↔ Irreducible A.detpoly := by
   sorry
 
 /-- **Lemma 6.1**, generalized from symmetric to symmetrizable `A`. The same proof works,
