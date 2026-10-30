@@ -30,6 +30,10 @@ abbrev Matrix.setSubmatrix (A : Matrix n m R) (S : Set n) (T : Set m)
     : Matrix S T R :=
   A.submatrix (↑) (↑)
 
+abbrev Matrix.squareFinsetSubmatrix (A : Matrix n m R) (k : ℕ)
+    {S : Finset n} {T : Finset m} (hS : S.card = k) (hT : T.card = k) : Matrix (Fin k) (Fin k) R :=
+  A.submatrix (Subtype.val ∘ S.equivFin.symm.toFun) (T.equivFin)
+
 end
 
 /-- The principal submatrix `A[S, S]`. -/

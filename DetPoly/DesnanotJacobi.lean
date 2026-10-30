@@ -97,7 +97,7 @@ private theorem mul_adjugateCols_toSquareBlockProp_compl (M : Matrix n n R) (i j
 
 /-- `M * adjugateCols M i j` is block triangular, with blocks `M[{i, j}ᶜ]` and `det M • 1`. -/
 private theorem det_mul_adjugateCols (M : Matrix n n R) {i j : n} (hij : i ≠ j) :
-    (M * adjugateCols M i j).det = M.det ^ 2 * (M.principalSubmatrix ({i, j}ᶜ : Set n)).det := by
+    (M * adjugateCols M i j).det = M.det ^ 2 * (M.principalSubmatrix {i, j}ᶜ).det := by
   rw [twoBlockTriangular_det' _ (· ∈ ({i, j}ᶜ : Set n)),
     det_toSquareBlockProp_pair _ hij (p := fun x ↦ x ∉ ({i, j}ᶜ : Set n))
       (by simp [or_iff_not_imp_left])]
@@ -122,10 +122,10 @@ private theorem det_mul_adjugate_mul_adjugate_sub_adjugate_mul_adjugate (M : Mat
 theorem adjugate_mul_adjugate_sub_adjugate_mul_adjugate (M : Matrix n n R) {i j : n}
     (hij : i ≠ j) :
     M.adjugate i i * M.adjugate j j - M.adjugate i j * M.adjugate j i =
-      M.det * (M.principalSubmatrix ({i, j}ᶜ : Set n)).det := by
+      M.det * (M.principalSubmatrix {i, j}ᶜ).det := by
   let A := mvPolynomialX n n ℤ
   suffices A.adjugate i i * A.adjugate j j - A.adjugate i j * A.adjugate j i =
-      A.det * (A.principalSubmatrix ({i, j}ᶜ : Set n)).det by
+      A.det * (A.principalSubmatrix {i, j}ᶜ).det by
     let f := MvPolynomial.aeval (R := ℤ) fun p : n × n ↦ M p.1 p.2
     have hA : f.mapMatrix A = M := mvPolynomialX_mapMatrix_aeval ℤ M
     have h := congrArg f this

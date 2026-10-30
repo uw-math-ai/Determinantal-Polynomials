@@ -19,18 +19,33 @@ open MvPolynomial Matrix
 
 variable {n R : Type*} [CommRing R] [DecidableEq n] [Fintype n]
 
-theorem pderiv_detPoly_eq (A : Matrix n n R) (i : n) :
-    (pderiv i A.detpoly) = (A.mvCharmatrix.principalSubmatrix ({i}ᶜ : Finset n)).det := by
+theorem pderiv_detpoly_eq (A : Matrix n n R) (i : n) :
+    (pderiv i A.detpoly) = (A.mvCharmatrix.principalSubmatrix {i}ᶜ).det := by
   sorry
 
-theorem pderiv_pderiv_detPoly_eq (A : Matrix n n R) {i j : n} (hneq : i ≠ j) :
-    (pderiv i (pderiv j A.detpoly)) = (A.mvCharmatrix.principalSubmatrix ({i, j}ᶜ : Finset n)).det := by
+
+theorem pderiv_pderiv_detpoly_eq (A : Matrix n n R) {i j : n} (hneq : i ≠ j) :
+    (pderiv i (pderiv j A.detpoly)) = (A.mvCharmatrix.principalSubmatrix {i, j}ᶜ).det := by
+  rw [pderiv_detpoly_eq]
+  sorry
+
+theorem det_updateCol_single (A : Matrix n n R) {i j : n} :
+    (A.updateRow i (Pi.single j 1)).det = (A.squareSetSubmatrix {i}ᶜ {j}ᶜ (by apply?)).det := by
   sorry
 
 #check adjugate_mul_adjugate_sub_adjugate_mul_adjugate
 /-- Theorem 2.3 -/
-theorem theorem2_3 (A : Matrix n n R) (i j : n) :
+theorem theorem2_3 (A : Matrix n n R) {i j : n} :
     rayleighDiff i j A.detpoly = A.mvCharmatrix.adjugate i j * A.mvCharmatrix.adjugate j i := by
-  sorry
+  rw [rayleighDiff]
+  rw [adjugate_apply, adjugate_apply, det_updateCol_single]
+  by_cases hij : i = j
+  · rcases hij with rfl
+    rw [pderiv_detpoly_eq]
+    sorry
+  · change i ≠ j at hij
+    rw [pderiv_pderiv_detpoly_eq _ hij, pderiv_detpoly_eq, pderiv_detpoly_eq]
+    rw [← adjugate_mul_adjugate_sub_adjugate_mul_adjugate _ hij]
+    sorry
 
 end
