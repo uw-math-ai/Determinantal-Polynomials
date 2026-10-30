@@ -22,10 +22,15 @@ open MvPolynomial Matrix
 
 variable {n R : Type*}
 
+section
+variable {m : Type*}
+
 /-- The submatrix of `A` with rows in `S` and columns in `T`. -/
-abbrev Matrix.setSubmatrix {m : Type*} (A : Matrix n m R) (S : Set n) (T : Set m)
+abbrev Matrix.setSubmatrix (A : Matrix n m R) (S : Set n) (T : Set m)
     : Matrix S T R :=
   A.submatrix (↑) (↑)
+
+end
 
 /-- The principal submatrix `A[S, S]`. -/
 abbrev Matrix.principalSubmatrix (A : Matrix n n R) (S : Set n) : Matrix S S R :=
@@ -39,14 +44,6 @@ variable [DecidableEq n] [Fintype n]
 
 section CommRing
 variable [CommRing R]
-
-/-- hack to work around different instances getting picked up:
-  `Subtype.fintype` vs. `Finset.Subtype.fintype` -/
-theorem Matrix.det_principalSubmatrix (A : Matrix n n R) (S : Finset n) :
-    (A.principalSubmatrix S).det =
-      @det _ _ (Subtype.fintype (· ∈ S)) _ _ (A.toSquareBlockProp (· ∈ S)) := by
-  convert rfl using 2
-  exact (A.principalSubmatrix_eq_toSquareBlockProp S).symm
 
 /-- The Rayleigh difference `Δᵢⱼ(f) = ∂ᵢf ∂ⱼf - f ∂ᵢ∂ⱼf`. -/
 def rayleighDiff (i j : n) (f : MvPolynomial n R) : MvPolynomial n R :=
