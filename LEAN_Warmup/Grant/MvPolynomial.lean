@@ -5,7 +5,7 @@ Authors: Grant Yang
 -/
 module
 
-public import DetPoly.LEAN_Warmup.ClaudeMathlib
+public import LEAN_Warmup.ClaudeMathlib
 
 /-!
 # `setZero` API and Lemma 2.2

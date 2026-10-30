@@ -6,7 +6,10 @@ Authors: Grant Yang
 
 module
 
-public import DetPoly.LEAN_Warmup.Grant.IrreducibleMatrix
+public import DetPoly.Basic
+public import DetPoly.Cut
+public import DetPoly.IrreducibleMatrix
+public import DetPoly.DiagSimilar
 
 /-!
 # Definitions and statements for "The fiber of the principal minor map"
@@ -35,14 +38,14 @@ Theorem 4.1. Tags used in docstrings:
 
 | paper | Lean |
 |---|---|
-| `A = DBD⁻¹` or `A = DBᵀD⁻¹` | `DiagEquiv A B` |
+| `A = DBD⁻¹` or `A = DBᵀD⁻¹` | `DiagEquivalent A B` |
 | `A_S` | `A.principalMinor S` |
 | fiber of `A` under the principal minor map | `A.pmFiber` |
 | `𝒟(n)` | `{A | A.HasTrivialFiber}` |
 | `A` reducible / irreducible | `A.IsReducible` / `A.IsIrred` |
 | `A` has a cut `X` | `A.HasCut X` |
 | `diag(x₁,…,xₙ) + A` | `A.mvCharmatrix` |
-| `f_A` | `A.detPoly` |
+| `f_A` | `A.detpoly` |
 | `G = (diag(x) + A)^adj` | `A.adjPoly` |
 | `f` multiaffine | `IsMultiaffine f` |
 | `f` has degree `≤ 1` in `xᵢ` | `f.degreeOf i ≤ 1` |
@@ -93,65 +96,24 @@ open Matrix MvPolynomial
 
 /-! ## Diagonal equivalence -/
 
-section DiagEquiv
+section DiagEquivalent
 
 variable {R n : Type*} [Fintype n] [DecidableEq n]
 
 variable [CommSemiring R]
-
-/-- `M` and `N` are *diagonally equivalent*: `M = D N D⁻¹` or `M = D Nᵀ D⁻¹` for an invertible
-diagonal `D`. We quantify over units `d : n → Rˣ`; using `d : n → R` with `(diagonal d)⁻¹`
-would make every matrix equivalent to `0` via `d = 0`. -/
-def DiagEquiv (M N : Matrix n n R) : Prop :=
-  ∃ d : n → Rˣ,
-    M = diagonal (fun i ↦ (d i).val) * N * diagonal (fun i ↦ (d i)⁻¹.val) ∨
-    M = diagonal (fun i ↦ (d i).val) * Nᵀ * diagonal (fun i ↦ (d i)⁻¹.val)
 
 /-- Conjugating by diagonals rescales entries. -/
 theorem diagonal_mul_mul_diagonal_apply (a b : n → R) (N : Matrix n n R) (i j : n) :
     (diagonal a * N * diagonal b) i j = a i * N i j * b j := by
   rw [mul_diagonal, diagonal_mul]
 
-theorem DiagEquiv.equivalence : Equivalence (DiagEquiv (R := R) (n := n)) where
-  refl M := by use 1; simp
-  symm := by
-    rintro M N ⟨d, h | h⟩
-    · use d⁻¹
-      left; ext i j
-      simp [h, mul_assoc]
-    · use d
-      right; ext i j
-      simp [h, mul_assoc]
-  trans := by
-    rintro M N O ⟨d₁, hl₁ | hr₁⟩ ⟨d₂, hl₂ | hr₂⟩
-    · use d₁ * d₂
-      left; ext i j
-      simp [hl₁, hl₂, mul_assoc]
-    · use d₁ * d₂
-      right; ext i j
-      simp [hl₁, hr₂, mul_assoc]
-    · use d₁ * d₂⁻¹
-      right; ext i j
-      simp [hr₁, hl₂, mul_assoc]
-    · use d₁ * d₂⁻¹
-      left; ext i j
-      simp [hr₁, hr₂, mul_assoc]
-
-/-- Diagonal equivalence as a setoid. -/
-def DiagEquiv.setoid : Setoid (Matrix n n R) := ⟨DiagEquiv, DiagEquiv.equivalence⟩
-
-end DiagEquiv
+end DiagEquivalent
 
 /-! ## Principal minors, the principal minor map, and its fibers -/
 
 section Minors
 
 variable {R n : Type*} [Fintype n] [DecidableEq n] [CommRing R]
-
-/-- The principal submatrix `A[S, S]`. It unfolds to `A.submatrix (↑) (↑)`, the form Mathlib's
-lemmas use (e.g. `Matrix.det_piecewise_one_eq_submatrix_det`). -/
-def Matrix.principalSubmatrix (A : Matrix n n R) (S : Finset n) : Matrix S S R :=
-  A.submatrix (↑) (↑)
 
 omit [Fintype n] [DecidableEq n] [CommRing R] in
 @[simp]
@@ -177,11 +139,12 @@ def Matrix.pmFiber (A : Matrix n n R) : Set (Matrix n n R) :=
 
 /-- `A ∈ 𝒟(n)`: the fiber of `A` is a single point up to diagonal equivalence. -/
 def Matrix.HasTrivialFiber (A : Matrix n n R) : Prop :=
-  ∀ B ∈ A.pmFiber, DiagEquiv B A
+  ∀ B ∈ A.pmFiber, DiagEquivalent B A
 
 /-- Diagonally equivalent matrices have the same principal minors. -/
-theorem DiagEquiv.mem_pmFiber {A B : Matrix n n R} (h : DiagEquiv B A) : B ∈ A.pmFiber := by
-  obtain ⟨d, rfl | rfl⟩ := h <;> ext S <;>
+theorem Matrix.DiagEquivalent.mem_pmFiber {A B : Matrix n n R}
+    (h : DiagEquivalent B A) : B ∈ A.pmFiber := by
+  rcases h with ⟨d, rfl⟩ | ⟨d, rfl⟩ <;> ext S <;>
     simp only [principalMinors, principalMinor]
   · have : (diagonal (fun i ↦ (d i).val) * A * diagonal (fun i ↦ (d i)⁻¹.val)).principalSubmatrix S
         = diagonal (fun i : S ↦ (d i).val) * A.principalSubmatrix S *
@@ -198,23 +161,20 @@ theorem DiagEquiv.mem_pmFiber {A B : Matrix n n R} (h : DiagEquiv B A) : B ∈ A
       ← Finset.prod_mul_distrib]
     simp
 
+/-- Diagonally similar matrices have the same principal minors. -/
+theorem Matrix.DiagSimilar.mem_pmFiber {A B : Matrix n n R} (h : DiagSimilar B A) :
+    B ∈ A.pmFiber :=
+  DiagEquivalent.mem_pmFiber h.diagEquivalent
+
 end Minors
 
 /-! ## Cuts and symmetrizability
 
-Reducibility is in `DetPoly.LEAN_Warmup.Grant.IrreducibleMatrix`. -/
+Reducibility is in `DetPoly.IrreducibleMatrix`. -/
 
 section Combinatorial
 
 variable {R 𝔽 n : Type*} [Fintype n] [DecidableEq n]
-
-/-- `A` has a cut at `X`: `2 ≤ |X| ≤ n - 2`, `rk A[X,Xᶜ] ≤ 1` and `rk A[Xᶜ,X] ≤ 1`. Proofs
-use the factorization form `rank_le_one_iff_eq_vecMulVec`. The definition is symmetric in
-`X ↔ Xᶜ` (`HasCut.compl`). -/
-def Matrix.HasCut [Field 𝔽] (A : Matrix n n 𝔽) (X : Finset n) : Prop :=
-  2 ≤ X.card ∧ 2 ≤ Xᶜ.card ∧
-    (A.submatrix ((↑) : X → n) ((↑) : ↥Xᶜ → n)).rank ≤ 1 ∧
-    (A.submatrix ((↑) : ↥Xᶜ → n) ((↑) : X → n)).rank ≤ 1
 
 omit [Fintype n] [DecidableEq n] in
 /-- A matrix has rank `≤ 1` iff it is an outer product `u vᵀ`. **NAME ONLY**: Mathlib has the
@@ -234,14 +194,10 @@ theorem Matrix.rank_le_one_iff_eq_vecMulVec [Field 𝔽] {m p : Type*} [Fintype 
   ext i j
   rw [vecMulVec_apply, ← col_apply M j i, ← hc j, Pi.smul_apply, smul_eq_mul, mul_comm]
 
-theorem Matrix.HasCut.compl [Field 𝔽] {A : Matrix n n 𝔽} {X : Finset n} (h : A.HasCut X) :
-    A.HasCut Xᶜ := by
-  obtain ⟨h₁, h₂, h₃, h₄⟩ := h
-  exact ⟨h₂, by rwa [compl_compl], by rwa [compl_compl], by rwa [compl_compl]⟩
-
-/-- The paper's "diagonally equivalent to a symmetric matrix". -/
-def Matrix.IsDiagEquivSymm [CommRing R] (A : Matrix n n R) : Prop :=
-  ∃ S : Matrix n n R, S.IsSymm ∧ DiagEquiv A S
+/-- Diagonal similarity to a symmetric matrix. For a symmetric target, allowing
+transpose gives the same relation, so this also expresses the paper's terminology. -/
+def Matrix.IsDiagSimilarSymm [CommRing R] (A : Matrix n n R) : Prop :=
+  ∃ S : Matrix n n R, S.IsSymm ∧ DiagSimilar A S
 
 /-- `A` is *symmetrizable*: `μA` is symmetric for some invertible diagonal `μ`, i.e.
 `μᵢ aᵢⱼ = μⱼ aⱼᵢ`. **MISSING** from Mathlib. -/
@@ -249,21 +205,21 @@ def Matrix.IsSymmetrizable [CommRing R] (A : Matrix n n R) : Prop :=
   ∃ μ : n → Rˣ, (diagonal (fun i ↦ (μ i).val) * A).IsSymm
 
 /-- If `A = D S D⁻¹` with `S` symmetric, then `μ = D⁻²` symmetrizes `A`. -/
-theorem Matrix.IsDiagEquivSymm.isSymmetrizable [CommRing R] {A : Matrix n n R}
-    (h : A.IsDiagEquivSymm) : A.IsSymmetrizable := by
-  obtain ⟨S, hS, d, rfl | rfl⟩ := h <;>
+theorem Matrix.IsDiagSimilarSymm.isSymmetrizable [CommRing R] {A : Matrix n n R}
+    (h : A.IsDiagSimilarSymm) : A.IsSymmetrizable := by
+  obtain ⟨S, hS, d, rfl⟩ := h
   · refine ⟨d⁻¹ ^ 2, IsSymm.ext fun i j ↦ ?_⟩
     have hi := (d i).inv_mul
     have hj := (d j).inv_mul
     have hs : S i j = S j i := hS.apply j i
-    simp only [diagonal_mul, mul_diagonal, transpose_apply, Pi.pow_apply, Pi.inv_apply,
+    simp only [diagonal_mul, mul_diagonal, Pi.pow_apply, Pi.inv_apply,
       Units.val_pow_eq_pow_val, hs]
     linear_combination (↑(d j)⁻¹ * S j i * ↑(d i)⁻¹) * hj -
       (↑(d i)⁻¹ * S j i * ↑(d j)⁻¹) * hi
 
 /-- **TODO**. The converse needs square roots; this is the gap in Lemma 4.4. -/
-theorem Matrix.IsSymmetrizable.isDiagEquivSymm [Field 𝔽] [IsAlgClosed 𝔽] {A : Matrix n n 𝔽}
-    (h : A.IsSymmetrizable) : A.IsDiagEquivSymm := by
+theorem Matrix.IsSymmetrizable.isDiagSimilarSymm [Field 𝔽] [IsAlgClosed 𝔽] {A : Matrix n n 𝔽}
+    (h : A.IsSymmetrizable) : A.IsDiagSimilarSymm := by
   sorry
 
 end Combinatorial
@@ -465,15 +421,6 @@ section DetPoly
 
 variable {R 𝔽 n : Type*} [Fintype n] [DecidableEq n] [CommRing R]
 
-/-- `diag(x₁,…,xₙ) + A`. Compare Mathlib's univariate `Matrix.charmatrix`, which is
-`X • 1 - A`. -/
-noncomputable def Matrix.mvCharmatrix (A : Matrix n n R) : Matrix n n (MvPolynomial n R) :=
-  diagonal X + A.map C
-
-/-- The determinantal polynomial `f_A = det(diag(x) + A)`. -/
-noncomputable def Matrix.detPoly (A : Matrix n n R) : MvPolynomial n R :=
-  A.mvCharmatrix.det
-
 /-- `G = (diag(x) + A)^adj`. -/
 noncomputable def Matrix.adjPoly (A : Matrix n n R) : Matrix n n (MvPolynomial n R) :=
   A.mvCharmatrix.adjugate
@@ -481,29 +428,29 @@ noncomputable def Matrix.adjPoly (A : Matrix n n R) : Matrix n n (MvPolynomial n
 /-- **TODO**: the coefficient of `∏_{i ∈ S} xᵢ` in `f_A` is the complementary minor `A_{Sᶜ}`.
 The expansion is `det_add_diagonal_formula` (`DetPoly/PS2_#1c_Shaoda.lean`). Mathlib's
 univariate analogue is `Matrix.coeff_det_one_add_X_smul_eq_sum_minors`. -/
-theorem Matrix.coeff_detPoly (A : Matrix n n R) (S : Finset n) :
-    A.detPoly.coeff S.exponent = A.principalMinor Sᶜ := by
+theorem Matrix.coeff_detpoly (A : Matrix n n R) (S : Finset n) :
+    A.detpoly.coeff S.exponent = A.principalMinor Sᶜ := by
   sorry
 
 /-- **TODO** -/
-theorem Matrix.detPoly_isMultiaffine (A : Matrix n n R) : IsMultiaffine A.detPoly := by
+theorem Matrix.detpoly_isMultiaffine (A : Matrix n n R) : IsMultiaffine A.detpoly := by
   sorry
 
 /-- The leading coefficient is `1`, the normalization in Theorem 2.1. -/
-theorem Matrix.coeff_univ_detPoly (A : Matrix n n R) :
-    A.detPoly.coeff Finset.univ.exponent = 1 := by
-  rw [coeff_detPoly, Finset.compl_univ, principalMinor_empty]
+theorem Matrix.coeff_univ_detpoly (A : Matrix n n R) :
+    A.detpoly.coeff Finset.univ.exponent = 1 := by
+  rw [coeff_detpoly, Finset.compl_univ, principalMinor_empty]
 
 /-- **TODO**: same fiber iff same determinantal polynomial. -/
-theorem Matrix.detPoly_eq_iff {A B : Matrix n n R} :
-    B.detPoly = A.detPoly ↔ B ∈ A.pmFiber := by
+theorem Matrix.detpoly_eq_iff {A B : Matrix n n R} :
+    B.detpoly = A.detpoly ↔ B ∈ A.pmFiber := by
   sorry
 
 /-- **TODO**, **MISSING** (Jacobi's formula): `∂ᵢ f_A = G_ii`. Mathlib only has univariate
 versions (`Matrix.derivative_det_one_add_X_smul`). Hint: expand along row `i`
 (`det_eq_sum_mul_adjugate_row`); the cofactors along row `i` are free of `xᵢ`. -/
-theorem Matrix.pderiv_detPoly (A : Matrix n n R) (i : n) :
-    pderiv i A.detPoly = A.adjPoly i i := by
+theorem Matrix.pderiv_detpoly (A : Matrix n n R) (i : n) :
+    pderiv i A.detpoly = A.adjPoly i i := by
   sorry
 
 /-- **TODO**: `G_ij ∈ R[x_k : k ≠ i, j]` for `i ≠ j`. -/
@@ -531,10 +478,6 @@ section Rayleigh
 
 variable {R 𝔽 n : Type*} [CommRing R]
 
-/-- The Rayleigh difference `Δᵢⱼ(f) = ∂ᵢf ∂ⱼf - f ∂ᵢ∂ⱼf`. -/
-noncomputable def rayleighDiff (i j : n) (f : MvPolynomial n R) : MvPolynomial n R :=
-  pderiv i f * pderiv j f - f * pderiv i (pderiv j f)
-
 variable [DecidableEq n]
 
 /-- The paper's resultant `res_{x_k}(g, h) = g|_{x_k=0} ∂ₖh - h|_{x_k=0} ∂ₖg`. This is **not**
@@ -551,7 +494,7 @@ theorem res_mul_left {k : n} {c : MvPolynomial n R} (hc : c ∈ supported R ({k}
   ring
 
 -- Lemma 2.2 (`rayleighDiff_eq_zero_iff`) and the rest of the `setZero` API are in
--- `DetPoly.LEAN_Warmup.Grant.MvPolynomial`.
+-- `LEAN_Warmup.Grant.MvPolynomial`.
 
 variable [Fintype n]
 
@@ -564,13 +507,13 @@ theorem Matrix.adjugate_mul_adjugate_sub {M : Matrix n n R} {i j : n} (hij : i �
   sorry
 
 /-- **Theorem 2.3**. It also holds for `i = j`, where both sides are `G_ii²`. -/
-theorem Matrix.rayleighDiff_detPoly (A : Matrix n n R) (i j : n) :
-    rayleighDiff i j A.detPoly = A.adjPoly i j * A.adjPoly j i := by
+theorem Matrix.rayleighDiff_detpoly (A : Matrix n n R) (i j : n) :
+    rayleighDiff i j A.detpoly = A.adjPoly i j * A.adjPoly j i := by
   sorry
 
 /-- **TODO**: condition (b) of Theorem 2.1 for the adjugate ("only if" direction). -/
 theorem Matrix.res_adjPoly (A : Matrix n n R) {i j k : n} (hij : i ≠ j) (hki : k ≠ i)
-    (hkj : k ≠ j) : res k (A.adjPoly i j) A.detPoly = A.adjPoly i k * A.adjPoly k j := by
+    (hkj : k ≠ j) : res k (A.adjPoly i j) A.detpoly = A.adjPoly i k * A.adjPoly k j := by
   sorry
 
 end Rayleigh
@@ -591,13 +534,13 @@ theorem Matrix.adjPoly_ne_zero {A : Matrix n n 𝔽} (hA : A.IsIrred) (i j : n) 
 
 /-- **EXTERNAL**, **Theorem 2.1**, "if" direction ([AV22, Thm 3.1 and Rem 3.4]), in the strong
 form that Lemma 4.5 uses: the off-diagonal entries of `G_B` are the `gᵢⱼ`. -/
-theorem exists_detPoly_eq_of_rayleigh {f : MvPolynomial n 𝔽} (hf : IsMultiaffine f)
+theorem exists_detpoly_eq_of_rayleigh {f : MvPolynomial n 𝔽} (hf : IsMultiaffine f)
     (hlead : f.coeff Finset.univ.exponent = 1) (g : n → n → MvPolynomial n 𝔽)
     (hΔ : ∀ i j, i ≠ j → rayleighDiff i j f = g i j * g j i)
     (hsupp : ∀ i j, i ≠ j → g i j ∈ supported 𝔽 ({i, j}ᶜ : Set n))
     (haff : ∀ i j, IsMultiaffine (g i j))
     (hres : ∀ i j k, i ≠ j → k ≠ i → k ≠ j → res k (g i j) f = g i k * g k j) :
-    ∃ B : Matrix n n 𝔽, B.detPoly = f ∧ ∀ i j, i ≠ j → B.adjPoly i j = g i j := by
+    ∃ B : Matrix n n 𝔽, B.detpoly = f ∧ ∀ i j, i ≠ j → B.adjPoly i j = g i j := by
   sorry
 
 /-- **EXTERNAL** ([Loewy 1986, Thm 1]): irreducible with no cut implies trivial fiber. -/
@@ -651,7 +594,7 @@ theorem Matrix.exists_adjPoly_eq_cutSwap (hn : 4 ≤ Fintype.card n) {A : Matrix
     (hd : ∀ j ∈ X, d j ∈ supported 𝔽 ↑(X.erase j))
     (hR : ∀ i ∈ X, ∀ j ∉ X, A.adjPoly i j = a i * b j)
     (hT : ∀ i ∉ X, ∀ j ∈ X, A.adjPoly i j = c i * d j) :
-    ∃ B : Matrix n n 𝔽, B.detPoly = A.detPoly ∧
+    ∃ B : Matrix n n 𝔽, B.detpoly = A.detpoly ∧
       ∀ i j, i ≠ j → B.adjPoly i j = cutSwap X A.adjPoly a b c d i j := by
   sorry
 
@@ -663,8 +606,8 @@ theorem Matrix.IsReducible.not_hasTrivialFiber {A : Matrix n n 𝔽} (hA : A.IsR
 
 /-- **Lemma 5.1**. `[Nonempty n]` excludes the `0 × 0` matrix, which is irreducible while
 `f = 1` is not. -/
-theorem Matrix.isIrred_iff_irreducible_detPoly [Nonempty n] (A : Matrix n n 𝔽) :
-    A.IsIrred ↔ Irreducible A.detPoly := by
+theorem Matrix.isIrred_iff_irreducible_detpoly [Nonempty n] (A : Matrix n n 𝔽) :
+    A.IsIrred ↔ Irreducible A.detpoly := by
   sorry
 
 /-- **Lemma 6.1**, generalized from symmetric to symmetrizable `A`. The same proof works,
