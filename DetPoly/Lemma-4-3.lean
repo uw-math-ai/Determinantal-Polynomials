@@ -6,7 +6,8 @@ Authors: Joe Rogge
 
 module
 
-public import DetPoly.LEAN_Warmup.ClaudeMathlib
+public import DetPoly.Cut
+public import DetPoly.IrreducibleMatrix
 
 /-!
 # A cut of `A` is a cut of `(diag(x) + A)^adj` (Lemma 4.3)
@@ -33,7 +34,7 @@ as outer products, which is `Matrix.adjPoly_eq_mul_of_hasCut` applied to `X` and
 (`HasCut.compl`). -/
 lemma Matrix.hasCut_adjPoly_of_hasCut {A : Matrix n n 𝔽} (hA : A.IsIrred) {X : Finset n}
     (hX : A.HasCut X) :
-    (A.adjPoly.map
+    (A.mvCharmatrix.adjugate.map
       (algebraMap (MvPolynomial n 𝔽) (FractionRing (MvPolynomial n 𝔽)))).HasCut X := by
   sorry
 

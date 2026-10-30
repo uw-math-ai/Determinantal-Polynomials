@@ -20,9 +20,14 @@ open MvPolynomial Matrix
 
 variable {n R : Type*}
 
+/-- The submatrix of `A` with rows in `S` and columns in `T`. -/
+abbrev Matrix.finsetSubmatrix {m : Type*} (A : Matrix n m R) (S : Finset n) (T : Finset m)
+    : Matrix S T R :=
+  A.submatrix (↑) (↑)
+
 /-- The principal submatrix `A[S, S]`. -/
 abbrev Matrix.principalSubmatrix (A : Matrix n n R) (S : Finset n) : Matrix S S R :=
-  A.submatrix (↑) (↑)
+  A.finsetSubmatrix S S
 
 theorem Matrix.principalSubmatrix_eq_toSquareBlockProp (A : Matrix n n R) (S : Finset n) :
     A.principalSubmatrix S = A.toSquareBlockProp (· ∈ S) :=

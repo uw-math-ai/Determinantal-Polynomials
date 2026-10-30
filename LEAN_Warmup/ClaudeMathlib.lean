@@ -7,7 +7,9 @@ Authors: Grant Yang
 module
 
 public import DetPoly.Basic
-public import LEAN_Warmup.Grant.IrreducibleMatrix
+public import DetPoly.Cut
+public import DetPoly.IrreducibleMatrix
+public import DetPoly.DiagSimilar
 
 /-!
 # Definitions and statements for "The fiber of the principal minor map"
@@ -36,7 +38,7 @@ Theorem 4.1. Tags used in docstrings:
 
 | paper | Lean |
 |---|---|
-| `A = DBD⁻¹` or `A = DBᵀD⁻¹` | `DiagEquiv A B` |
+| `A = DBD⁻¹` or `A = DBᵀD⁻¹` | `DiagEquivalent A B` |
 | `A_S` | `A.principalMinor S` |
 | fiber of `A` under the principal minor map | `A.pmFiber` |
 | `𝒟(n)` | `{A | A.HasTrivialFiber}` |
@@ -94,54 +96,18 @@ open Matrix MvPolynomial
 
 /-! ## Diagonal equivalence -/
 
-section DiagEquiv
+section DiagEquivalent
 
 variable {R n : Type*} [Fintype n] [DecidableEq n]
 
 variable [CommSemiring R]
-
-/-- `M` and `N` are *diagonally equivalent*: `M = D N D⁻¹` or `M = D Nᵀ D⁻¹` for an invertible
-diagonal `D`. We quantify over units `d : n → Rˣ`; using `d : n → R` with `(diagonal d)⁻¹`
-would make every matrix equivalent to `0` via `d = 0`. -/
-def DiagEquiv (M N : Matrix n n R) : Prop :=
-  ∃ d : n → Rˣ,
-    M = diagonal (fun i ↦ (d i).val) * N * diagonal (fun i ↦ (d i)⁻¹.val) ∨
-    M = diagonal (fun i ↦ (d i).val) * Nᵀ * diagonal (fun i ↦ (d i)⁻¹.val)
 
 /-- Conjugating by diagonals rescales entries. -/
 theorem diagonal_mul_mul_diagonal_apply (a b : n → R) (N : Matrix n n R) (i j : n) :
     (diagonal a * N * diagonal b) i j = a i * N i j * b j := by
   rw [mul_diagonal, diagonal_mul]
 
-theorem DiagEquiv.equivalence : Equivalence (DiagEquiv (R := R) (n := n)) where
-  refl M := by use 1; simp
-  symm := by
-    rintro M N ⟨d, h | h⟩
-    · use d⁻¹
-      left; ext i j
-      simp [h, mul_assoc]
-    · use d
-      right; ext i j
-      simp [h, mul_assoc]
-  trans := by
-    rintro M N O ⟨d₁, hl₁ | hr₁⟩ ⟨d₂, hl₂ | hr₂⟩
-    · use d₁ * d₂
-      left; ext i j
-      simp [hl₁, hl₂, mul_assoc]
-    · use d₁ * d₂
-      right; ext i j
-      simp [hl₁, hr₂, mul_assoc]
-    · use d₁ * d₂⁻¹
-      right; ext i j
-      simp [hr₁, hl₂, mul_assoc]
-    · use d₁ * d₂⁻¹
-      left; ext i j
-      simp [hr₁, hr₂, mul_assoc]
-
-/-- Diagonal equivalence as a setoid. -/
-def DiagEquiv.setoid : Setoid (Matrix n n R) := ⟨DiagEquiv, DiagEquiv.equivalence⟩
-
-end DiagEquiv
+end DiagEquivalent
 
 /-! ## Principal minors, the principal minor map, and its fibers -/
 
@@ -173,11 +139,12 @@ def Matrix.pmFiber (A : Matrix n n R) : Set (Matrix n n R) :=
 
 /-- `A ∈ 𝒟(n)`: the fiber of `A` is a single point up to diagonal equivalence. -/
 def Matrix.HasTrivialFiber (A : Matrix n n R) : Prop :=
-  ∀ B ∈ A.pmFiber, DiagEquiv B A
+  ∀ B ∈ A.pmFiber, DiagEquivalent B A
 
 /-- Diagonally equivalent matrices have the same principal minors. -/
-theorem DiagEquiv.mem_pmFiber {A B : Matrix n n R} (h : DiagEquiv B A) : B ∈ A.pmFiber := by
-  obtain ⟨d, rfl | rfl⟩ := h <;> ext S <;>
+theorem Matrix.DiagEquivalent.mem_pmFiber {A B : Matrix n n R}
+    (h : DiagEquivalent B A) : B ∈ A.pmFiber := by
+  rcases h with ⟨d, rfl⟩ | ⟨d, rfl⟩ <;> ext S <;>
     simp only [principalMinors, principalMinor]
   · have : (diagonal (fun i ↦ (d i).val) * A * diagonal (fun i ↦ (d i)⁻¹.val)).principalSubmatrix S
         = diagonal (fun i : S ↦ (d i).val) * A.principalSubmatrix S *
@@ -194,23 +161,20 @@ theorem DiagEquiv.mem_pmFiber {A B : Matrix n n R} (h : DiagEquiv B A) : B ∈ A
       ← Finset.prod_mul_distrib]
     simp
 
+/-- Diagonally similar matrices have the same principal minors. -/
+theorem Matrix.DiagSimilar.mem_pmFiber {A B : Matrix n n R} (h : DiagSimilar B A) :
+    B ∈ A.pmFiber :=
+  DiagEquivalent.mem_pmFiber h.diagEquivalent
+
 end Minors
 
 /-! ## Cuts and symmetrizability
 
-Reducibility is in `LEAN_Warmup.Grant.IrreducibleMatrix`. -/
+Reducibility is in `DetPoly.IrreducibleMatrix`. -/
 
 section Combinatorial
 
 variable {R 𝔽 n : Type*} [Fintype n] [DecidableEq n]
-
-/-- `A` has a cut at `X`: `2 ≤ |X| ≤ n - 2`, `rk A[X,Xᶜ] ≤ 1` and `rk A[Xᶜ,X] ≤ 1`. Proofs
-use the factorization form `rank_le_one_iff_eq_vecMulVec`. The definition is symmetric in
-`X ↔ Xᶜ` (`HasCut.compl`). -/
-def Matrix.HasCut [Field 𝔽] (A : Matrix n n 𝔽) (X : Finset n) : Prop :=
-  2 ≤ X.card ∧ 2 ≤ Xᶜ.card ∧
-    (A.submatrix ((↑) : X → n) ((↑) : ↥Xᶜ → n)).rank ≤ 1 ∧
-    (A.submatrix ((↑) : ↥Xᶜ → n) ((↑) : X → n)).rank ≤ 1
 
 omit [Fintype n] [DecidableEq n] in
 /-- A matrix has rank `≤ 1` iff it is an outer product `u vᵀ`. **NAME ONLY**: Mathlib has the
@@ -230,14 +194,10 @@ theorem Matrix.rank_le_one_iff_eq_vecMulVec [Field 𝔽] {m p : Type*} [Fintype 
   ext i j
   rw [vecMulVec_apply, ← col_apply M j i, ← hc j, Pi.smul_apply, smul_eq_mul, mul_comm]
 
-theorem Matrix.HasCut.compl [Field 𝔽] {A : Matrix n n 𝔽} {X : Finset n} (h : A.HasCut X) :
-    A.HasCut Xᶜ := by
-  obtain ⟨h₁, h₂, h₃, h₄⟩ := h
-  exact ⟨h₂, by rwa [compl_compl], by rwa [compl_compl], by rwa [compl_compl]⟩
-
-/-- The paper's "diagonally equivalent to a symmetric matrix". -/
-def Matrix.IsDiagEquivSymm [CommRing R] (A : Matrix n n R) : Prop :=
-  ∃ S : Matrix n n R, S.IsSymm ∧ DiagEquiv A S
+/-- Diagonal similarity to a symmetric matrix. For a symmetric target, allowing
+transpose gives the same relation, so this also expresses the paper's terminology. -/
+def Matrix.IsDiagSimilarSymm [CommRing R] (A : Matrix n n R) : Prop :=
+  ∃ S : Matrix n n R, S.IsSymm ∧ DiagSimilar A S
 
 /-- `A` is *symmetrizable*: `μA` is symmetric for some invertible diagonal `μ`, i.e.
 `μᵢ aᵢⱼ = μⱼ aⱼᵢ`. **MISSING** from Mathlib. -/
@@ -245,21 +205,21 @@ def Matrix.IsSymmetrizable [CommRing R] (A : Matrix n n R) : Prop :=
   ∃ μ : n → Rˣ, (diagonal (fun i ↦ (μ i).val) * A).IsSymm
 
 /-- If `A = D S D⁻¹` with `S` symmetric, then `μ = D⁻²` symmetrizes `A`. -/
-theorem Matrix.IsDiagEquivSymm.isSymmetrizable [CommRing R] {A : Matrix n n R}
-    (h : A.IsDiagEquivSymm) : A.IsSymmetrizable := by
-  obtain ⟨S, hS, d, rfl | rfl⟩ := h <;>
+theorem Matrix.IsDiagSimilarSymm.isSymmetrizable [CommRing R] {A : Matrix n n R}
+    (h : A.IsDiagSimilarSymm) : A.IsSymmetrizable := by
+  obtain ⟨S, hS, d, rfl⟩ := h
   · refine ⟨d⁻¹ ^ 2, IsSymm.ext fun i j ↦ ?_⟩
     have hi := (d i).inv_mul
     have hj := (d j).inv_mul
     have hs : S i j = S j i := hS.apply j i
-    simp only [diagonal_mul, mul_diagonal, transpose_apply, Pi.pow_apply, Pi.inv_apply,
+    simp only [diagonal_mul, mul_diagonal, Pi.pow_apply, Pi.inv_apply,
       Units.val_pow_eq_pow_val, hs]
     linear_combination (↑(d j)⁻¹ * S j i * ↑(d i)⁻¹) * hj -
       (↑(d i)⁻¹ * S j i * ↑(d j)⁻¹) * hi
 
 /-- **TODO**. The converse needs square roots; this is the gap in Lemma 4.4. -/
-theorem Matrix.IsSymmetrizable.isDiagEquivSymm [Field 𝔽] [IsAlgClosed 𝔽] {A : Matrix n n 𝔽}
-    (h : A.IsSymmetrizable) : A.IsDiagEquivSymm := by
+theorem Matrix.IsSymmetrizable.isDiagSimilarSymm [Field 𝔽] [IsAlgClosed 𝔽] {A : Matrix n n 𝔽}
+    (h : A.IsSymmetrizable) : A.IsDiagSimilarSymm := by
   sorry
 
 end Combinatorial
