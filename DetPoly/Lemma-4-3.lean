@@ -6,8 +6,8 @@ Authors: Joe Rogge
 
 module
 
-public import DetPoly.Cut
 public import DetPoly.IrreducibleMatrix
+public import DetPoly.Basic
 
 /-!
 # A cut of `A` is a cut of `(diag(x) + A)^adj` (Lemma 4.3)

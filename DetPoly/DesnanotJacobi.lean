@@ -6,6 +6,9 @@ Authors: Anders Lewis
 module
 
 public import DetPoly.Basic
+public import Mathlib.Algebra.AffineMonoid.Basic
+public import Mathlib.Algebra.AffineMonoid.UniqueSums
+public import Mathlib.LinearAlgebra.Matrix.Block
 
 /-!
 # The Desnanot–Jacobi identity
@@ -97,7 +100,7 @@ private theorem mul_adjugateCols_apply (M : Matrix n n R) (i j k l : n) :
 
 /-- `M * adjugateCols M i j` is block triangular, with blocks `M[{i, j}ᶜ]` and `det M • 1`. -/
 private theorem det_mul_adjugateCols (M : Matrix n n R) {i j : n} (hij : i ≠ j) :
-    (M * adjugateCols M i j).det = M.det ^ 2 * (M.principalSubmatrix {i, j}ᶜ).det := by
+    (M * adjugateCols M i j).det = M.det ^ 2 * (M.principalSubmatrix ({i, j}ᶜ : Finset n)).det := by
   rw [det_principalSubmatrix, twoBlockTriangular_det' _ (· ∈ ({i, j}ᶜ : Finset n)),
     det_toSquareBlockProp_pair _ hij notMem_compl_pair_iff]
   · -- the `{i, j}ᶜ` block is `M[{i, j}ᶜ]`, and the `{i, j}` block is `det M • 1`
@@ -119,7 +122,7 @@ private theorem det_mul_adjugateCols (M : Matrix n n R) {i j : n} (hij : i ≠ j
 private theorem det_mul_adjugate_mul_adjugate_sub_adjugate_mul_adjugate (M : Matrix n n R)
     {i j : n} (hij : i ≠ j) :
     M.det * (M.adjugate i i * M.adjugate j j - M.adjugate i j * M.adjugate j i) =
-      M.det * (M.det * (M.principalSubmatrix {i, j}ᶜ).det) := by
+      M.det * (M.det * (M.principalSubmatrix ({i, j}ᶜ : Finset n)).det) := by
   rw [← det_adjugateCols M hij, ← det_mul, det_mul_adjugateCols M hij, pow_two, mul_assoc]
 
 /-- The **Desnanot–Jacobi identity** (Dodgson condensation), in adjugate form:
@@ -127,10 +130,10 @@ private theorem det_mul_adjugate_mul_adjugate_sub_adjugate_mul_adjugate (M : Mat
 theorem adjugate_mul_adjugate_sub_adjugate_mul_adjugate (M : Matrix n n R) {i j : n}
     (hij : i ≠ j) :
     M.adjugate i i * M.adjugate j j - M.adjugate i j * M.adjugate j i =
-      M.det * (M.principalSubmatrix {i, j}ᶜ).det := by
+      M.det * (M.principalSubmatrix ({i, j}ᶜ : Finset n)).det := by
   let A := mvPolynomialX n n ℤ
   suffices A.adjugate i i * A.adjugate j j - A.adjugate i j * A.adjugate j i =
-      A.det * (A.principalSubmatrix {i, j}ᶜ).det by
+      A.det * (A.principalSubmatrix ({i, j}ᶜ : Finset n)).det by
     let f := MvPolynomial.aeval (R := ℤ) fun p : n × n ↦ M p.1 p.2
     have hA : f.mapMatrix A = M := mvPolynomialX_mapMatrix_aeval ℤ M
     have h := congrArg f this

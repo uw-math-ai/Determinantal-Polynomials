@@ -7,9 +7,9 @@ Authors: Grant Yang
 module
 
 public import DetPoly.Basic
-public import DetPoly.Cut
 public import DetPoly.IrreducibleMatrix
 public import DetPoly.DiagSimilar
+public import Mathlib
 
 /-!
 # Definitions and statements for "The fiber of the principal minor map"

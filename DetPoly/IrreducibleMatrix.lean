@@ -5,7 +5,8 @@ Authors: Grant Yang
 -/
 module
 
-public import Mathlib
+public import Mathlib.Combinatorics.Quiver.ConnectedComponent
+public import Mathlib.LinearAlgebra.Matrix.Block
 
 /-!
 # Reducible and irreducible matrices

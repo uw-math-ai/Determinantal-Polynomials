@@ -6,7 +6,7 @@ Authors: Anders Lewis, Grant Yang
 
 module
 
-public import Mathlib
+public import Mathlib.LinearAlgebra.Matrix.Symmetric
 
 /-! # Diagonal similarity and diagonal equivalence
 

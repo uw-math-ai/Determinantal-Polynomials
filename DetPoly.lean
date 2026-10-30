@@ -1,7 +1,8 @@
-import DetPoly.Basic
-import DetPoly.Cut
-import DetPoly.DesnanotJacobi
-import DetPoly.DiagSimilar
-import DetPoly.IrreducibleMatrix
-import DetPoly.Theorem2_3
-import DetPoly.«Lemma-4-3»
+module -- shake: keep-all
+
+public import DetPoly.Basic
+public import DetPoly.DesnanotJacobi
+public import DetPoly.DiagSimilar
+public import DetPoly.IrreducibleMatrix
+public import DetPoly.Theorem2_3
+public import DetPoly.«Lemma-4-3»
