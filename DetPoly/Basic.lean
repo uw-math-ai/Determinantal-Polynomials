@@ -9,6 +9,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import Mathlib
 
 /-!
 # Determinantal Polynomials
@@ -22,19 +23,10 @@ open MvPolynomial Matrix
 
 variable {n R : Type*}
 
-section
-variable {m : Type*}
-
 /-- The submatrix of `A` with rows in `S` and columns in `T`. -/
-abbrev Matrix.setSubmatrix (A : Matrix n m R) (S : Set n) (T : Set m)
+abbrev Matrix.setSubmatrix {m : Type*} (A : Matrix n m R) (S : Set n) (T : Set m)
     : Matrix S T R :=
   A.submatrix (↑) (↑)
-
-abbrev Matrix.squareFinsetSubmatrix (A : Matrix n m R) (k : ℕ)
-    {S : Finset n} {T : Finset m} (hS : S.card = k) (hT : T.card = k) : Matrix (Fin k) (Fin k) R :=
-  A.submatrix (Subtype.val ∘ S.equivFin.symm.toFun) (T.equivFin)
-
-end
 
 /-- The principal submatrix `A[S, S]`. -/
 abbrev Matrix.principalSubmatrix (A : Matrix n n R) (S : Set n) : Matrix S S R :=

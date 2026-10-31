@@ -131,8 +131,7 @@ theorem adjugate_mul_adjugate_sub_adjugate_mul_adjugate (M : Matrix n n R) {i j 
     have h := congrArg f this
     simp only [map_sub, map_mul, AlgHom.map_det] at h
     -- what remains differs from the goal only by unfolding `f.mapMatrix`
-    rw [← hA, ← AlgHom.map_adjugate]
-    exact h
+    rwa [← hA, ← AlgHom.map_adjugate]
   exact mul_left_cancel₀ (det_mvPolynomialX_ne_zero n ℤ)
     (det_mul_adjugate_mul_adjugate_sub_adjugate_mul_adjugate A hij)
 
