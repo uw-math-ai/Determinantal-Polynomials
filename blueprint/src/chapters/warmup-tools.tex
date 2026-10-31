@@ -1,0 +1,554 @@
+\chapter{LEAN\_Warmup: proved tools and computations}
+
+These modules contain completed mathematics as well as one unfinished mixed-derivative
+formula. They remain in the exploratory library, with their current names and dependencies.
+
+\section{Specialization and the factorization criterion}
+
+\begin{lemma}[Specialization API]
+
+\label{lem:setzero-api}
+
+\lean{setZero_X, setZero_X_self, setZero_X_of_ne, setZero_C, setZero_monomial, support_setZero_subset, degreeOf_setZero_le, setZero_mem_supported_of_mem, setZero_eq_self_iff, setZero_setZero, setZero_comm, setZero_commute, pderiv_setZero_self, pderiv_setZero_of_ne, setZero_map, eval_setZero}
+
+\leanok
+
+\uses{def:setzero,lem:affine-derivative}
+
+Specializing $x_k$ to zero fixes constants and the other variables, kills $x_k$,
+and kills exactly those monomials with a positive $k$th exponent. It decreases support
+and individual degrees, preserves support restrictions, and fixes exactly the polynomials
+independent of $x_k$. Specializations are idempotent and commute with one another.
+Differentiation in $x_k$ after specialization is zero; differentiation in another variable
+commutes with specialization. Specialization also commutes with coefficient maps and
+has the expected evaluation formula.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{lemma}[Two-variable affine decomposition]
+
+\label{lem:bilinear}
+
+\lean{exists_eq_X_mul_X_add, rayleighDiff_X_mul_X_add, rayleighDiff_mul_eq_zero}
+
+\leanok
+
+\uses{lem:affine-decompose,lem:setzero-api}
+
+If $f$ has degree at most one in $x_i$ and $x_j$, it can be written
+\[ f=ax_ix_j+bx_i+cx_j+d \]
+with $a,b,c,d$ supported outside $\{i,j\}$. For $i\ne j$, the Rayleigh difference of
+this expression is $bc-ad$. If $f=gh$ with $g$ independent of $x_i$ and $h$ independent
+of $x_j$, then $\Delta_{ij}(f)=0$, without degree hypotheses.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{lemma}[Rayleigh vanishing and factorization (Lemma 2.2)]
+
+\label{lem:22}
+
+\lean{rayleighDiff_eq_zero_iff}
+
+\leanok
+
+\uses{lem:bilinear,lem:support}
+
+Over a unique factorization domain, if $f$ is affine in $x_i$ and $x_j$, then
+\[ \Delta_{ij}(f)=0\quad\Longleftrightarrow\quad
+ f=gh,\quad g\in R[x_k:k\ne i],\quad h\in R[x_k:k\ne j]. \]
+The formal statement also allows $i=j$.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+For distinct indices use $bc=ad$. If $a\ne0$, unique factorization splits
+$a=\gamma\alpha$, $b=\gamma\beta$, $c=\alpha\delta$, so $d=\beta\delta$ and
+$f=(\alpha x_j+\beta)(\gamma x_i+\delta)$. Divisor-support lemmas give the support
+restrictions. If $a=0$, one of $b,c$ vanishes. For equal indices, the square of the
+derivative vanishes in a domain, and affine decomposition finishes the proof.
+
+\end{proof}
+
+\section{Differential operators and mixed derivatives}
+
+\begin{lemma}[Squarefree exponent API]
+
+\label{lem:exponent-api}
+
+\lean{Finset.exponent_empty, Finset.exponent_insert, Finset.exponent_apply}
+
+\leanok
+
+\uses{def:multiaffine}
+
+The exponent vector $e_S$ is zero on the empty set, adding a new element adds its
+single-coordinate exponent, and $e_S(i)$ is one or zero according as $i\in S$ or not.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{definition}[Evaluation in a noncommutative algebra]
+
+\label{def:commuting-eval}
+
+\lean{MvPolynomial.aevalOfCommute, MvPolynomial.aevalOfCommute_X}
+
+\leanok
+
+A family of pairwise commuting elements in an algebra defines an algebra homomorphism
+from the multivariate polynomial algebra, even if the target algebra itself is not
+commutative. Variables evaluate to the supplied elements.
+
+\end{definition}
+
+\begin{definition}[Polynomial differential operators]
+
+\label{def:differential-op}
+
+\lean{MvPolynomial.pderivOp, MvPolynomial.pderivOp_X, MvPolynomial.pderivOp_mul_apply, MvPolynomial.pderivOp_X_pow}
+
+\leanok
+
+\uses{def:commuting-eval}
+
+Substituting the commuting partial derivatives for variables defines
+$p\mapsto p(\partial)$ with values in linear endomorphisms of the polynomial ring.
+A variable gives its partial derivative; polynomial multiplication gives composition;
+$x_i^k$ gives the $k$th iterate of $\partial_i$.
+
+\end{definition}
+
+\begin{lemma}[Coefficients of differential operators]
+
+\label{lem:operator-coeff}
+
+\lean{MvPolynomial.coeff_pderiv_iterate, MvPolynomial.coeff_pderivOp_monomial, MvPolynomial.constantCoeff_pderivOp_monomial, MvPolynomial.coeff_pderivOp_prod_X, MvPolynomial.constantCoeff_pderivOp_prod_X, MvPolynomial.constantCoeff_pderivOp_apply_monomial, MvPolynomial.pderivOp_injective}
+
+\leanok
+
+\uses{def:differential-op,lem:exponent-api}
+
+The coefficient of $x^t$ in $\partial_i^k f$ is
+$(t_i+k)^{\underline{k}}[x^{t+ke_i}]f$. For a multi-index $s$, the coefficient in
+$\partial^s f$ is $\prod_i(t_i+s_i)^{\underline{s_i}}[x^{t+s}]f$.
+At $t=0$ this is $\prod_i s_i!\,[x^s]f$.
+For squarefree $s=e_S$ no factorial remains at zero, and
+$[x^t]\partial_S f=\prod_{i\in S}(t_i+1)[x^{t+e_S}]f$.
+Conversely, the constant coefficient of $p(\partial)x^s$ is $\prod_i s_i!\,[x^s]p$.
+Over a characteristic-zero domain these formulas make $p\mapsto p(\partial)$ injective.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{lemma}[Mixed derivatives of multiaffine polynomials]
+
+\label{lem:mixed-support}
+
+\lean{coeff_add_exponent_ne_zero_of_coeff_pderivOp_ne_zero, pderivOp_prod_X_mem_supported, IsMultiaffine.pderivOp_prod_X, coeff_exponent_eq_constantCoeff_pderivOp}
+
+\leanok
+
+\uses{lem:operator-coeff,def:multiaffine}
+
+A nonzero coefficient of $\partial_S f$ forces the corresponding shifted coefficient
+of $f$ to be nonzero. For multiaffine $f$, $\partial_S f$ is supported outside $S$
+and remains multiaffine. For any $f$, $[x^{e_S}]f=(\partial_S f)(0)$.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{lemma}[Generalized Jacobi formula]
+
+\label{lem:mixed-det}
+
+\lean{Matrix.pderivOp_detPoly}
+
+\leanok
+
+\uses{def:differential-op,lem:detpoly-derivatives}
+
+The proposed identity is
+\[ \partial_S f_A=\det M_A[S^c,S^c]. \]
+The proof draft inducts on $S$; the empty and insertion steps remain unfinished.
+The first- and second-derivative library formulas are completed special cases.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished proof.}
+
+\begin{lemma}[Constant coefficient of a polynomial principal minor]
+
+\label{lem:constant-minor}
+
+\lean{Matrix.constantCoeff_principalMinor_mvCharmatrix}
+
+\leanok
+
+\uses{def:fiber,def:detpoly}
+
+The constant coefficient of $\det M_A[S,S]$ is $A_S$.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{lemma}[Coefficient formula from mixed derivatives]
+
+\label{lem:coeff-via-derivative}
+
+\lean{Matrix.coeff_detPoly_of_pderivOp}
+
+\leanok
+
+\uses{lem:mixed-det,lem:constant-minor,lem:mixed-support}
+
+The coefficient of $x^{e_S}$ in $f_A$ is $A_{S^c}$.
+The Lean proof reduces this to the generalized Jacobi formula and the constant-coefficient
+minor identity, so it currently depends on the unfinished mixed-derivative theorem.
+
+\end{lemma}
+
+\noindent\emph{Status: proof written, conditional on the unfinished generalized Jacobi formula.}
+
+\section{Computable multivariate polynomials}
+
+\begin{definition}[A computation model for polynomials]
+
+\label{def:computable}
+
+\lean{CMvPolynomial, CMvPolynomial.X, cMvPolynomialEquiv, CMvPolynomial.C, CMvPolynomial.equiv_single, CMvPolynomial.equiv_C, CMvPolynomial.equiv_X}
+
+\leanok
+
+Use a direct sum of coefficients indexed by finitely supported natural exponent vectors,
+represented with computable dependent finitely supported functions. There are executable
+constants and variables, and an algebra equivalence to Mathlib's multivariate polynomials.
+An unsafe representation instance extracts quotient representatives for display only;
+it is not used by the algebraic algorithms or correctness proofs.
+
+\end{definition}
+
+\begin{lemma}[Normalization]
+
+\label{lem:normalize}
+
+\lean{CMvPolynomial.normalize, CMvPolynomial.normalize_eq}
+
+\leanok
+
+\uses{def:computable}
+
+Rebuilding a polynomial from its nonzero coefficients removes accumulated zero terms
+from its support bound and does not change its value.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{definition}[Computable substitution and differentiation]
+
+\label{def:compute-operations}
+
+\lean{CMvPolynomial.bind, CMvPolynomial.bind_single, CMvPolynomial.equiv_bind, CMvPolynomial.setZero, CMvPolynomial.pderiv, CMvPolynomial.pderiv_single, CMvPolynomial.equiv_pderiv}
+
+\leanok
+
+\uses{def:computable}
+
+Substitution is computed monomial by monomial and agrees under the algebra equivalence
+with polynomial evaluation. Setting a variable to zero is a special substitution.
+The derivative sends $rx^s$ to $r s_i x^{s-e_i}$, and agrees with formal partial
+differentiation under the equivalence.
+
+\end{definition}
+
+\begin{definition}[Computable matrix polynomials]
+
+\label{def:compute-matrices}
+
+\lean{CMvPolynomial.rayleighDiff, CMvPolynomial.resultant, CMvPolynomial.charmatrix, CMvPolynomial.detPoly, CMvPolynomial.adjPoly, CMvPolynomial.sameFiber}
+
+\leanok
+
+\uses{def:compute-operations}
+
+The computation model supplies Rayleigh differences, degree-one resultants,
+$\operatorname{diag}(X)+A$, its determinant and adjugate, and a Boolean test for equality
+of determinantal polynomials. Coefficients may be exact computable rings such as the
+rationals. Matrix operations use Mathlib's determinant and adjugate algorithms.
+
+\end{definition}
+
+\begin{lemma}[Correctness of the computable operations]
+
+\label{lem:compute-correct}
+
+\lean{CMvPolynomial.equiv_setZero, CMvPolynomial.equiv_rayleighDiff, CMvPolynomial.equiv_charmatrix, CMvPolynomial.equiv_resultant, CMvPolynomial.equiv_detPoly, CMvPolynomial.equiv_adjPoly, CMvPolynomial.sameFiber_eq_true_iff_detPoly_eq}
+
+\leanok
+
+\uses{def:compute-matrices,def:setzero,def:resultant,def:adjpoly}
+
+Transport through the algebra equivalence agrees with the mathematical specialization,
+Rayleigh difference, characteristic matrix, resultant, determinantal polynomial and
+polynomial adjugate. The Boolean comparison returns true exactly when $f_A=f_B$.
+This certificate does not use the unfinished principal-minor coefficient theorem;
+interpreting the Boolean test as principal-minor equality still uses
+Lemma~\ref{lem:fiber-poly}.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{definition}[Exact executable examples]
+
+\label{def:compute-examples}
+
+\lean{CMvPolynomial.Examples.A, CMvPolynomial.Examples.B, CMvPolynomial.Examples.D, CMvPolynomial.Examples.cutA, CMvPolynomial.Examples.cutB}
+
+\leanok
+
+\uses{lem:compute-correct,def:cut-swap}
+
+Two rational two-by-two matrices related by diagonal conjugation have equal determinantal
+polynomials; a third with a different off-diagonal product does not. Guards verify the
+polynomial $x_0x_1+4x_0+x_1-2$, its derivative, specialization, Rayleigh difference,
+a resultant and an adjugate entry, and normalization. A four-by-four pair formed by a
+cut transpose has equal determinantal polynomials. Further guards check the empty
+determinant and differentiation of $x_0^3$. The five matrices are exported definitions.
+
+\end{definition}
+
+\section{Problem-set results and alternative relations}
+
+\begin{definition}[Independent row and column scaling]
+
+\label{def:two-sided}
+
+\lean{Matrix.TwoSidedDiagEquiv, Matrix.TwoSidedDiagEquiv.equivalence, Matrix.TwoSidedDiagEquiv.refl, Matrix.TwoSidedDiagEquiv.symm, Matrix.TwoSidedDiagEquiv.trans, Matrix.twoSidedDiagEquivSetoid, Matrix.TwoSidedDiagEquiv.transpose, Matrix.TwoSidedDiagEquivUpToTranspose, Matrix.TwoSidedDiagEquivUpToTranspose.equivalence, Matrix.TwoSidedDiagEquivUpToTranspose.refl, Matrix.TwoSidedDiagEquivUpToTranspose.symm, Matrix.TwoSidedDiagEquivUpToTranspose.trans, Matrix.TwoSidedDiagEquiv.twoSidedDiagEquivUpToTranspose, Matrix.twoSidedDiagEquivUpToTransposeSetoid}
+
+\leanok
+
+The alternative relation is
+\[ M=\operatorname{diag}(l)N\operatorname{diag}(r) \]
+for
+independent families of units $l,r$, allowing rectangular matrices. It is an equivalence
+relation and is preserved by transpose. For square matrices its closure under transpose
+is also an equivalence relation. Both have the reflexive, symmetric, transitive and
+setoid APIs, and the first relation embeds in the second.
+This is a different relation from diagonal conjugacy in the principal-minor theorem.
+
+\end{definition}
+
+\begin{lemma}[Entries of diagonal conjugation]
+
+\label{lem:diag-conj-entry}
+
+\lean{diag_conj_apply}
+
+\leanok
+
+For a vector $d$ over a field, the entry formula is
+\[ (\operatorname{diag}(d)A\operatorname{diag}(d^{-1}))_{ij}=d_iA_{ij}d_j^{-1}. \]
+The entry formula itself does not need nonzero entries in $d$.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{lemma}[Repeated rows, adjugates and inverses]
+
+\label{lem:bach}
+
+\lean{BachWarmup.det_updateRow_eq_zero, BachWarmup.adj, BachWarmup.adj_eq_adjugate, BachWarmup.mul_adj, BachWarmup.exists_inverse_iff_isUnit_det}
+
+\leanok
+
+Replacing one row by a distinct existing row gives determinant zero.
+For indices $\{0,\ldots,n\}$, the cofactor definition
+$\operatorname{adj}(A)_{ij}=(-1)^{i+j}\det A[\widehat{j},\widehat{i}]$ agrees with Mathlib's
+adjugate and satisfies $A\operatorname{adj}(A)=\det(A)I$.
+Over a commutative ring, a square matrix has a two-sided inverse exactly when its
+determinant is a unit.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+Use determinant alternation for equal rows, the cofactor formula for the adjugate,
+and the adjugate inverse when the determinant is a unit.
+
+\end{proof}
+
+\begin{definition}[Principal minors and mixed rows]
+
+\label{def:diagonal-expansion}
+
+\lean{DetDiagonal.principalMinor, DetDiagonal.mixRows}
+
+\leanok
+
+In this separate namespace, principal minors are determinants of finite principal
+submatrices. The matrix $\operatorname{mixRows}(S,M,N)$ uses rows of $M$ in $S$ and
+rows of $N$ outside $S$.
+
+\end{definition}
+
+\begin{lemma}[Determinants of mixed rows]
+
+\label{lem:mixed-rows}
+
+\lean{DetDiagonal.row_diagonal_eq_smul_row_one, DetDiagonal.det_of_rows, DetDiagonal.det_mixRows_one, DetDiagonal.det_mixRows_diagonal}
+
+\leanok
+
+\uses{def:diagonal-expansion}
+
+A diagonal row is a scalar multiple of the corresponding identity row. The determinant
+is the alternating multilinear map on its row family. Mixing identity rows in $S$ with
+rows of $A$ gives $A_{S^c}$. Mixing diagonal rows instead gives
+$A_{S^c}\prod_{i\in S}x_i$.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{theorem}[Determinant after adding a diagonal]
+
+\label{thm:diagonal-expansion}
+
+\lean{DetDiagonal.det_add_diagonal_formula}
+
+\leanok
+
+\uses{lem:mixed-rows}
+
+For arbitrary $x:I\to R$,
+\[ \det(A+\operatorname{diag}(x))=\sum_{S\subseteq I}A_{S^c}\prod_{i\in S}x_i. \]
+This completed identity is a second route toward the draft polynomial coefficient formula:
+one must still specialize the coefficients to polynomials and extract the squarefree coefficient.
+
+\end{theorem}
+
+\begin{proof}
+
+\leanok
+
+Expand the determinant multilinearly in the sum of the original and diagonal row
+families. Index the choices by subsets $S$, then evaluate each mixed-row determinant.
+
+\end{proof}
+
+\begin{theorem}[Generalized Laplace on a finite ordinal]
+
+\label{thm:fin-laplace}
+
+\lean{Matrix.card_compl_fin, Matrix.det_eq_sum_neg_one_pow_mul_det_mul_det_fin}
+
+\leanok
+
+\uses{thm:generalized-laplace}
+
+For $I=\{0,\ldots,N-1\}$ and $|S|=k$, one has $|S^c|=N-k$ and the increasingly
+indexed expansion
+\[ \det A=\sum_{|T|=k}(-1)^{\sum_{i\in S}i+\sum_{j\in T}j}
+ \det A[S,T]\det A[S^c,T^c]. \]
+This is the paper's finite-ordinal version of the general library theorem.
+
+\end{theorem}
+
+\begin{proof}
+
+\leanok
+
+Specialize the linearly ordered formula to a finite ordinal, where position equals value.
+
+\end{proof}
+
+\begin{definition}[Display instance]
+
+\label{def:display-instance}
+
+\lean{instReprCMvPolynomialOfDecidableEq}
+
+\leanok
+
+\uses{def:computable}
+
+The representation instance prints terms with nonzero coefficients and their exponents.
+
+Term order is unspecified. This instance is unsafe and is used only for display.
+
+\end{definition}

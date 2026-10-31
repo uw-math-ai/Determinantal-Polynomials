@@ -1,0 +1,47 @@
+\chapter{Scope and current state}
+
+This project formalizes the characterization of fibers of the principal minor map in
+Al Ahmadieh, \emph{The fiber of the principal minor map} (2023), Theorem 4.1.
+For a finite index type $I$ and a field $F$, write $A_S=\det A[S,S]$ and
+\[ f_A=\det(\operatorname{diag}(x_i)_{i\in I}+A),\qquad
+   G_A=\operatorname{adj}(\operatorname{diag}(x_i)+A). \]
+The target identifies matrices whose principal minors determine them up to invertible
+diagonal conjugation and transpose.
+
+The library has two separate roots. \texttt{DetPoly} contains reusable matrix identities
+and the completed proof of Theorem 2.3, together with three unfinished statements toward
+Lemma 4.3. \texttt{LEAN\_Warmup} contains exploratory definitions, the draft statement of
+Theorem 4.1 and its intended prerequisites, problem-set proofs, and executable examples.
+Warmup modules may import the library; the library does not import the warmups.
+The module \texttt{LEAN\_Warmup.JoeWarmup} currently exports no declarations.
+
+Every explicitly named public definition and result in both roots is linked below,
+including helper APIs and examples. Private implementation lemmas and compiler-generated
+auxiliary declarations are not separate mathematical blueprint nodes.
+The computable polynomial display instance is recorded with its computation model.
+
+A Lean link records that a statement or definition exists. A proof marked complete records
+an actual proof without a transitive dependency on \texttt{sorryAx}; a statement with
+\texttt{sorry} is not a completed proof. In particular, a proved corollary of an unfinished
+coefficient theorem remains conditional. Dependency arrows describe mathematical
+prerequisites or the intended proof route for unfinished nodes; they are not a literal
+Lean import graph. Grouped nodes link all API declarations implementing that piece of mathematics.
+
+\section{Conventions and boundaries}
+
+Matrix identities are stated over commutative rings whenever possible, and use arbitrary
+finite index types rather than a fixed enumeration. Polynomial support restrictions are
+predicates in one ambient multivariate polynomial ring. The rank definition of a cut
+uses a field; ranks of polynomial matrices in Lemma 4.3 are taken over a fraction field.
+Irreducibility means strong connectivity for nonzero entries, including length-zero paths.
+Thus the one-by-one zero matrix is irreducible, and so is the empty matrix. The latter has
+$f_A=1$, so the polynomial irreducibility criterion needs a nonempty index type.
+
+The roadmap uses \emph{symmetrizable}: an invertible diagonal matrix $\mu$ makes
+$\mu A$ symmetric. Conjugacy to a symmetric matrix can require square roots; their
+equivalence is only proposed under an algebraically closed field hypothesis.
+The main theorem and cut construction are draft statements, including their exact field
+hypotheses. In the necessity argument, both diagonal conjugacy to $A$ and to $A^t$
+must be excluded. These mathematical checks remain part of completing the formalization.
+Sections 5--7 beyond the needed irreducibility criterion and symmetric-fiber lemma are
+outside the current target.

@@ -1,0 +1,455 @@
+\chapter{The DetPoly library}
+
+Unless otherwise specified, $R$ is a commutative ring and $I$ is a finite decidable index
+type. The results in this chapter are proved except for the final three cut statements.
+
+\section{Determinantal polynomials and matrix equivalence}
+
+\begin{definition}[Determinantal polynomial and Rayleigh difference]
+
+\label{def:detpoly}
+
+\lean{rayleighDiff, Matrix.mvCharmatrix, Matrix.detpoly}
+
+\leanok
+
+Set $M_A=\operatorname{diag}(x)+A$, $f_A=\det M_A$, and
+\[ \Delta_{ij}(f)=(\partial_i f)(\partial_j f)-f\partial_i\partial_j f. \]
+
+\end{definition}
+
+\begin{definition}[Cuts]
+
+\label{def:cut}
+
+\lean{Matrix.HasCut, Matrix.HasCut.compl}
+
+\leanok
+
+For $A$ over a field, a cut is a finite subset $X$ such that
+$2\leq |X|$, $2\leq |X^c|$ and both $A[X,X^c]$ and $A[X^c,X]$ have rank at most one.
+The definition is unchanged on replacing $X$ by $X^c$.
+
+\end{definition}
+
+\begin{definition}[Diagonal similarity and equivalence]
+
+\label{def:diag}
+
+\lean{Matrix.DiagSimilar, Matrix.DiagSimilar.equivalence, Matrix.DiagSimilar.transpose, Matrix.DiagEquivalent, Matrix.DiagEquivalent.equivalence, Matrix.DiagSimilar.refl, Matrix.DiagSimilar.symm, Matrix.DiagSimilar.trans, Matrix.diagSimilarSetoid, Matrix.DiagEquivalent.refl, Matrix.DiagEquivalent.symm, Matrix.DiagEquivalent.trans, Matrix.diagEquivalentSetoid, Matrix.DiagSimilar.diagEquivalent, Matrix.diagEquivalent_iff_diagSimilar_of_isSymm}
+
+\leanok
+
+Matrices are diagonally similar if $M=DND^{-1}$ for diagonal $D$ with unit entries.
+They are diagonally equivalent if $M$ is diagonally similar to $N$ or to $N^t$.
+Both relations are equivalence relations, with reflexivity, symmetry, transitivity and
+setoid APIs. Similarity is preserved by transpose and implies equivalence.
+For symmetric $N$, equivalence to $N$ reduces to similarity to $N$.
+
+\end{definition}
+
+\section{Irreducibility and block triangular matrices}
+
+\begin{definition}[Nonzero-entry quiver]
+
+\label{def:irred}
+
+\lean{Matrix.toQuiver', Matrix.IsIrred, Matrix.IsReducible}
+
+\leanok
+
+The quiver of $A$ has an arrow $i\to j$ exactly when $A_{ij}\ne0$.
+The matrix is irreducible if this quiver is strongly connected; reducible means its negation.
+No order or positivity on the coefficient type is needed.
+
+\end{definition}
+
+\begin{lemma}[Reducibility criteria]
+
+\label{lem:reducible}
+
+\lean{Matrix.isReducible_iff_exists_set, Matrix.isReducible_iff_exists_finset, Matrix.isReducible_iff_blockTriangular, Matrix.blockTriangular_of_subset}
+
+\leanok
+
+\uses{def:irred}
+
+A matrix is reducible exactly when there is a nonempty proper subset $S$ with
+$A_{ij}=0$ for $i\notin S$, $j\in S$. This is also expressed with finite subsets,
+and as block triangularity for a surjective labeling $I\to\{\mathrm{false},\mathrm{true}\}$.
+The same vanishing condition directly gives block triangularity for the membership label.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+If $i$ cannot reach $j$, take $S$ to be the vertices that can reach $j$.
+Conversely, a path into $S$ cannot start outside it. The Boolean labeling separates $S$
+and its complement.
+
+\end{proof}
+
+\section{Cofactors without an ordered index set}
+
+\begin{lemma}[Single-row and single-column Laplace expansion]
+
+\label{lem:laplace}
+
+\lean{Matrix.det_updateRow_single_self, Matrix.det_updateCol_single_self, Matrix.det_updateRow_single, Matrix.det_updateCol_single, Matrix.adjugate_apply_self, Matrix.adjugate_submatrix_apply_self, Matrix.adjugate_apply_eq_det_submatrix, Matrix.det_eq_sum_mul_det_submatrix_row, Matrix.det_eq_sum_mul_det_submatrix_col, Matrix.adjugate_apply_eq_det_submatrix_swap, Matrix.det_eq_sum_mul_det_submatrix_row_swap, Matrix.det_eq_sum_mul_det_submatrix_col_swap}
+
+\leanok
+
+Replacing row $i$ by its coordinate vector leaves the principal minor with $i$ deleted;
+the corresponding column statement also holds. General row and column deletion formulas
+use equivalences from an option type and the sign of the induced permutation.
+Diagonal adjugate entries are principal complementary minors; a second deletion gives
+the minor with two distinct indices removed. General adjugate entries and Laplace
+expansions are supplied in both equivalence and swap forms.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+Split off the replaced row and column by block triangularity, then transport the
+identity through index equivalences. Transposition supplies the column versions.
+
+\end{proof}
+
+\section{Generalized Laplace expansion}
+
+\begin{lemma}[Group determinant terms by image of a row set]
+
+\label{lem:laplace-group}
+
+\lean{Matrix.sum_sign_mul_prod_eq_det_mul_det, Matrix.sum_sign_mul_prod_eq_sign_mul_det_mul_det, Matrix.det_eq_sum_det_mul_det_row, Matrix.det_eq_sum_det_mul_det_col, Matrix.sign_mul_det_mul_det_eq_of_map_eq}
+
+\leanok
+
+The terms of the Leibniz determinant formula indexed by permutations preserving $S$
+sum to $\det A[S,S]\det A[S^c,S^c]$. Terms sending $S$ onto $\sigma(S)$ instead give
+\[ \operatorname{sgn}(\sigma)
+ \det A[S,\sigma(S)]\det A[S^c,\sigma(S^c)]. \]
+The signed product depends only on the image set. Summing over column subsets of size
+$|S|$ gives the row expansion; transposition gives the column expansion.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+Zero the off-block entries to identify the preserving-permutation sum with a block
+diagonal determinant. Group the full Leibniz sum by the image of $S$.
+
+\end{proof}
+
+\begin{definition}[Chosen permutations for complementary minors]
+
+\label{def:laplace-perm}
+
+\lean{Matrix.exists_perm_map_eq, Matrix.laplacePerm, Matrix.map_laplacePerm, Matrix.det_eq_sum_laplacePerm_row, Matrix.det_eq_sum_laplacePerm_col}
+
+\leanok
+
+\uses{lem:laplace-group}
+
+Equal-cardinality subsets admit a permutation sending one to the other.
+Choose such a permutation for each pair and obtain row and column Laplace expansions
+with these choices. No linear order on $I$ is required.
+
+\end{definition}
+
+\begin{lemma}[Signs and increasing enumerations]
+
+\label{lem:shuffle-sign}
+
+\lean{Matrix.sign_eq_prod_prod_lt, Matrix.sign_eq_of_strictMonoOn, Matrix.prod_orderEmbOfFin, Matrix.card_filter_lt_orderEmbOfFin, Matrix.prod_prod_ite_lt_mul, Matrix.card_compl_eq_of_card_eq}
+
+\leanok
+
+On a linearly ordered finite type, the sign of a permutation is a product of comparison
+signs. If it is increasing separately on a subset and its complement, only cross-block
+comparisons remain. Products and positions can be computed using increasing enumerations.
+The auxiliary cardinality and comparison-product identities supply the sign calculation.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{definition}[Order shuffle]
+
+\label{def:shuffle}
+
+\lean{Matrix.orderShuffle, Matrix.orderShuffle_orderEmbOfFin, Matrix.orderShuffle_orderEmbOfFin_compl, Matrix.map_orderShuffle, Matrix.sign_orderShuffle}
+
+\leanok
+
+\uses{lem:shuffle-sign}
+
+For $|S|=|T|$, the order shuffle sends the increasing enumeration of $S$ to that of $T$
+and likewise for their complements. It sends $S$ onto $T$ and its sign is
+$(-1)^{\sum_{a\in S}\operatorname{pos}(a)+\sum_{b\in T}\operatorname{pos}(b)}$,
+where $\operatorname{pos}(a)=|\{b:b<a\}|$.
+
+\end{definition}
+
+\begin{theorem}[Generalized Laplace expansion (Theorem 3.1)]
+
+\label{thm:generalized-laplace}
+
+\lean{Matrix.det_eq_sum_neg_one_pow_mul_det_mul_det}
+
+\leanok
+
+\uses{lem:laplace-group,def:shuffle}
+
+For increasingly indexed minors,
+\[ \det A=\sum_{|T|=|S|}(-1)^{\sum_{a\in S}\operatorname{pos}(a)+
+ \sum_{b\in T}\operatorname{pos}(b)}\det A[S,T]\det A[S^c,T^c]. \]
+
+\end{theorem}
+
+\begin{proof}
+
+\leanok
+
+Use the order shuffle in the arbitrary-permutation expansion and substitute its sign.
+
+\end{proof}
+
+\section{Desnanot--Jacobi and differentiation}
+
+\begin{lemma}[A two-element determinant block]
+
+\label{lem:pair-block}
+
+\lean{Matrix.det_toSquareBlockProp_pair}
+
+\leanok
+
+For distinct $i,j$, the determinant of the block on $\{i,j\}$ is
+$N_{ii}N_{jj}-N_{ij}N_{ji}$.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{theorem}[Desnanot--Jacobi identity]
+
+\label{thm:desnanot}
+
+\lean{Matrix.adjugate_mul_adjugate_sub_adjugate_mul_adjugate}
+
+\leanok
+
+\uses{lem:pair-block}
+
+For $i\ne j$, put $K=I\setminus\{i,j\}$. Then
+\[ \operatorname{adj}(M)_{ii}\operatorname{adj}(M)_{jj}
+ -\operatorname{adj}(M)_{ij}\operatorname{adj}(M)_{ji}
+ =\det(M)\det M[K,K]. \]
+
+\end{theorem}
+
+\begin{proof}
+
+\leanok
+
+Replace two columns of the identity by adjugate columns. Block triangular determinant
+formulas and $M\operatorname{adj}(M)=\det(M)I$ give the desired identity multiplied by
+$\det M$. Prove it for a generic matrix over an integral domain, cancel its nonzero
+determinant, and specialize to an arbitrary commutative ring.
+
+\end{proof}
+
+\begin{lemma}[Leibniz rule for products]
+
+\label{lem:leibniz}
+
+\lean{Derivation.leibniz_prod}
+
+\leanok
+
+For a derivation $D$ into a module,
+\[ D\left(\prod_{i\in S}a_i\right)=
+ \sum_{i\in S}\left(\prod_{j\in S\setminus\{i\}}a_j\right)\mathbin{\cdot}D(a_i). \]
+The coefficient action is scalar multiplication. The result works over commutative semirings.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{theorem}[Jacobi formula for a derivation]
+
+\label{thm:jacobi}
+
+\lean{Derivation.leibniz_det}
+
+\leanok
+
+\uses{lem:leibniz}
+
+For an algebra-valued derivation over commutative rings,
+\[ D(\det M)=\sum_i\det(M\text{ with row }i\text{ replaced by }D(M_{i,-})). \]
+
+\end{theorem}
+
+\begin{proof}
+
+\leanok
+
+Apply the finite-product Leibniz rule to every term in the permutation formula for the determinant.
+
+\end{proof}
+
+\begin{lemma}[Derivatives with an arbitrary variable labeling]
+
+\label{lem:partial-submatrix}
+
+\lean{pderiv_diagonal_X_add_apply, pderiv_det_diagonal_X_add, pderiv_det_diagonal_X_add_of_injective, pderiv_det_diagonal_X_add_of_notMem, Matrix.mvCharmatrix_submatrix}
+
+\leanok
+
+\uses{thm:jacobi,lem:laplace,def:detpoly}
+
+For $M=\operatorname{diag}(x_{v(l)})+B$, differentiating a row with respect to $x_i$
+gives its coordinate vector if $v(l)=i$, and zero otherwise. Consequently
+\[ \partial_i\det M=\sum_{l:v(l)=i}\operatorname{adj}(M)_{ll}. \]
+For injective $v$, the derivative at $v(k)$ is the $kk$ adjugate entry; outside the range
+of $v$ it is zero. Restriction of $M_A$ along an injective index map has this form.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{lemma}[First and second partial derivatives]
+
+\label{lem:detpoly-derivatives}
+
+\lean{pderiv_detpoly, pderiv_pderiv_detpoly, pderiv_pderiv_detpoly_self}
+
+\leanok
+
+\uses{lem:partial-submatrix}
+
+Writing $G=G_A$, one has $\partial_i f_A=G_{ii}$ and, for $i\ne j$,
+\[ \partial_i\partial_j f_A=\det M_A[I\setminus\{i,j\},I\setminus\{i,j\}]. \]
+Also $\partial_i^2 f_A=0$ over any commutative ring. In positive characteristic this
+last identity alone is not a degree characterization of multiaffinity.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{theorem}[Rayleigh identity (Theorem 2.3)]
+
+\label{thm:rayleigh}
+
+\lean{rayleighDiff_detpoly}
+
+\leanok
+
+\uses{thm:desnanot,lem:detpoly-derivatives}
+
+For every $i,j$,
+\[ \Delta_{ij}(f_A)=(G_A)_{ij}(G_A)_{ji}. \]
+For $i=j$ both sides equal $(G_A)_{ii}^2$.
+
+\end{theorem}
+
+\begin{proof}
+
+\leanok
+
+For distinct indices substitute the derivative formulas into Desnanot--Jacobi.
+For equal indices use $\partial_i^2f_A=0$.
+
+\end{proof}
+
+\section{Statements toward Lemma 4.3}
+
+\begin{lemma}[Nonzero cut blocks]
+
+\label{lem:cut-ranks}
+
+\lean{Matrix.isIrred_hasCut_rk1}
+
+\leanok
+
+\uses{def:cut,lem:reducible}
+
+If $A$ is irreducible and $X$ is a cut, both off-diagonal block ranks equal one.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished proof.}
+
+\begin{lemma}[Common factors of column-replacement minors]
+
+\label{lem:cut-minors}
+
+\lean{Matrix.hasCut_minors_multiples}
+
+\leanok
+
+\uses{lem:cut-ranks,thm:generalized-laplace}
+
+For an irreducible matrix with cut $X$, there are polynomials $a_i$ supported in
+$X\setminus\{i\}$ and scalars $c_j$ such that replacing column $i$ of $M_A[X,X]$
+by column $j\notin X$ gives determinant $c_j a_i$.
+The replacement is indexed by $X$, so its ordering sign is absorbed in $a_i$.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished proof.}
+
+\begin{lemma}[A cut persists in the adjugate]
+
+\label{lem:adj-cut}
+
+\lean{Matrix.hasCut_adjPoly_of_hasCut}
+
+\leanok
+
+\uses{def:cut,lem:cut-minors,lem:cut-factorization}
+
+An irreducible matrix with cut $X$ has the same cut in $G_A$, after mapping polynomial
+entries to the fraction field of $F[x_i:i\in I]$. Both cross-block ranks are at most one.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished proof.}

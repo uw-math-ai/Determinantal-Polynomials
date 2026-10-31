@@ -1,0 +1,567 @@
+\chapter{LEAN\_Warmup: definitions and the paper roadmap}
+
+The main draft is \texttt{LEAN\_Warmup.ClaudeMathlib}. Its declarations expose the
+intended mathematics, including external results left as \texttt{sorry} theorems.
+Some old draft statements duplicate results now proved in \texttt{DetPoly}; their own
+proofs have not yet been replaced. The following nodes preserve that distinction.
+
+\section{Principal minors and fibers}
+
+\begin{lemma}[Entries of diagonal rescaling]
+
+\label{lem:diag-entry}
+
+\lean{diagonal_mul_mul_diagonal_apply}
+
+\leanok
+
+For arbitrary diagonal factors, the entry formula is
+\[ (\operatorname{diag}(a)N\operatorname{diag}(b))_{ij}=a_iN_{ij}b_j. \]
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{definition}[The principal minor map]
+
+\label{def:fiber}
+
+\lean{Matrix.principalSubmatrix, Matrix.principalSubmatrix_apply, Matrix.principalMinor, Matrix.principalMinor_empty, Matrix.principalMinors, Matrix.pmFiber, Matrix.HasTrivialFiber}
+
+\leanok
+
+The principal submatrix is restriction of both indices to a subset.
+For a finite subset $S$, its determinant is $A_S$, with $A_\varnothing=1$.
+The principal minor map is $A\mapsto(S\mapsto A_S)$. Its fiber at $A$ consists of
+matrices with the same principal minors. The predicate ``trivial fiber'' says every
+matrix in that fiber is diagonally equivalent to $A$.
+
+\end{definition}
+
+\begin{lemma}[Diagonal equivalence preserves principal minors]
+
+\label{lem:diag-fiber}
+
+\lean{Matrix.DiagEquivalent.mem_pmFiber, Matrix.DiagSimilar.mem_pmFiber}
+
+\leanok
+
+\uses{def:fiber,def:diag}
+
+Diagonal equivalence, and hence diagonal similarity, places a matrix in the same
+principal minor fiber.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+Restrict diagonal conjugation to each principal submatrix; the determinants of the
+unit diagonal factors cancel. Transposition preserves determinants.
+
+\end{proof}
+
+\begin{lemma}[Outer-product criterion]
+
+\label{lem:rank-one}
+
+\lean{Matrix.rank_le_one_iff_eq_vecMulVec}
+
+\leanok
+
+A matrix over a field has rank at most one exactly when it is an outer product $uv^t$.
+The draft supplies the named criterion used in cut factorizations.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{definition}[Symmetry under diagonal operations]
+
+\label{def:symmetrizable}
+
+\lean{Matrix.IsDiagSimilarSymm, Matrix.IsSymmetrizable, Matrix.IsDiagSimilarSymm.isSymmetrizable}
+
+\leanok
+
+\uses{def:diag}
+
+A matrix is diagonally similar to a symmetric matrix if $A=DSD^{-1}$ for symmetric $S$.
+It is symmetrizable if $\operatorname{diag}(\mu)A$ is symmetric for a family of units $\mu$.
+The first condition implies the second, using $D^{-2}$.
+
+\end{definition}
+
+\begin{lemma}[Converse over an algebraically closed field]
+
+\label{lem:square-roots}
+
+\lean{Matrix.IsSymmetrizable.isDiagSimilarSymm}
+
+\leanok
+
+\uses{def:symmetrizable}
+
+Over an algebraically closed field, a symmetrizable matrix is diagonally similar to a
+symmetric matrix. The proposed proof takes square roots of the diagonal symmetrizer.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished proof.}
+
+\section{Support, multiaffinity and specialization}
+
+\begin{lemma}[Supported polynomials]
+
+\label{lem:support}
+
+\lean{mem_supported_iff_degreeOf_eq_zero, mem_supported_compl_singleton_iff, mem_supported_compl_pair_iff, mem_supported_of_degreeOf_le, mem_supported_of_dvd, mem_supported_of_mul_mem}
+
+\leanok
+
+A polynomial belongs to $R[x_i:i\in S]$ exactly when its degree in every variable
+outside $S$ is zero. Special cases remove one or two variables. Operations that do not
+increase individual degrees preserve this support restriction. Over a domain, divisors
+of a nonzero supported polynomial are supported; this also applies to either factor
+of a nonzero supported product.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{definition}[Multiaffinity and squarefree exponent vectors]
+
+\label{def:multiaffine}
+
+\lean{IsMultiaffine, isMultiaffine_iff_mem_restrictDegree, Finset.exponent}
+
+\leanok
+
+A polynomial is multiaffine when its degree in each variable is at most one,
+equivalently it belongs to the corresponding degree restriction submodule.
+For a finite subset $S$, let $e_S=\sum_{i\in S}e_i$, the exponent of $\prod_{i\in S}x_i$.
+
+\end{definition}
+
+\begin{lemma}[Partial differentiation and support]
+
+\label{lem:affine-derivative}
+
+\lean{divMonomial_single_eq_pderiv, pderiv_mem_supported, pderiv_eq_zero_of_mem_supported, degreeOf_pderiv_le, pderiv_mem_supported_of_mem}
+
+\leanok
+
+\uses{lem:support}
+
+For a polynomial affine in $x_k$, division by the monomial $x_k$ is $\partial_k$,
+and the derivative is independent of $x_k$. A polynomial independent of $x_k$ has
+zero $k$th derivative. Partial differentiation does not increase individual degrees
+and preserves any existing support restriction.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{definition}[Specializing a variable to zero]
+
+\label{def:setzero}
+
+\lean{setZero, setZero_eq_modMonomial, coeff_setZero, setZero_mem_supported, setZero_of_mem_supported}
+
+\leanok
+
+\uses{lem:support}
+
+The algebra homomorphism $Z_k$ substitutes zero for $x_k$ and leaves all other variables
+fixed. It equals remainder modulo $x_k$, and its coefficient at exponent $t$ is the
+original coefficient if $t(k)=0$, otherwise zero. Its image is independent of $x_k$,
+and it fixes polynomials already independent of $x_k$.
+
+\end{definition}
+
+\begin{lemma}[Affine decomposition]
+
+\label{lem:affine-decompose}
+
+\lean{eq_setZero_add_X_mul_pderiv}
+
+\leanok
+
+\uses{def:setzero,lem:affine-derivative}
+
+If $\deg_k p\leq1$, then $p=Z_kp+x_k\partial_kp$. Both coefficients on the right
+are independent of $x_k$.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\section{Draft polynomial matrix statements}
+
+\begin{definition}[Polynomial adjugate]
+
+\label{def:adjpoly}
+
+\lean{Matrix.adjPoly}
+
+\leanok
+
+\uses{def:detpoly}
+
+The draft names $G_A=\operatorname{adj}(M_A)$ as the polynomial adjugate.
+
+\end{definition}
+
+\begin{lemma}[Coefficients of the determinantal polynomial]
+
+\label{lem:coeff-draft}
+
+\lean{Matrix.coeff_detpoly, Matrix.detpoly_isMultiaffine, Matrix.coeff_univ_detpoly}
+
+\leanok
+
+\uses{def:detpoly,def:fiber,def:multiaffine}
+
+The coefficient of $x^{e_S}$ in $f_A$ is the complementary principal minor $A_{S^c}$,
+and $f_A$ is multiaffine. In particular the coefficient of $\prod_{i\in I}x_i$ is one.
+The last assertion is proved from the coefficient formula in Lean, so it still depends
+on that unfinished formula.
+
+\end{lemma}
+
+\noindent\emph{Status: coefficient and multiaffinity proofs unfinished; leading-coefficient proof conditional.}
+
+\begin{lemma}[Polynomial equality detects the fiber]
+
+\label{lem:fiber-poly}
+
+\lean{Matrix.detpoly_eq_iff}
+
+\leanok
+
+\uses{lem:coeff-draft}
+
+One has $f_A=f_B$ exactly when $B$ belongs to the principal minor fiber of $A$.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished proof.}
+
+\begin{lemma}[Draft derivative and adjugate properties]
+
+\label{lem:adj-properties}
+
+\lean{Matrix.pderiv_detpoly, Matrix.adjPoly_mem_supported, Matrix.adjPoly_isMultiaffine, Matrix.adjPoly_diag_conj}
+
+\leanok
+
+\uses{def:adjpoly,lem:detpoly-derivatives,def:multiaffine}
+
+The draft asserts $\partial_i f_A=(G_A)_{ii}$; off-diagonal $(G_A)_{ij}$ is supported
+outside $\{i,j\}$; every adjugate entry is multiaffine; and diagonal conjugation
+rescales the adjugate entries in the same way as the matrix entries.
+The first assertion already has a completed library proof in Lemma~\ref{lem:detpoly-derivatives},
+but this draft declaration still contains \texttt{sorry}.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished draft proofs.}
+
+\begin{definition}[Degree-one resultant]
+
+\label{def:resultant}
+
+\lean{res, res_mul_left}
+
+\leanok
+
+\uses{def:setzero}
+
+Define
+\[ \operatorname{res}_k(g,h)=Z_k(g)\partial_kh-Z_k(h)\partial_kg. \]
+A factor independent of $x_k$ pulls out of the first argument.
+This is the degree-one operation used in the paper.
+
+\end{definition}
+
+\begin{lemma}[Draft adjugate identities]
+
+\label{lem:rayleigh-draft}
+
+\lean{Matrix.adjugate_mul_adjugate_sub, Matrix.rayleighDiff_detpoly, Matrix.res_adjPoly}
+
+\leanok
+
+\uses{def:resultant,thm:desnanot,thm:rayleigh,def:adjpoly}
+
+The draft includes the adjugate form of Desnanot--Jacobi and
+$\Delta_{ij}(f_A)=(G_A)_{ij}(G_A)_{ji}$. Both are already proved in the library as
+Theorems~\ref{thm:desnanot} and~\ref{thm:rayleigh}, but these draft declarations remain unfinished.
+The further resultant identity, for pairwise distinct indices, is
+$\operatorname{res}_k((G_A)_{ij},f_A)=(G_A)_{ik}(G_A)_{kj}$.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished draft proofs.}
+
+\section{External inputs}
+
+\begin{lemma}[Nonzero adjugate entries (Lemma 4.2)]
+
+\label{ext:nonzero}
+
+\lean{Matrix.adjPoly_ne_zero}
+
+\leanok
+
+\uses{def:irred,def:adjpoly}
+
+If $A$ is irreducible, every $(G_A)_{ij}$ is a nonzero polynomial.
+External input: Hartfiel--Loewy (1984), Theorem 1.
+
+\end{lemma}
+
+\noindent\emph{Status: external theorem, proof omitted.}
+
+\begin{lemma}[Determinantal representation (Theorem 2.1)]
+
+\label{ext:recognition}
+
+\lean{exists_detpoly_eq_of_rayleigh}
+
+\leanok
+
+\uses{def:multiaffine,def:resultant,def:detpoly}
+
+Let $f$ be multiaffine with coefficient one at $\prod_{i\in I}x_i$.
+Suppose $g_{ij}$ are multiaffine, supported outside $\{i,j\}$ for $i\ne j$, and satisfy
+\[ \Delta_{ij}(f)=g_{ij}g_{ji},\qquad
+   \operatorname{res}_k(g_{ij},f)=g_{ik}g_{kj} \]
+for the respective distinct indices. Then there is $B$ with $f_B=f$ and
+$(G_B)_{ij}=g_{ij}$ for $i\ne j$.
+External input: Al Ahmadieh--Vinzant (2022), Theorem 3.1 and Remark 3.4.
+The current draft has no irreducibility hypothesis on $f$ and requires multiaffinity
+also for the diagonal members of the supplied family. Its strong adjugate conclusion
+is needed for the cut swap.
+
+\end{lemma}
+
+\noindent\emph{Status: external theorem, proof omitted.}
+
+\begin{lemma}[No cut implies a trivial fiber]
+
+\label{ext:no-cut}
+
+\lean{Matrix.hasTrivialFiber_of_noCut}
+
+\leanok
+
+\uses{def:irred,def:cut,def:fiber}
+
+For $|I|\geq4$, an irreducible matrix with no cut has a trivial principal minor fiber.
+External input: Loewy (1986), Theorem 1.
+
+\end{lemma}
+
+\noindent\emph{Status: external theorem, proof omitted.}
+
+\section{Cut factorization and the main theorem}
+
+\begin{lemma}[Separated adjugate factors (Lemma 4.3)]
+
+\label{lem:cut-factorization}
+
+\lean{Matrix.adjPoly_eq_mul_of_hasCut}
+
+\leanok
+
+\uses{lem:cut-minors,lem:rank-one,ext:nonzero,thm:generalized-laplace}
+
+For an irreducible matrix with a cut $X$ and $|I|\geq4$, there are nonzero factors
+$a_i$ supported in $X\setminus\{i\}$ and $b_j$ supported in $X^c\setminus\{j\}$ with
+$(G_A)_{ij}=a_ib_j$ for $i\in X$, $j\notin X$. Apply this again to $X^c$ for the reverse block.
+The paper's signs are absorbed in the factors.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished proof.}
+
+\begin{lemma}[Proportionality implies symmetrizability (Lemma 4.4)]
+
+\label{lem:proportional}
+
+\lean{Matrix.isSymmetrizable_of_adjPoly_proportional}
+
+\leanok
+
+\uses{lem:cut-factorization,lem:rayleigh-draft,def:symmetrizable}
+
+If $A$ is irreducible with a cut and $(G_A)_{ij}=\alpha_{ij}(G_A)_{ji}$ for scalars
+$\alpha_{ij}\in F$ across that cut, then $A$ is symmetrizable. The intended proof
+propagates proportionality with the Rayleigh and resultant identities.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished proof.}
+
+\begin{definition}[Cut swap]
+
+\label{def:cut-swap}
+
+\lean{cutSwap}
+
+\leanok
+
+Write $G=\left(\begin{smallmatrix}P&ab^t\\cd^t&Q\end{smallmatrix}\right)$ along $X$.
+Define
+\[ H=\begin{pmatrix}P&ac^t\\bd^t&Q^t\end{pmatrix}. \]
+This convention transposes the complementary diagonal block.
+
+\end{definition}
+
+\begin{lemma}[Realization of the cut swap (Lemma 4.5)]
+
+\label{lem:cut-construction}
+
+\lean{Matrix.exists_adjPoly_eq_cutSwap}
+
+\leanok
+
+\uses{def:cut-swap,lem:cut-factorization,ext:recognition,lem:rayleigh-draft}
+
+Under the cut, irreducibility and separated-support hypotheses, the swapped matrix $H$
+is the off-diagonal polynomial adjugate of a matrix $B$ with $f_B=f_A$.
+The current statement takes the four factors as inputs. The intended proof verifies
+the recognition theorem's Rayleigh, support, multiaffinity and resultant conditions.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished proof.}
+
+\begin{lemma}[Reducible matrices have nontrivial fibers]
+
+\label{lem:reducible-fiber}
+
+\lean{Matrix.IsReducible.not_hasTrivialFiber}
+
+\leanok
+
+\uses{lem:reducible,def:fiber,def:diag}
+
+If $A$ is reducible, its principal minor fiber is nontrivial. This statement has no
+$|I|\geq4$ hypothesis. The proposed construction changes a strictly off-diagonal block
+of a block upper triangular matrix, preserving its principal minors and changing its
+zero pattern to prevent diagonal equivalence.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished proof.}
+
+\begin{lemma}[Polynomial irreducibility (Lemma 5.1)]
+
+\label{lem:irred-poly}
+
+\lean{Matrix.isIrred_iff_irreducible_detpoly}
+
+\leanok
+
+\uses{ext:nonzero,thm:rayleigh,lem:22,lem:reducible,lem:coeff-draft}
+
+For nonempty $I$, $A$ is irreducible exactly when $f_A$ is an irreducible polynomial.
+The forward route uses nonzero adjugate entries, the Rayleigh identity and the
+factorization criterion of Lemma~\ref{lem:22}. The reverse route uses block triangular determinants.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished proof.}
+
+\begin{lemma}[Symmetrizable fibers (Lemma 6.1)]
+
+\label{lem:symmetric-fiber}
+
+\lean{Matrix.IsSymmetrizable.hasTrivialFiber_iff}
+
+\leanok
+
+\uses{def:symmetrizable,lem:reducible-fiber,thm:rayleigh,lem:rayleigh-draft,lem:fiber-poly}
+
+For a symmetrizable matrix with $|I|\geq4$, the principal minor fiber is trivial
+exactly when the matrix is irreducible. The proposed sufficiency proof compares
+factorizations of $\Delta_{ij}(f_A)$ and uses resultant identities to reconstruct
+consistent diagonal scaling factors.
+
+\end{lemma}
+
+\noindent\emph{Status: unfinished proof.}
+
+\begin{theorem}[Principal minor fibers (Theorem 4.1)]
+
+\label{thm:main}
+
+\lean{Matrix.hasTrivialFiber_iff}
+
+\leanok
+
+\uses{lem:reducible-fiber,lem:cut-construction,lem:proportional,ext:no-cut,lem:symmetric-fiber,lem:fiber-poly}
+
+For $|I|\geq4$, the draft target over a field is
+\[ A\text{ has trivial fiber}\quad\Longleftrightarrow\quad
+ A\text{ is irreducible}\ \text{ and }\quad
+ \bigl(A\text{ is symmetrizable or }A\text{ has no cut}\bigr). \]
+For necessity, first exclude reducibility. With an irreducible nonsymmetrizable matrix
+and a cut, use the cut swap to construct a second matrix in the fiber. If this matrix
+is diagonally equivalent to $A$, interchange the other pair of factors and try again;
+proportionality in both attempts should force symmetrizability. Both transpose and
+nontranspose alternatives in diagonal equivalence must be handled.
+For sufficiency, use the no-cut external theorem or the symmetrizable-fiber lemma.
+
+\end{theorem}
+
+\noindent\emph{Status: unfinished draft theorem.}
+
+\begin{definition}[Example 4.6]
+
+\label{def:example46}
+
+\lean{ex46A, ex46B}
+
+\leanok
+
+\uses{def:fiber}
+
+The draft supplies the two rational four-by-four matrices from Example 4.6.
+An exact \texttt{\#guard} checks equality of all principal minors.
+This is an executable example, not a proof of the general construction.
+
+\end{definition}
