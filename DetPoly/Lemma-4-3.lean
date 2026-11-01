@@ -38,14 +38,32 @@ lemma Matrix.hasCut_adjPoly_of_hasCut {A : Matrix n n 𝔽} (hA : A.IsIrred) {X 
       (algebraMap (MvPolynomial n 𝔽) (FractionRing (MvPolynomial n 𝔽)))).HasCut X := by
   sorry
 
+lemma rank_eq_zero_entry {m k : Type*} [Fintype m] [Fintype k]
+    (M : Matrix m k 𝔽) (h : M.rank = 0) (i : m) (j : k) : M i j = 0 := by
+  by_contra hij
+  have hpos : 0 < M.rank := by
+    rw [Matrix.rank_eq_finrank_span_cols]
+    apply Module.finrank_pos_iff_exists_ne_zero.mpr
+    refine ⟨⟨M.col j, Submodule.subset_span ⟨j, rfl⟩⟩, ?_⟩
+    intro hc
+    apply hij
+    have := congrArg (fun v : Submodule.span 𝔽 (Set.range M.col) => (v : m → 𝔽) i) hc
+    simpa using this
+  omega
+
 /-- If `A` is irreducible and `X` is a rank-one cut, then the ranks of
 `M[X, Xᶜ]` and `M[Xᶜ, X]` are both exactly `1`
 -/
 lemma Matrix.isIrred_hasCut_rk1 {A : Matrix n n 𝔽} (hA : A.IsIrred)
     {X : Finset n} (hX : A.HasCut X) :
-    ((A.submatrix ((↑) : X → n) ((↑) : ↥Xᶜ → n)).rank = 1) ∧
-    ((A.submatrix ((↑) : ↥Xᶜ → n) ((↑) : X → n)).rank = 1)
-    := sorry
+    ((A.finsetSubmatrix X Xᶜ).rank = 1) ∧
+    ((A.finsetSubmatrix Xᶜ X).rank = 1)
+    := ⟨by
+      obtain ⟨-, -, hUpperBd, -⟩ := hX
+      have hLowerBd : (A.finsetSubmatrix X Xᶜ).rank ≥ 1 := sorry
+      exact le_antisymm hUpperBd hLowerBd
+    ,
+    sorry⟩
 
 /-- second statement of lemma 4.3: If `rk M[X, Xᶜ] = 1`, then for all
 `i ∈ X`, there exists `a_i ∈ 𝔽[x_k : k ∈ X ∖ {i}]` such that for all `j in Xᶜ`,
