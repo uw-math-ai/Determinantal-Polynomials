@@ -38,18 +38,18 @@ lemma Matrix.hasCut_adjPoly_of_hasCut {A : Matrix n n 𝔽} (hA : A.IsIrred) {X 
       (algebraMap (MvPolynomial n 𝔽) (FractionRing (MvPolynomial n 𝔽)))).HasCut X := by
   sorry
 
-lemma rank_eq_zero_entry {m k : Type*} [Fintype m] [Fintype k]
-    (M : Matrix m k 𝔽) (h : M.rank = 0) (i : m) (j : k) : M i j = 0 := by
-  by_contra hij
-  have hpos : 0 < M.rank := by
-    rw [Matrix.rank_eq_finrank_span_cols]
-    apply Module.finrank_pos_iff_exists_ne_zero.mpr
-    refine ⟨⟨M.col j, Submodule.subset_span ⟨j, rfl⟩⟩, ?_⟩
-    intro hc
-    apply hij
-    have := congrArg (fun v : Submodule.span 𝔽 (Set.range M.col) => (v : m → 𝔽) i) hc
-    simpa using this
-  omega
+-- lemma rank_eq_zero_entry {m k : Type*} [Fintype m] [Fintype k]
+--     (M : Matrix m k 𝔽) (h : M.rank = 0) (i : m) (j : k) : M i j = 0 := by
+--   by_contra hij
+--   have hpos : 0 < M.rank := by
+--     rw [Matrix.rank_eq_finrank_span_cols]
+--     apply Module.finrank_pos_iff_exists_ne_zero.mpr
+--     refine ⟨⟨M.col j, Submodule.subset_span ⟨j, rfl⟩⟩, ?_⟩
+--     intro hc
+--     apply hij
+--     have := congrArg (fun v : Submodule.span 𝔽 (Set.range M.col) => (v : m → 𝔽) i) hc
+--     simpa using this
+--   omega
 
 /-- If `A` is irreducible and `X` is a rank-one cut, then the ranks of
 `M[X, Xᶜ]` and `M[Xᶜ, X]` are both exactly `1`
@@ -59,8 +59,24 @@ lemma Matrix.isIrred_hasCut_rk1 {A : Matrix n n 𝔽} (hA : A.IsIrred)
     ((A.finsetSubmatrix X Xᶜ).rank = 1) ∧
     ((A.finsetSubmatrix Xᶜ X).rank = 1)
     := ⟨by
-      obtain ⟨-, -, hUpperBd, -⟩ := hX
-      have hLowerBd : (A.finsetSubmatrix X Xᶜ).rank ≥ 1 := sorry
+      obtain ⟨hXcard, hXcCard, hUpperBd, -⟩ := hX
+      have hLowerBd : (A.finsetSubmatrix X Xᶜ).rank ≥ 1 := by
+        obtain ⟨i, hi, j, hj, hij⟩ : ∃ i ∈ X, ∃ j ∈ Xᶜ, A i j ≠ 0 := by
+          by_contra hall
+          push Not at hall
+          have hne : Xᶜ.Nonempty := Finset.card_pos.mp (by omega)
+          have hnu : Xᶜ ≠ Finset.univ := by
+            intro h
+            rw [Finset.compl_eq_univ_iff] at h
+            simp [h] at hXcard
+          exact (Matrix.isReducible_iff_exists_finset.mpr
+            ⟨Xᶜ, hne, hnu, fun i hi j hj => hall i (by simpa using hi) j hj⟩) hA
+        rw [Matrix.rank_eq_finrank_span_cols]
+        refine Module.finrank_pos_iff_exists_ne_zero.mpr ⟨⟨_, Submodule.subset_span ⟨⟨j, hj⟩, rfl⟩⟩, ?_⟩
+        intro hc
+        apply hij
+        have := congrArg (fun v : Submodule.span 𝔽 (Set.range _) => (v : X → 𝔽) ⟨i, hi⟩) hc
+        simpa using this
       exact le_antisymm hUpperBd hLowerBd
     ,
     sorry⟩
