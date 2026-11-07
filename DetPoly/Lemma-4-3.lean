@@ -57,47 +57,29 @@ lemma Matrix.hasCut_adjPoly_of_hasCut {A : Matrix n n 𝔽} (hA : A.IsIrred) {X 
 lemma Matrix.isIrred_hasCut_rk1 {A : Matrix n n 𝔽} (hA : A.IsIrred)
     {X : Finset n} (hX : A.HasCut X) :
     ((A.finsetSubmatrix X Xᶜ).rank = 1) ∧
-    ((A.finsetSubmatrix Xᶜ X).rank = 1)
-    := ⟨by
-      obtain ⟨hXcard, hXcCard, hUpperBd, -⟩ := hX
-      have hLowerBd : (A.finsetSubmatrix X Xᶜ).rank ≥ 1 := by
-        obtain ⟨i, hi, j, hj, hij⟩ : ∃ i ∈ X, ∃ j ∈ Xᶜ, A i j ≠ 0 := by
-          by_contra hall
-          push Not at hall
-          have hne : Xᶜ.Nonempty := Finset.card_pos.mp (by omega)
-          have hnu : Xᶜ ≠ Finset.univ := by
-            intro h
-            rw [Finset.compl_eq_univ_iff] at h
-            simp [h] at hXcard
-          exact (Matrix.isReducible_iff_exists_finset.mpr
-            ⟨Xᶜ, hne, hnu, fun i hi j hj => hall i (by simpa using hi) j hj⟩) hA
-        rw [Matrix.rank_eq_finrank_span_cols]
-        refine Module.finrank_pos_iff_exists_ne_zero.mpr ⟨⟨_, Submodule.subset_span ⟨⟨j, hj⟩, rfl⟩⟩, ?_⟩
-        intro hc
-        apply hij
-        have := congrArg (fun v : Submodule.span 𝔽 (Set.range _) => (v : X → 𝔽) ⟨i, hi⟩) hc
-        simpa using this
-      exact le_antisymm hUpperBd hLowerBd
-    ,
-    by
-      obtain ⟨hXcard, hXcCard, -, hUpperBd⟩ := hX
-      have hLowerBd : (A.finsetSubmatrix Xᶜ X).rank ≥ 1 := by
-        obtain ⟨i, hi, j, hj, hij⟩ : ∃ i ∈ Xᶜ, ∃ j ∈ X, A i j ≠ 0 := by
-          by_contra hall
-          push Not at hall
-          have hne : X.Nonempty := Finset.card_pos.mp (by omega)
-          have hnu : X ≠ Finset.univ := by
-            intro h
-            simp [h] at hXcCard
-          exact (Matrix.isReducible_iff_exists_finset.mpr
-            ⟨X, hne, hnu, fun i hi j hj => hall i (by simpa using hi) j hj⟩) hA
-        rw [Matrix.rank_eq_finrank_span_cols]
-        refine Module.finrank_pos_iff_exists_ne_zero.mpr ⟨⟨_, Submodule.subset_span ⟨⟨j, hj⟩, rfl⟩⟩, ?_⟩
-        intro hc
-        apply hij
-        have := congrArg (fun v : Submodule.span 𝔽 (Set.range _) => (v : (Xᶜ : Finset n) → 𝔽) ⟨i, hi⟩) hc
-        simpa using this
-      exact le_antisymm hUpperBd hLowerBd⟩
+    ((A.finsetSubmatrix Xᶜ X).rank = 1) := by
+  -- SLOP (anders) Haven't fully understood this tactic chain yet.
+  -- The two statements are swapped by `X ↔ Xᶜ`, so it suffices to prove the first for any cut.
+  suffices key : ∀ Y : Finset n, A.HasCut Y → (A.finsetSubmatrix Y Yᶜ).rank = 1 from
+    ⟨key X hX, by have h := key Xᶜ hX.compl; rwa [compl_compl] at h⟩
+  rintro Y ⟨hYcard, hYcCard, hUpperBd, -⟩
+  refine le_antisymm hUpperBd ?_
+  obtain ⟨i, hi, j, hj, hij⟩ : ∃ i ∈ Y, ∃ j ∈ Yᶜ, A i j ≠ 0 := by
+    by_contra hall
+    push Not at hall
+    have hne : Yᶜ.Nonempty := Finset.card_pos.mp (by omega)
+    have hnu : Yᶜ ≠ Finset.univ := by
+      intro h
+      rw [Finset.compl_eq_univ_iff] at h
+      simp [h] at hYcard
+    exact (Matrix.isReducible_iff_exists_finset.mpr
+      ⟨Yᶜ, hne, hnu, fun i hi j hj => hall i (by simpa using hi) j hj⟩) hA
+  rw [Matrix.rank_eq_finrank_span_cols]
+  refine Module.finrank_pos_iff_exists_ne_zero.mpr ⟨⟨_, Submodule.subset_span ⟨⟨j, hj⟩, rfl⟩⟩, ?_⟩
+  intro hc
+  apply hij
+  have := congrArg (fun v : Submodule.span 𝔽 (Set.range _) => (v : Y → 𝔽) ⟨i, hi⟩) hc
+  simpa using this
 
 /-- second statement of lemma 4.3: If `rk M[X, Xᶜ] = 1`, then for all
 `i ∈ X`, there exists `a_i ∈ 𝔽[x_k : k ∈ X ∖ {i}]` such that for all `j in Xᶜ`,
