@@ -79,7 +79,25 @@ lemma Matrix.isIrred_hasCut_rk1 {A : Matrix n n 𝔽} (hA : A.IsIrred)
         simpa using this
       exact le_antisymm hUpperBd hLowerBd
     ,
-    sorry⟩
+    by
+      obtain ⟨hXcard, hXcCard, -, hUpperBd⟩ := hX
+      have hLowerBd : (A.finsetSubmatrix Xᶜ X).rank ≥ 1 := by
+        obtain ⟨i, hi, j, hj, hij⟩ : ∃ i ∈ Xᶜ, ∃ j ∈ X, A i j ≠ 0 := by
+          by_contra hall
+          push Not at hall
+          have hne : X.Nonempty := Finset.card_pos.mp (by omega)
+          have hnu : X ≠ Finset.univ := by
+            intro h
+            simp [h] at hXcCard
+          exact (Matrix.isReducible_iff_exists_finset.mpr
+            ⟨X, hne, hnu, fun i hi j hj => hall i (by simpa using hi) j hj⟩) hA
+        rw [Matrix.rank_eq_finrank_span_cols]
+        refine Module.finrank_pos_iff_exists_ne_zero.mpr ⟨⟨_, Submodule.subset_span ⟨⟨j, hj⟩, rfl⟩⟩, ?_⟩
+        intro hc
+        apply hij
+        have := congrArg (fun v : Submodule.span 𝔽 (Set.range _) => (v : (Xᶜ : Finset n) → 𝔽) ⟨i, hi⟩) hc
+        simpa using this
+      exact le_antisymm hUpperBd hLowerBd⟩
 
 /-- second statement of lemma 4.3: If `rk M[X, Xᶜ] = 1`, then for all
 `i ∈ X`, there exists `a_i ∈ 𝔽[x_k : k ∈ X ∖ {i}]` such that for all `j in Xᶜ`,
