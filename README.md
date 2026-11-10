@@ -9,6 +9,18 @@ characterizing the fiber of a point in the image of the principal minor map.
 
 We are part of the [UW Math AI lab](https://ai.math.uw.edu) for Autumn 2026.
 
+## Library organization
+
+`DetPoly` contains the definitions and supporting identities for Theorem 2.3
+(proved) and Lemma 4.3 (in progress). Diagonal similarity and equivalence also
+remain in this library.
+
+`LEAN_Warmup` preserves exploratory work and additional APIs, including general
+cofactor formulas, generalized Laplace expansion, and block-triangular forms of
+reducibility. Warmups may import `DetPoly`; `DetPoly` must not import warmups.
+
+Run `lake build` to check both libraries.
+
 ## Project Members
 
 ### Graduate Mentors

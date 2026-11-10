@@ -12,11 +12,9 @@ public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib
 
 /-!
-# Determinantal Polynomials
+# Determinantal polynomials and cuts
 
-Lean 4 formalization of Theorem 4.1 from
-[arXiv:2309.00806](https://arxiv.org/abs/2309.00806) (Al Ahmadieh '23),
-characterizing the fiber of a point in the image of the principal minor map.
+Definitions used by Theorem 2.3 and Lemma 4.3 of Al Ahmadieh (2023).
 -/
 @[expose] public noncomputable section
 open MvPolynomial Matrix
@@ -31,14 +29,6 @@ abbrev Matrix.setSubmatrix {m : Type*} (A : Matrix n m R) (S : Set n) (T : Set m
 /-- Compatibility alias for `Matrix.setSubmatrix` -/
 abbrev Matrix.finsetSubmatrix {m : Type*} (A : Matrix n m R) (S : Finset n) (T : Finset m) :=
   A.setSubmatrix S T
-
-/-- The principal submatrix `A[S, S]`. -/
-abbrev Matrix.principalSubmatrix (A : Matrix n n R) (S : Set n) : Matrix S S R :=
-  A.setSubmatrix S S
-
-theorem Matrix.principalSubmatrix_eq_toSquareBlockProp (A : Matrix n n R) (S : Set n) :
-    A.principalSubmatrix S = A.toSquareBlockProp (· ∈ S) :=
-  rfl
 
 variable [DecidableEq n] [Fintype n]
 

@@ -38,27 +38,13 @@ lemma Matrix.hasCut_adjPoly_of_hasCut {A : Matrix n n 𝔽} (hA : A.IsIrred) {X 
       (algebraMap (MvPolynomial n 𝔽) (FractionRing (MvPolynomial n 𝔽)))).HasCut X := by
   sorry
 
--- lemma rank_eq_zero_entry {m k : Type*} [Fintype m] [Fintype k]
---     (M : Matrix m k 𝔽) (h : M.rank = 0) (i : m) (j : k) : M i j = 0 := by
---   by_contra hij
---   have hpos : 0 < M.rank := by
---     rw [Matrix.rank_eq_finrank_span_cols]
---     apply Module.finrank_pos_iff_exists_ne_zero.mpr
---     refine ⟨⟨M.col j, Submodule.subset_span ⟨j, rfl⟩⟩, ?_⟩
---     intro hc
---     apply hij
---     have := congrArg (fun v : Submodule.span 𝔽 (Set.range M.col) => (v : m → 𝔽) i) hc
---     simpa using this
---   omega
-
 /-- If `A` is irreducible and `X` is a rank-one cut, then the ranks of
-`M[X, Xᶜ]` and `M[Xᶜ, X]` are both exactly `1`
+`A[X, Xᶜ]` and `A[Xᶜ, X]` are both exactly `1`
 -/
 lemma Matrix.isIrred_hasCut_rk1 {A : Matrix n n 𝔽} (hA : A.IsIrred)
     {X : Finset n} (hX : A.HasCut X) :
     ((A.finsetSubmatrix X Xᶜ).rank = 1) ∧
     ((A.finsetSubmatrix Xᶜ X).rank = 1) := by
-  -- SLOP (anders) Haven't fully understood this tactic chain yet.
   -- The two statements are swapped by `X ↔ Xᶜ`, so it suffices to prove the first for any cut.
   suffices key : ∀ Y : Finset n, A.HasCut Y → (A.finsetSubmatrix Y Yᶜ).rank = 1 from
     ⟨key X hX, by have h := key Xᶜ hX.compl; rwa [compl_compl] at h⟩

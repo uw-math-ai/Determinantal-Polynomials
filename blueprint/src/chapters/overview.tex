@@ -8,10 +8,11 @@ For a finite index type $I$ and a field $F$, write $A_S=\det A[S,S]$ and
 The target identifies matrices whose principal minors determine them up to invertible
 diagonal conjugation and transpose.
 
-The library has two separate roots. \texttt{DetPoly} contains reusable matrix identities
-and the completed proof of Theorem 2.3, together with three unfinished statements toward
-Lemma 4.3. \texttt{LEAN\_Warmup} contains exploratory definitions, the draft statement of
-Theorem 4.1 and its intended prerequisites, problem-set proofs, and executable examples.
+The library has two separate roots. \texttt{DetPoly} contains the definitions and matrix identities supporting
+Theorem 2.3 and Lemma 4.3, together with diagonal similarity and equivalence.
+Theorem 2.3 is proved; two statements toward Lemma 4.3 remain unfinished. \texttt{LEAN\_Warmup} contains exploratory definitions, the draft statement of
+Theorem 4.1 and its intended prerequisites, problem-set proofs, executable examples, and additional matrix identities, including
+generalized Laplace expansion.
 Warmup modules may import the library; the library does not import the warmups.
 The module \texttt{LEAN\_Warmup.JoeWarmup} currently exports no declarations.
 

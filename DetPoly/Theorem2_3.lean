@@ -8,7 +8,7 @@ module
 public import DetPoly.Basic
 public import DetPoly.DesnanotJacobi
 public import DetPoly.JacobiFormula
-public import DetPoly.Laplace
+public import DetPoly.PrincipalCofactors
 
 /-!
 # Theorem 2.3: Rayleigh differences of determinantal polynomials

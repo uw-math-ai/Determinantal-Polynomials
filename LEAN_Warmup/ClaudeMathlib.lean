@@ -6,7 +6,7 @@ Authors: Grant Yang
 
 module
 
-public import DetPoly.Basic
+public import LEAN_Warmup.Basic
 public import DetPoly.IrreducibleMatrix
 public import DetPoly.DiagSimilar
 public import Mathlib

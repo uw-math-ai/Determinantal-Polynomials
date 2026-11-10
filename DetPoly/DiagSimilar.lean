@@ -108,6 +108,8 @@ theorem diagEquivalent_iff_diagSimilar_of_isSymm {M N : Matrix n n R} (hN : N.Is
     DiagEquivalent M N ↔ DiagSimilar M N := by
   simp [DiagEquivalent, hN.eq]
 
+
+
 end Matrix
 
 end

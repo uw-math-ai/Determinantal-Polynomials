@@ -552,3 +552,147 @@ The representation instance prints terms with nonzero coefficients and their exp
 Term order is unspecified. This instance is unsafe and is used only for display.
 
 \end{definition}
+
+\section{Additional matrix identities}
+
+The following APIs are retained in \texttt{LEAN\_Warmup}; the current proofs of
+Theorem 2.3 and Lemma 4.3 do not depend on them.
+
+\begin{lemma}[Block-triangular forms of reducibility]
+
+\label{lem:warmup-block-triangular}
+
+\lean{Matrix.isReducible_iff_blockTriangular, Matrix.blockTriangular_of_subset}
+
+\leanok
+
+\uses{lem:reducible}
+
+Reducibility is equivalent to block triangularity for a surjective Boolean labeling.
+Vanishing entries outside a subset give block triangularity for its membership label.
+
+\end{lemma}
+
+\begin{lemma}[General cofactors and Laplace expansion]
+
+\label{lem:warmup-laplace}
+
+\lean{Matrix.det_updateCol_single_self, Matrix.det_updateRow_single, Matrix.det_updateCol_single, Matrix.adjugate_apply_eq_det_submatrix, Matrix.det_eq_sum_mul_det_submatrix_row, Matrix.det_eq_sum_mul_det_submatrix_col, Matrix.adjugate_apply_eq_det_submatrix_swap, Matrix.det_eq_sum_mul_det_submatrix_row_swap, Matrix.det_eq_sum_mul_det_submatrix_col_swap}
+
+\leanok
+
+\uses{lem:laplace}
+
+General row and column deletion formulas use equivalences from an option type and the
+sign of the induced permutation. Expanding the determinant gives row and column Laplace
+formulas, including specializations matching the remaining indices by a swap.
+
+\end{lemma}
+
+\section{Generalized Laplace expansion}
+
+\begin{lemma}[Group determinant terms by image of a row set]
+
+\label{lem:laplace-group}
+
+\lean{Matrix.sum_sign_mul_prod_eq_det_mul_det, Matrix.sum_sign_mul_prod_eq_sign_mul_det_mul_det, Matrix.det_eq_sum_det_mul_det_row, Matrix.det_eq_sum_det_mul_det_col, Matrix.sign_mul_det_mul_det_eq_of_map_eq}
+
+\leanok
+
+The terms of the Leibniz determinant formula indexed by permutations preserving $S$
+sum to $\det A[S,S]\det A[S^c,S^c]$. Terms sending $S$ onto $\sigma(S)$ instead give
+\[ \operatorname{sgn}(\sigma)
+ \det A[S,\sigma(S)]\det A[S^c,\sigma(S^c)]. \]
+The signed product depends only on the image set. Summing over column subsets of size
+$|S|$ gives the row expansion; transposition gives the column expansion.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+Zero the off-block entries to identify the preserving-permutation sum with a block
+diagonal determinant. Group the full Leibniz sum by the image of $S$.
+
+\end{proof}
+
+\begin{definition}[Chosen permutations for complementary minors]
+
+\label{def:laplace-perm}
+
+\lean{Matrix.exists_perm_map_eq, Matrix.laplacePerm, Matrix.map_laplacePerm, Matrix.det_eq_sum_laplacePerm_row, Matrix.det_eq_sum_laplacePerm_col}
+
+\leanok
+
+\uses{lem:laplace-group}
+
+Equal-cardinality subsets admit a permutation sending one to the other.
+Choose such a permutation for each pair and obtain row and column Laplace expansions
+with these choices. No linear order on $I$ is required.
+
+\end{definition}
+
+\begin{lemma}[Signs and increasing enumerations]
+
+\label{lem:shuffle-sign}
+
+\lean{Matrix.sign_eq_prod_prod_lt, Matrix.sign_eq_of_strictMonoOn, Matrix.prod_orderEmbOfFin, Matrix.card_filter_lt_orderEmbOfFin, Matrix.prod_prod_ite_lt_mul, Matrix.card_compl_eq_of_card_eq}
+
+\leanok
+
+On a linearly ordered finite type, the sign of a permutation is a product of comparison
+signs. If it is increasing separately on a subset and its complement, only cross-block
+comparisons remain. Products and positions can be computed using increasing enumerations.
+The auxiliary cardinality and comparison-product identities supply the sign calculation.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
+
+\end{proof}
+
+\begin{definition}[Order shuffle]
+
+\label{def:shuffle}
+
+\lean{Matrix.orderShuffle, Matrix.orderShuffle_orderEmbOfFin, Matrix.orderShuffle_orderEmbOfFin_compl, Matrix.map_orderShuffle, Matrix.sign_orderShuffle}
+
+\leanok
+
+\uses{lem:shuffle-sign}
+
+For $|S|=|T|$, the order shuffle sends the increasing enumeration of $S$ to that of $T$
+and likewise for their complements. It sends $S$ onto $T$ and its sign is
+$(-1)^{\sum_{a\in S}\operatorname{pos}(a)+\sum_{b\in T}\operatorname{pos}(b)}$,
+where $\operatorname{pos}(a)=|\{b:b<a\}|$.
+
+\end{definition}
+
+\begin{theorem}[Generalized Laplace expansion (Theorem 3.1)]
+
+\label{thm:generalized-laplace}
+
+\lean{Matrix.det_eq_sum_neg_one_pow_mul_det_mul_det}
+
+\leanok
+
+\uses{lem:laplace-group,def:shuffle}
+
+For increasingly indexed minors,
+\[ \det A=\sum_{|T|=|S|}(-1)^{\sum_{a\in S}\operatorname{pos}(a)+
+ \sum_{b\in T}\operatorname{pos}(b)}\det A[S,T]\det A[S^c,T^c]. \]
+
+\end{theorem}
+
+\begin{proof}
+
+\leanok
+
+Use the order shuffle in the arbitrary-permutation expansion and substitute its sign.
+
+\end{proof}
