@@ -21,7 +21,26 @@ characterizing the fiber of a point in the image of the principal minor map.
 @[expose] public noncomputable section
 open MvPolynomial Matrix
 
-variable {n R : Type*} [DecidableEq n] [Fintype n]
+variable {n R : Type*}
+
+/-- The submatrix of `A` with rows in `S` and columns in `T`. -/
+abbrev Matrix.setSubmatrix {m : Type*} (A : Matrix n m R) (S : Set n) (T : Set m)
+    : Matrix S T R :=
+  A.submatrix (↑) (↑)
+
+/-- Compatibility alias for `Matrix.setSubmatrix` -/
+abbrev Matrix.finsetSubmatrix {m : Type*} (A : Matrix n m R) (S : Finset n) (T : Finset m) :=
+  A.setSubmatrix S T
+
+/-- The principal submatrix `A[S, S]`. -/
+abbrev Matrix.principalSubmatrix (A : Matrix n n R) (S : Set n) : Matrix S S R :=
+  A.setSubmatrix S S
+
+theorem Matrix.principalSubmatrix_eq_toSquareBlockProp (A : Matrix n n R) (S : Set n) :
+    A.principalSubmatrix S = A.toSquareBlockProp (· ∈ S) :=
+  rfl
+
+variable [DecidableEq n] [Fintype n]
 
 section CommRing
 variable [CommRing R]
@@ -48,8 +67,8 @@ use the factorization form `rank_le_one_iff_eq_vecMulVec`. The definition is sym
 `X ↔ Xᶜ` (`HasCut.compl`). -/
 def Matrix.HasCut (A : Matrix n n 𝔽) (X : Finset n) : Prop :=
   2 ≤ X.card ∧ 2 ≤ Xᶜ.card ∧
-    (A.submatrix ((↑) : X → n) ((↑) : ↥Xᶜ → n)).rank ≤ 1 ∧
-    (A.submatrix ((↑) : ↥Xᶜ → n) ((↑) : X → n)).rank ≤ 1
+    (A.setSubmatrix X (Xᶜ : Finset n)).rank ≤ 1 ∧
+    (A.setSubmatrix (Xᶜ : Finset n) X).rank ≤ 1
 
 /-- The complement of a cut is a cut. -/
 theorem Matrix.HasCut.compl {A : Matrix n n 𝔽} {X : Finset n} (h : A.HasCut X) :

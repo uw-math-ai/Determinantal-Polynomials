@@ -115,10 +115,6 @@ section Minors
 
 variable {R n : Type*} [Fintype n] [DecidableEq n] [CommRing R]
 
-/-- The principal submatrix `A[S, S]`. -/
-abbrev Matrix.principalSubmatrix {R : Type*} (A : Matrix n n R) (S : Set n) : Matrix S S R :=
-  A.submatrix (↑) (↑)
-
 omit [Fintype n] [DecidableEq n] [CommRing R] in
 @[simp]
 theorem Matrix.principalSubmatrix_apply (A : Matrix n n R) (S : Finset n) (i j : S) :
