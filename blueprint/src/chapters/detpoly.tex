@@ -1,7 +1,9 @@
 \chapter{The DetPoly library}
+\label{chap:detpoly}
 
 Unless otherwise specified, $R$ is a commutative ring and $I$ is a finite decidable index
-type. The results in this chapter are proved except for the two unfinished cut statements.
+type. The results in this chapter are proved except for the two unfinished cut statements
+of Section~\ref{sec:lemma43}.
 
 \section{Determinantal polynomials and matrix equivalence}
 
@@ -18,6 +20,19 @@ Set $M_A=\operatorname{diag}(x)+A$, $f_A=\det M_A$, and
 
 \end{definition}
 
+\begin{definition}[Submatrices on subsets]
+
+\label{def:submatrix}
+
+\lean{Matrix.setSubmatrix, Matrix.finsetSubmatrix}
+
+\leanok
+
+For subsets $S$ of the row indices and $T$ of the column indices, $A[S,T]$ is the
+submatrix indexed by the corresponding subtypes. A second name takes finite subsets.
+
+\end{definition}
+
 \begin{definition}[Cuts]
 
 \label{def:cut}
@@ -25,6 +40,8 @@ Set $M_A=\operatorname{diag}(x)+A$, $f_A=\det M_A$, and
 \lean{Matrix.HasCut, Matrix.HasCut.compl}
 
 \leanok
+
+\uses{def:submatrix}
 
 For $A$ over a field, a cut is a finite subset $X$ such that
 $2\leq |X|$, $2\leq |X^c|$ and both $A[X,X^c]$ and $A[X^c,X]$ have rank at most one.
@@ -85,6 +102,29 @@ $A_{ij}=0$ for $i\notin S$, $j\in S$. The same criterion is also expressed with 
 
 If $i$ cannot reach $j$, take $S$ to be the vertices that can reach $j$.
 Conversely, a path into $S$ cannot start outside it.
+
+\end{proof}
+
+\begin{lemma}[Block-triangular forms of reducibility]
+
+\label{lem:block-triangular}
+
+\lean{Matrix.isReducible_iff_blockTriangular, Matrix.blockTriangular_of_subset}
+
+\leanok
+
+\uses{lem:reducible}
+
+Reducibility is equivalent to block triangularity for a surjective Boolean labeling.
+Vanishing entries outside a subset give block triangularity for its membership label.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+The linked Lean declarations contain the proof.
 
 \end{proof}
 
@@ -287,6 +327,7 @@ For equal indices use $\partial_i^2f_A=0$.
 \end{proof}
 
 \section{Statements toward Lemma 4.3}
+\label{sec:lemma43}
 
 \begin{lemma}[Nonzero cut blocks]
 
@@ -302,7 +343,13 @@ If $A$ is irreducible and $X$ is a cut, both off-diagonal block ranks equal one.
 
 \end{lemma}
 
-\noindent\emph{Status: unfinished proof.}
+\begin{proof}
+
+\leanok
+
+A zero cross block would give a nonempty proper subset as in Lemma~\ref{lem:reducible}.
+
+\end{proof}
 
 \begin{lemma}[Common factors of column-replacement minors]
 
@@ -321,7 +368,8 @@ The replacement is indexed by $X$, so its ordering sign is absorbed in $a_i$.
 
 \end{lemma}
 
-\noindent\emph{Status: unfinished proof.}
+\noindent\emph{Status: unfinished proof. The route through Lemma~\ref{lem:fin-block-adj}
+avoids the generalized Laplace expansion.}
 
 \begin{lemma}[A cut persists in the adjugate]
 
@@ -335,7 +383,9 @@ The replacement is indexed by $X$, so its ordering sign is absorbed in $a_i$.
 
 An irreducible matrix with cut $X$ has the same cut in $G_A$, after mapping polynomial
 entries to the fraction field of $F[x_i:i\in I]$. Both cross-block ranks are at most one.
+The alternative main theorem does not need this lemma; compare Lemma~\ref{lem:cggr26}.
 
 \end{lemma}
 
-\noindent\emph{Status: unfinished proof.}
+\noindent\emph{Status: unfinished proof. Theorem~\ref{thm:fin-core} proves the factorization
+on a finite ordinal with separate definitions.}

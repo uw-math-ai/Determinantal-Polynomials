@@ -1,32 +1,71 @@
 \chapter{Scope and current state}
 
-This project formalizes the characterization of fibers of the principal minor map in
-Al Ahmadieh, \emph{The fiber of the principal minor map} (2023), Theorem 4.1.
+This project formalizes the characterization of fibers of the principal minor map.
 For a finite index type $I$ and a field $F$, write $A_S=\det A[S,S]$ and
 \[ f_A=\det(\operatorname{diag}(x_i)_{i\in I}+A),\qquad
    G_A=\operatorname{adj}(\operatorname{diag}(x_i)+A). \]
-The target identifies matrices whose principal minors determine them up to invertible
-diagonal conjugation and transpose.
+The question is when the principal minors of $A$ determine it up to invertible diagonal
+conjugation and transpose, that is, up to diagonal equivalence.
 
-The library has two separate roots. \texttt{DetPoly} contains the definitions and matrix identities supporting
-Theorem 2.3 and Lemma 4.3, together with diagonal similarity and equivalence.
-Theorem 2.3 is proved; two statements toward Lemma 4.3 remain unfinished. \texttt{LEAN\_Warmup} contains exploratory definitions, the draft statement of
-Theorem 4.1 and its intended prerequisites, problem-set proofs, executable examples, and additional matrix identities, including
-generalized Laplace expansion.
+There are two targets.
+\begin{enumerate}
+\item Al Ahmadieh, \emph{The fiber of the principal minor map} (arXiv:2309.00806),
+Theorem 4.1.
+\item Chatterjee--Ghosh--Gurjar--Raj, \emph{Characterizing and Testing Principal Minor
+Equivalence of Matrices} (STOC 2025, arXiv:2410.01961), Theorem 1.1
+(Theorem~\ref{thm:cggr11}): irreducible matrices have the same principal minors exactly
+when they are related by a sequence of cut-transposes followed by a diagonal equivalence.
+The alternate Theorem 4.1 is a corollary. The algorithmic results of that paper are out of
+scope.
+\end{enumerate}
+
+\section{Libraries}
+
+\texttt{DetPoly} is the library. It contains the definitions, diagonal similarity and
+equivalence, irreducible matrices, the Desnanot--Jacobi identity, Jacobi's formula for a
+derivation, and Theorem 2.3, all proved (Chapter~\ref{chap:detpoly}). Two statements toward
+Lemma 4.3 in the library's own terms are unfinished. It also contains two self-contained
+developments on the index type $\{0,\dots,n-1\}$: a complete proof of Lemma 4.3 given
+Lemma 4.2, and of the shuffle sign of Lemma 3.2.
+
+\texttt{LEAN\_Warmup} is exploratory. It contains the draft statements for the paper,
+the outline of CGGR with the alternate theorem, generalized Laplace expansion, tools for
+multivariate polynomials, a computable polynomial model, and problem-set proofs.
 Warmup modules may import the library; the library does not import the warmups.
-The module \texttt{LEAN\_Warmup.JoeWarmup} currently exports no declarations.
+\texttt{LEAN\_Warmup.JoeWarmup} exports no declarations, and the diagonal expansion of
+Theorem~\ref{thm:diagonal-expansion} currently exists in both libraries under the same
+names.
 
-Every explicitly named public definition and result in both roots is linked below,
-including helper APIs and examples. Private implementation lemmas and compiler-generated
-auxiliary declarations are not separate mathematical blueprint nodes.
-The computable polynomial display instance is recorded with its computation model.
+\section{Reading the dependency graph}
 
-A Lean link records that a statement or definition exists. A proof marked complete records
-an actual proof without a transitive dependency on \texttt{sorryAx}; a statement with
-\texttt{sorry} is not a completed proof. In particular, a proved corollary of an unfinished
-coefficient theorem remains conditional. Dependency arrows describe mathematical
-prerequisites or the intended proof route for unfinished nodes; they are not a literal
-Lean import graph. Grouped nodes link all API declarations implementing that piece of mathematics.
+Every explicitly named public definition and result in both roots is linked from some
+node, including helper APIs and examples; grouped nodes link all declarations implementing
+one piece of mathematics. A Lean link records that a statement or definition exists.
+A proof marked complete means that the Lean proof of that node contains no \texttt{sorry}
+of its own; it may still depend on unfinished nodes, which the graph shows.
+A node without a proof carries a status line: \emph{to do} or \emph{unfinished} for our own
+proofs, \emph{external} for results cited from other papers. Dependency arrows describe
+mathematical prerequisites or the intended proof route for unfinished nodes; they are not
+a literal Lean import graph.
+
+\section{Dependencies}
+
+The Lean proof of Theorem~\ref{thm:main-alt} is complete given:
+\begin{itemize}
+\item cut-transpose preserves principal minors (Lemma~\ref{lem:ct-pme}), the first real
+proof obligation;
+\item reducible matrices have nontrivial fibers (Lemma~\ref{lem:reducible-fiber});
+\item irreducibility of $A$ is irreducibility of $f_A$ (Lemma~\ref{lem:irred-poly}), which
+uses the external Lemma~\ref{ext:nonzero};
+\item equality of fibers is equality of determinantal polynomials
+(Lemma~\ref{lem:fiber-poly});
+\item compatibility of cut-transposes and cuts with diagonal equivalence
+(Lemmas~\ref{lem:ct-de-compat} and~\ref{lem:de-cuts});
+\item the hard direction of CGGR Theorem 1.1 (Theorem~\ref{thm:cggr11-hard}), whose proof
+cites Loewy (1986), Theorem 1 (Lemma~\ref{ext:no-cut}) and Hartfiel--Loewy (1984).
+\end{itemize}
+Lemmas 4.3, 4.4 and 4.5 of the paper and the determinantal representation theorem
+(Lemma~\ref{ext:recognition}) are not needed for it.
 
 \section{Conventions and boundaries}
 
@@ -38,11 +77,10 @@ Irreducibility means strong connectivity for nonzero entries, including length-z
 Thus the one-by-one zero matrix is irreducible, and so is the empty matrix. The latter has
 $f_A=1$, so the polynomial irreducibility criterion needs a nonempty index type.
 
-The roadmap uses \emph{symmetrizable}: an invertible diagonal matrix $\mu$ makes
-$\mu A$ symmetric. Conjugacy to a symmetric matrix can require square roots; their
-equivalence is only proposed under an algebraically closed field hypothesis.
-The main theorem and cut construction are draft statements, including their exact field
-hypotheses. In the necessity argument, both diagonal conjugacy to $A$ and to $A^t$
-must be excluded. These mathematical checks remain part of completing the formalization.
-Sections 5--7 beyond the needed irreducibility criterion and symmetric-fiber lemma are
-outside the current target.
+A matrix is \emph{symmetrizable} if an invertible diagonal matrix $\mu$ makes $\mu A$
+symmetric. Conjugacy to a symmetric matrix can require square roots; the two notions are
+only claimed to agree over an algebraically closed field. Diagonal similarity and
+diagonal equivalence must be kept apart: the error in the paper's proof is that its second
+cut swap is the transpose of the first, hence already diagonally equivalent to it.
+Sections 5--7 of the paper beyond the irreducibility criterion and the symmetric-fiber
+lemma are outside the current target.

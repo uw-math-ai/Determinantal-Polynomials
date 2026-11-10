@@ -1,0 +1,523 @@
+\chapter{LEAN\_Warmup: cut-transposes and the alternative theorem}
+
+This chapter follows \texttt{LEAN\_Warmup.CutTranspose}, an outline of
+Chatterjee--Ghosh--Gurjar--Raj, \emph{Characterizing and Testing Principal Minor Equivalence
+of Matrices} (STOC 2025, full version arXiv:2410.01961), abbreviated CGGR. Its Theorem 1.1
+is the second formalization target, and the alternative form of Theorem 4.1 is a corollary.
+Throughout, $F$ is a field, $I$ is a finite index type and $X\subseteq I$. Results cited from
+other papers are marked \emph{external}; the remaining unproved statements are marked
+\emph{to do}. The algorithmic results of CGGR (Theorems 1.2 and 1.3), Lemma 2.4,
+Observation 3.7, Claim 3.8 and the first part of Lemma 3.3 are not stated.
+
+\section{Principal minor equivalence}
+
+\begin{definition}[Principal minor equivalence]
+\label{def:pme}
+\lean{Matrix.PMEquiv, Matrix.pmEquiv_iff_mem_pmFiber, Matrix.PMEquiv.refl, Matrix.PMEquiv.symm, Matrix.PMEquiv.trans}
+\leanok
+\uses{def:fiber}
+Matrices $A,B$ over a commutative ring are \emph{principal minor equivalent} (PME) if
+$A_S=B_S$ for every finite $S$. Equivalently $B$ lies in the principal minor fiber of $A$.
+The relation is reflexive, symmetric and transitive.
+\end{definition}
+
+\begin{lemma}[Transpose and diagonal equivalence]
+\label{lem:pme-basic}
+\lean{Matrix.pmEquiv_transpose, Matrix.PMEquiv.transpose, Matrix.DiagEquivalent.pmEquiv, Matrix.DiagSimilar.pmEquiv, Matrix.hasTrivialFiber_iff_forall_pmEquiv}
+\leanok
+\uses{def:pme,lem:diag-fiber}
+A matrix is PME to its transpose, and PME is preserved by transposing both matrices.
+Diagonally equivalent matrices are PME. The fiber of $A$ is trivial exactly when every
+matrix PME to $A$ is diagonally equivalent to $A$.
+\end{lemma}
+\begin{proof}
+\leanok
+Transposition preserves determinants; the rest restates Lemma~\ref{lem:diag-fiber}.
+\end{proof}
+
+\begin{lemma}[Principal submatrices]
+\label{lem:pme-submatrix}
+\lean{Matrix.PMEquiv.principalSubmatrix}
+\leanok
+\uses{def:pme}
+If $A$ and $B$ are PME, so are $A[T,T]$ and $B[T,T]$ for every finite $T$.
+\end{lemma}
+\noindent\emph{Status: to do. A principal minor of $A[T,T]$ at $S\subseteq T$ is the principal
+minor of $A$ at the image of $S$.}
+
+\begin{lemma}[PME and determinantal polynomials]
+\label{lem:pme-detpoly}
+\lean{Matrix.pmEquiv_iff_detpoly_eq}
+\leanok
+\uses{def:pme,lem:fiber-poly}
+$A$ and $B$ are PME exactly when $f_A=f_B$.
+\end{lemma}
+\begin{proof}
+\leanok
+This is Lemma~\ref{lem:fiber-poly}.
+\end{proof}
+
+\begin{definition}[Nonzero off-diagonal entries]
+\label{def:offdiag}
+\lean{Matrix.OffDiagNeZero, Matrix.OffDiagNeZero.isIrred, Matrix.OffDiagNeZero.transpose}
+\leanok
+\uses{lem:reducible}
+$A$ has \emph{nonzero off-diagonal entries} if $A_{ij}\ne0$ for all $i\ne j$. Such a matrix
+is irreducible, and the condition is preserved by transpose. CGGR reduce Theorem 1.1 to
+this case.
+\end{definition}
+
+\begin{lemma}[PME preserves irreducibility]
+\label{lem:pme-irred}
+\lean{Matrix.PMEquiv.isIrred}
+\leanok
+\uses{lem:pme-detpoly,lem:irred-poly}
+For nonempty $I$, if $A$ and $B$ are PME and $A$ is irreducible, then $B$ is irreducible.
+\end{lemma}
+\begin{proof}
+\leanok
+By Lemma~\ref{lem:irred-poly}, irreducibility of the matrix is irreducibility of $f_A=f_B$.
+\end{proof}
+
+\section{Cuts and minimal cuts}
+
+\begin{lemma}[Cuts of the transpose]
+\label{lem:cut-transpose-inv}
+\lean{Matrix.HasCut.transpose, Matrix.hasCut_transpose}
+\leanok
+\uses{def:cut}
+$A$ and $A^t$ have the same cuts.
+\end{lemma}
+\begin{proof}
+\leanok
+The two cross blocks of $A^t$ are the transposes of those of $A$, and rank is invariant
+under transpose.
+\end{proof}
+
+\begin{definition}[Minimal cuts]
+\label{def:minimal-cut}
+\lean{Matrix.IsMinimalCut, Matrix.HasCut.isMinimalCut_of_card_eq_two}
+\leanok
+\uses{def:cut}
+A cut $X$ of $A$ is \emph{minimal} if no cut of $A$ is properly contained in $X$.
+A cut of size two is minimal.
+\end{definition}
+
+\begin{lemma}[Existence of minimal cuts]
+\label{lem:minimal-cut-exists}
+\lean{Matrix.HasCut.exists_isMinimalCut}
+\leanok
+\uses{def:minimal-cut}
+Every cut contains a minimal cut.
+\end{lemma}
+\noindent\emph{Status: to do. Well-founded induction on strict inclusion.}
+
+\section{The cut-transpose operation}
+
+\begin{definition}[Cut factorization]
+\label{def:cut-factorization}
+\lean{Matrix.IsCutFactorization}
+\leanok
+Functions $p,q,u,v:I\to R$ form a \emph{cut factorization} of $A$ at $X$ if
+$A_{ij}=p_iq_j$ for $i\in X$, $j\notin X$ and $A_{ij}=u_iv_j$ for $i\notin X$, $j\in X$.
+In block form along $X$, $X^c$,
+\[ A=\begin{pmatrix}E&pq^t\\uv^t&N\end{pmatrix}. \]
+Only the values of $p,v$ on $X$ and of $q,u$ on $X^c$ matter. No block order or
+normalized factorization is chosen.
+\end{definition}
+
+\begin{lemma}[Cuts are factorizations]
+\label{lem:cut-iff-factorization}
+\lean{Matrix.IsCutFactorization.rank_le_one, Matrix.HasCut.exists_isCutFactorization, Matrix.hasCut_iff_exists_isCutFactorization}
+\leanok
+\uses{def:cut-factorization,def:cut,lem:rank-one}
+Over a field, $X$ is a cut of $A$ exactly when $2\le|X|$, $2\le|X^c|$ and $A$ has a cut
+factorization at $X$.
+\end{lemma}
+\begin{proof}
+\leanok
+Apply the outer-product criterion of Lemma~\ref{lem:rank-one} to both cross blocks and
+extend the factors by zero.
+\end{proof}
+
+\begin{definition}[Cut-transpose (CGGR Definition 2.10)]
+\label{def:cut-transpose}
+\lean{Matrix.cutTranspose, Matrix.cutTranspose_eq_cutSwap, Matrix.IsCutTranspose, Matrix.HasCut.exists_isCutTranspose}
+\leanok
+\uses{def:cut-factorization,lem:cut-iff-factorization,def:cut-swap}
+For a cut factorization as above, the \emph{cut-transpose} is
+\[ \operatorname{ct}_X(A;p,q,u,v)=\begin{pmatrix}E&pu^t\\qv^t&N^t\end{pmatrix}: \]
+swap $q\leftrightarrow u$ and transpose the $X^c$ block. It is the cut swap of
+Definition~\ref{def:cut-swap} applied to $A$ instead of to $G_A$. A matrix $B$ \emph{is a
+cut-transpose of $A$ at $X$} if it arises from some cut factorization of $A$ at $X$.
+Every cut has a cut-transpose. Statements about CGGR's $\operatorname{ct}(A,X)$ are
+phrased for every such $B$.
+\end{definition}
+
+\begin{lemma}[Involution]
+\label{lem:ct-involution}
+\lean{Matrix.IsCutFactorization.cutTranspose, Matrix.cutTranspose_cutTranspose, Matrix.IsCutTranspose.symm, Matrix.IsCutTranspose.hasCut}
+\leanok
+\uses{def:cut-transpose,lem:cut-iff-factorization}
+The cut-transpose has the cut factorization $(p,u,q,v)$ at $X$, and cut-transposing again
+with it returns $A$ (CGGR Remark 2.11). Hence being a cut-transpose at $X$ is a symmetric
+relation, and $X$ is still a cut of every cut-transpose at $X$.
+\end{lemma}
+\begin{proof}
+\leanok
+Compare entries on the four blocks.
+\end{proof}
+
+\begin{lemma}[Transpose and complement]
+\label{lem:ct-transpose}
+\lean{Matrix.IsCutFactorization.transpose, Matrix.transpose_cutTranspose, Matrix.IsCutTranspose.transpose, Matrix.IsCutFactorization.compl, Matrix.cutTranspose_compl, Matrix.IsCutTranspose.compl}
+\leanok
+\uses{def:cut-transpose}
+If $(p,q,u,v)$ is a cut factorization of $A$ at $X$, then $(v,u,q,p)$ is one of $A^t$ at
+$X$ and $(u,v,p,q)$ is one of $A$ at $X^c$. For these,
+\[ \operatorname{ct}_X(A^t)=\operatorname{ct}_X(A)^t,\qquad
+   \operatorname{ct}_{X^c}(A)=\operatorname{ct}_X(A)^t. \]
+The second identity explains why Lemma 4.5 and Example 4.6 of the paper, which transpose
+different diagonal blocks, agree up to diagonal equivalence.
+\end{lemma}
+\begin{proof}
+\leanok
+Compare entries on the four blocks.
+\end{proof}
+
+\begin{lemma}[Uniqueness up to diagonal similarity (CGGR Remark 2.11)]
+\label{lem:ct-unique}
+\lean{Matrix.IsCutTranspose.diagSimilar}
+\leanok
+\uses{def:cut-transpose,lem:cut-ranks,def:diag}
+If $A$ is irreducible with a cut $X$, any two cut-transposes of $A$ at $X$ are diagonally
+similar.
+\end{lemma}
+\noindent\emph{Status: to do. The cross blocks have rank exactly one
+(Lemma~\ref{lem:cut-ranks}), so two factorizations differ by
+$(\lambda p,\lambda^{-1}q,\mu u,\mu^{-1}v)$; conjugate by the diagonal matrix that is
+$\lambda\mu$ on $X$ and $1$ on $X^c$.}
+
+\begin{lemma}[Cut-transpose preserves principal minors (CGGR Lemma 2.12)]
+\label{lem:ct-pme}
+\lean{Matrix.IsCutTranspose.pmEquiv}
+\leanok
+\uses{def:cut-transpose,lem:pme-detpoly}
+If $B$ is a cut-transpose of $A$ at $X$, then $A$ and $B$ are PME. No irreducibility or
+cardinality hypothesis is needed. This is the matrix form of Lemma 4.5 of the paper and the
+first real proof obligation of the outline.
+\end{lemma}
+\noindent\emph{Status: to do. With $E_x=E+\operatorname{diag}(x_X)$ and
+$N_x=N+\operatorname{diag}(x_{X^c})$, the rank-one Schur complement gives
+\[ f_A=\det E_x\det N_x-(v^t\operatorname{adj}(E_x)p)(q^t\operatorname{adj}(N_x)u), \]
+which is invariant under $q\leftrightarrow u$, $N\mapsto N^t$. This does not use the
+determinantal representation theorem (Lemma~\ref{ext:recognition}).}
+
+\begin{lemma}[Compatibility with diagonal equivalence]
+\label{lem:ct-de-compat}
+\lean{Matrix.DiagEquivalent.exists_isCutTranspose}
+\leanok
+\uses{lem:ct-transpose,def:diag}
+If $A'$ is diagonally equivalent to $A$ and $B'$ is a cut-transpose of $A'$ at $X$, then
+$B'$ is diagonally equivalent to some cut-transpose of $A$ at $X$.
+\end{lemma}
+\noindent\emph{Status: to do. Use Lemma~\ref{lem:ct-transpose} for the transpose, and
+$\operatorname{ct}_X(DAD^{-1})=\tilde D\operatorname{ct}_X(A)\tilde D^{-1}$ with
+$\tilde D=\operatorname{diag}(D_X,D_{X^c}^{-1})$ for the induced factorization.}
+
+\begin{lemma}[Diagonal equivalence preserves cuts]
+\label{lem:de-cuts}
+\lean{Matrix.DiagEquivalent.hasCut}
+\leanok
+\uses{lem:cut-transpose-inv,def:diag}
+Diagonally equivalent matrices have the same cuts.
+\end{lemma}
+\noindent\emph{Status: to do. Rescale a cut factorization, or use that multiplication by an
+invertible diagonal matrix preserves rank.}
+
+\section{Cut-transpose equivalence}
+
+\begin{definition}[Chains and cut-transpose equivalence (CGGR Definition 2.14)]
+\label{def:ct-chain}
+\lean{Matrix.IsCutTransposeChain, Matrix.CutTransposeEquivWrt, Matrix.CutTransposeEquiv, Matrix.DiagEquivalent.cutTransposeEquiv}
+\leanok
+\uses{def:cut-transpose,def:diag}
+A \emph{cut-transpose chain} from $A$ to $C$ along a list $(X_1,\dots,X_k)$ consists of
+$A=A_0,\dots,A_k=C$ with $X_i$ a cut of $A_{i-1}$ and $A_i$ a cut-transpose of $A_{i-1}$ at
+$X_i$. $A$ and $B$ are \emph{cut-transpose equivalent with respect to} the list if such a
+chain ends at a matrix diagonally equivalent to $B$, and \emph{cut-transpose equivalent} if
+this holds for some list. Diagonally equivalent matrices are cut-transpose equivalent
+through the empty list.
+\end{definition}
+
+\begin{lemma}[Theorem 1.1, easy direction]
+\label{lem:chain-pme}
+\lean{Matrix.IsCutTransposeChain.pmEquiv, Matrix.CutTransposeEquivWrt.pmEquiv, Matrix.CutTransposeEquiv.pmEquiv}
+\leanok
+\uses{def:ct-chain,lem:ct-pme,lem:pme-basic}
+Cut-transpose equivalent matrices are PME.
+\end{lemma}
+\begin{proof}
+\leanok
+Induct on the chain using Lemma~\ref{lem:ct-pme}, then use Lemma~\ref{lem:pme-basic}.
+\end{proof}
+
+\begin{lemma}[Chains inside a diagonal-equivalence class]
+\label{lem:chain-de}
+\lean{Matrix.IsCutTransposeChain.diagEquivalent}
+\leanok
+\uses{def:ct-chain,lem:ct-de-compat,lem:de-cuts}
+Suppose every cut-transpose of $A$ at every cut of $A$ is diagonally equivalent to $A$.
+Then every chain starting at a matrix diagonally equivalent to $A$ ends at a matrix
+diagonally equivalent to $A$.
+\end{lemma}
+\begin{proof}
+\leanok
+Induct on the chain. At each step transfer the cut and the cut-transpose to $A$ by
+Lemmas~\ref{lem:de-cuts} and~\ref{lem:ct-de-compat}.
+\end{proof}
+
+\section{Passing to the adjugate}
+
+These statements reduce Theorem 1.1 to matrices with nonzero off-diagonal entries.
+CGGR's ``$A+D$ is nonsingular'' is the hypothesis that $\det(A+\operatorname{diag}(d))$ is
+a unit.
+
+\begin{lemma}[PME and adjugates (CGGR Lemma 2.1)]
+\label{ext:cggr21}
+\lean{Matrix.pmEquiv_adjugate_add_diagonal_iff}
+\leanok
+\uses{def:pme}
+If $A+D$ and $B+D$ are nonsingular for a diagonal $D$, then
+$\operatorname{adj}(A+D)$ and $\operatorname{adj}(B+D)$ are PME exactly when $A$ and $B$ are.
+\end{lemma}
+\noindent\emph{Status: external, from Hartfiel--Loewy (1984), Lemma 4.}
+
+\begin{lemma}[Cuts of the adjugate (CGGR Lemma 2.6)]
+\label{lem:cggr26}
+\lean{Matrix.hasCut_adjugate_add_diagonal_iff}
+\leanok
+\uses{def:cut}
+If $A+D$ is nonsingular, $A$ and $\operatorname{adj}(A+D)$ have the same cuts.
+\end{lemma}
+\noindent\emph{Status: to do. Lemma~\ref{lem:adj-cut} is the same statement before
+specializing $x\mapsto d$.}
+
+\begin{lemma}[Diagonal similarity and adjugates (CGGR Lemma 2.9)]
+\label{ext:cggr29}
+\lean{Matrix.diagSimilar_adjugate_add_diagonal_iff}
+\leanok
+\uses{def:diag}
+If $A+D$ and $B+D$ are nonsingular, then $\operatorname{adj}(A+D)$ and
+$\operatorname{adj}(B+D)$ are diagonally similar exactly when $A$ and $B$ are.
+\end{lemma}
+\noindent\emph{Status: external, from Hartfiel--Loewy (1984), Lemma 4.}
+
+\begin{lemma}[Cut-transpose commutes with the adjugate (CGGR Lemma 2.13)]
+\label{lem:cggr213}
+\lean{Matrix.IsCutTranspose.adjugate}
+\leanok
+\uses{def:cut-transpose,lem:ct-unique}
+If $A$ is irreducible with a cut $X$ and $B$ is a cut-transpose of $A$ at $X$, then $X$ is
+a cut of $\operatorname{adj}(A)$ and $\operatorname{adj}(B)$ is diagonally similar to a
+cut-transpose of $\operatorname{adj}(A)$ at $X$.
+\end{lemma}
+\noindent\emph{Status: to do.}
+
+\begin{lemma}[Cut-transpose equivalence and adjugates (CGGR Lemma 2.15)]
+\label{lem:cggr215}
+\lean{Matrix.cutTransposeEquivWrt_adjugate_add_diagonal_iff}
+\leanok
+\uses{def:ct-chain,lem:cggr26,ext:cggr29,lem:cggr213}
+For irreducible $A,B$ with $A+D$ and $B+D$ nonsingular, $\operatorname{adj}(A+D)$ and
+$\operatorname{adj}(B+D)$ are cut-transpose equivalent with respect to a list exactly when
+$A$ and $B$ are.
+\end{lemma}
+\noindent\emph{Status: to do.}
+
+\begin{lemma}[A good diagonal shift exists (CGGR Claim 4.1)]
+\label{lem:claim41}
+\lean{Matrix.exists_diagonal_offDiagNeZero_adjugate}
+\leanok
+\uses{ext:nonzero,def:offdiag}
+Over an infinite field, for irreducible $A,B$ there is a diagonal $D$ with $A+D$, $B+D$
+nonsingular and all entries of both adjugates nonzero. CGGR require only $|F|>10n^5$.
+\end{lemma}
+\noindent\emph{Status: to do. Every entry of $G_A$ is a nonzero polynomial
+(Lemma~\ref{ext:nonzero}), and a finite product of nonzero polynomials over an infinite
+field has a non-root.}
+
+\section{The characterization}
+
+\begin{lemma}[Small matrices (CGGR Lemma 2.8 (1))]
+\label{ext:hl-small}
+\lean{Matrix.hasTrivialFiber_of_card_le_three}
+\leanok
+\uses{def:fiber,def:irred}
+An irreducible matrix with $|I|\le3$ has a trivial fiber. Part (2) of the lemma is
+Lemma~\ref{ext:no-cut}.
+\end{lemma}
+\noindent\emph{Status: external, Hartfiel--Loewy (1984), Theorem 3.}
+
+\begin{lemma}[The case $|I|=4$ (CGGR Lemma 3.1)]
+\label{lem:cggr31}
+\lean{Matrix.diagEquivalent_or_cutTranspose_of_card_eq_four}
+\leanok
+\uses{def:offdiag,def:pme,def:cut-transpose}
+Let $|I|=4$, let $A$ have nonzero off-diagonal entries and let $B$ be PME to $A$. Then
+$A$ and $B$ are diagonally equivalent, or they have a common cut and every cut-transpose
+of $A$ at a common cut is diagonally equivalent to $B$.
+\end{lemma}
+\noindent\emph{Status: to do.}
+
+\begin{lemma}[Cuts of a cut-transpose (CGGR Lemma 3.2)]
+\label{lem:cggr32}
+\lean{Matrix.IsCutTranspose.hasCut_iff_of_nested, Matrix.IsCutTranspose.hasCut_symmDiff_iff}
+\leanok
+\uses{def:offdiag,def:cut-transpose}
+Let $A$ have nonzero off-diagonal entries, $S$ a cut of $A$ and $C$ a cut-transpose of $A$
+at $S$. If $T$ or $T^c$ is contained in $S$ or $S^c$, then $T$ is a cut of $C$ exactly when
+it is a cut of $A$. Otherwise $T\mathbin{\triangle}S$ is a cut of $C$ exactly when $T$ is a
+cut of $A$.
+\end{lemma}
+\noindent\emph{Status: to do.}
+
+\begin{lemma}[Minimal cuts and one extra index (CGGR Lemma 3.3)]
+\label{lem:cggr33}
+\lean{Matrix.IsMinimalCut.not_hasCut_principalSubmatrix_insert}
+\leanok
+\uses{def:offdiag,def:minimal-cut}
+If $A$ has nonzero off-diagonal entries, $S$ is a minimal cut with $|S|>2$ and $t\notin S$,
+then $A[S\cup\{t\}]$ has no cut. Only this consequence of the lemma is stated.
+\end{lemma}
+\noindent\emph{Status: to do.}
+
+\begin{lemma}[Lifting a cut (CGGR Lemma 3.4)]
+\label{lem:cggr34}
+\lean{Matrix.HasCut.of_principalSubmatrix_insert_compl}
+\leanok
+\uses{def:offdiag,def:cut}
+If $A$ has nonzero off-diagonal entries, $S$ is a cut of $A$, $t\in S$ and $Y\subseteq S^c$
+is a cut of $A[S^c\cup\{t\}]$, then $Y$ is a cut of $A$.
+\end{lemma}
+\noindent\emph{Status: to do.}
+
+\begin{lemma}[Cuts of size two (CGGR Lemma 3.5)]
+\label{lem:cggr35}
+\lean{Matrix.PMEquiv.hasCut_or_of_card_eq_two}
+\leanok
+\uses{def:offdiag,def:pme,def:cut-transpose,lem:cggr31,lem:pme-submatrix}
+Let $A,B$ be PME with nonzero off-diagonal entries and $S$ a cut of $A$ of size two.
+Then $S$ is a cut of $B$, or $B$ has a cut $X$ such that $S$ is a cut of every
+cut-transpose of $B$ at $X$. This is the form used in the proof of Theorem 1.1.
+\end{lemma}
+\noindent\emph{Status: to do.}
+
+\begin{lemma}[Large minimal cuts (CGGR Lemma 3.6)]
+\label{lem:cggr36}
+\lean{Matrix.PMEquiv.hasCut_of_isMinimalCut}
+\leanok
+\uses{def:offdiag,def:pme,lem:cggr33,lem:pme-submatrix,ext:no-cut}
+Let $A,B$ be PME with nonzero off-diagonal entries. A minimal cut of $A$ of size greater
+than two is a cut of $B$.
+\end{lemma}
+\noindent\emph{Status: to do.}
+
+\begin{lemma}[Gluing along a minimal cut (CGGR Lemma 3.9)]
+\label{lem:cggr39}
+\lean{Matrix.PMEquiv.diagSimilar_or_cutTranspose}
+\leanok
+\uses{def:offdiag,def:pme,def:minimal-cut,def:cut-transpose}
+Let $A,B$ be PME with nonzero off-diagonal entries, $S$ a minimal cut of $A$ and a cut of
+$B$, and $s\in S$. If $A[S^c\cup\{s\}]$ and $B[S^c\cup\{s\}]$ are diagonally similar, then
+$A$ is diagonally similar to $B$, or every cut-transpose of $A$ at $S$ is.
+\end{lemma}
+\noindent\emph{Status: to do.}
+
+\begin{theorem}[CGGR Theorem 1.1, hard direction]
+\label{thm:cggr11-hard}
+\lean{Matrix.PMEquiv.exists_cutTransposeEquivWrt}
+\leanok
+\uses{def:ct-chain,ext:cggr21,lem:cggr215,lem:claim41,ext:hl-small,ext:no-cut,lem:cggr31,lem:cggr32,lem:cggr34,lem:cggr35,lem:cggr36,lem:cggr39,lem:minimal-cut-exists,lem:pme-submatrix}
+Irreducible PME matrices are cut-transpose equivalent with respect to a list of length at
+most $2|I|$.
+\end{theorem}
+\noindent\emph{Status: to do; a formalization target. Reduce to nonzero off-diagonal
+entries by passing to $\operatorname{adj}(A+D)$, possibly over a field extension, then
+induct on $|I|$ through a minimal cut $S$ and the principal submatrix on $S^c\cup\{s\}$.
+The base cases are Lemmas~\ref{ext:hl-small}, \ref{ext:no-cut} and~\ref{lem:cggr31}.}
+
+\begin{theorem}[CGGR Theorem 1.1]
+\label{thm:cggr11}
+\lean{Matrix.pmEquiv_iff_cutTransposeEquivWrt, Matrix.pmEquiv_iff_cutTransposeEquiv}
+\leanok
+\uses{thm:cggr11-hard,lem:chain-pme}
+Irreducible matrices over a field are PME exactly when they are cut-transpose equivalent,
+and the list of cuts can be taken of length at most $2|I|$.
+\end{theorem}
+\begin{proof}
+\leanok
+Combine Theorem~\ref{thm:cggr11-hard} with Lemma~\ref{lem:chain-pme}.
+\end{proof}
+
+\section{The alternative Theorem 4.1}
+
+\begin{lemma}[An active cut gives a nontrivial fiber]
+\label{lem:ct-nontrivial}
+\lean{Matrix.not_hasTrivialFiber_of_isCutTranspose}
+\leanok
+\uses{lem:ct-pme,lem:pme-basic}
+If some cut-transpose of $A$ is not diagonally equivalent to $A$, the fiber of $A$ is not
+trivial.
+\end{lemma}
+\begin{proof}
+\leanok
+The cut-transpose lies in the fiber by Lemma~\ref{lem:ct-pme}.
+\end{proof}
+
+\begin{theorem}[Alternative Theorem 4.1]
+\label{thm:main-alt}
+\lean{Matrix.hasTrivialFiber_iff_forall_isCutTranspose}
+\leanok
+\uses{lem:reducible-fiber,lem:ct-pme,lem:pme-basic,thm:cggr11-hard,lem:pme-irred,lem:chain-de}
+For nonempty $I$ and a field $F$, the fiber of $A$ is trivial exactly when $A$ is
+irreducible and every cut-transpose of $A$ at every cut of $A$ is diagonally equivalent to
+$A$. No hypothesis $|I|\ge4$ is needed, since there are no cuts when $|I|\le3$.
+\end{theorem}
+\begin{proof}
+\leanok
+If the fiber is trivial, $A$ is irreducible by Lemma~\ref{lem:reducible-fiber}, and each
+cut-transpose lies in the fiber by Lemma~\ref{lem:ct-pme}. Conversely, a matrix $B$ in the
+fiber is irreducible by Lemma~\ref{lem:pme-irred}, so by Theorem~\ref{thm:cggr11-hard} it is
+diagonally equivalent to the end of a chain starting at $A$; that end is diagonally
+equivalent to $A$ by Lemma~\ref{lem:chain-de}.
+\end{proof}
+
+\begin{corollary}[No cut]
+\label{cor:no-cut}
+\lean{Matrix.hasTrivialFiber_of_noCut'}
+\leanok
+\uses{thm:main-alt}
+For nonempty $I$, an irreducible matrix with no cut has a trivial fiber. Compare the
+external statement Lemma~\ref{ext:no-cut}, which the proof of
+Theorem~\ref{thm:cggr11-hard} itself uses.
+\end{corollary}
+\begin{proof}
+\leanok
+The cut-transpose condition is vacuous.
+\end{proof}
+
+\begin{definition}[Examples]
+\label{def:ct-examples}
+\lean{exMat, exActive, exActiveCT}
+\leanok
+\uses{def:cut-transpose}
+Over $\mathbb{Q}$, with indices $0,\dots,3$ and the cut $X=\{0,1\}$:
+\[ A=\begin{pmatrix}0&2&1&1\\3&0&1&1\\1&1&0&1\\1&1&1&0\end{pmatrix},\qquad
+   A^*=\begin{pmatrix}0&2&1&1\\3&0&1&1\\1&1&0&2\\1&1&3&0\end{pmatrix},\qquad
+   \operatorname{ct}_X(A^*)=\begin{pmatrix}0&2&1&1\\3&0&1&1\\1&1&0&3\\1&1&2&0\end{pmatrix}. \]
+Guards check that $\operatorname{ct}_X(A)=A$, that the third matrix is the cut-transpose
+of the second, and that the last two have equal principal minors. A further example
+checks that the second matrix of Example 4.6 (Definition~\ref{def:example46}) is the
+transpose of a cut-transpose of the first.
+\end{definition}

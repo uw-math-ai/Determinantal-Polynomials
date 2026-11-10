@@ -426,7 +426,7 @@ noncomputable def Matrix.adjPoly (A : Matrix n n R) : Matrix n n (MvPolynomial n
   A.mvCharmatrix.adjugate
 
 /-- **TODO**: the coefficient of `∏_{i ∈ S} xᵢ` in `f_A` is the complementary minor `A_{Sᶜ}`.
-The expansion is `det_add_diagonal_formula` (`DetPoly/PS2_#1c_Shaoda.lean`). Mathlib's
+The expansion is `det_add_diagonal_formula` (`DetPoly/PS2_#1c_MultiLin_Shaoda.lean`). Mathlib's
 univariate analogue is `Matrix.coeff_det_one_add_X_smul_eq_sum_minors`. -/
 theorem Matrix.coeff_detpoly (A : Matrix n n R) (S : Finset n) :
     A.detpoly.coeff S.exponent = A.principalMinor Sᶜ := by

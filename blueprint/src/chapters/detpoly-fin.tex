@@ -1,0 +1,223 @@
+\chapter{DetPoly: Lemma 4.3 and the shuffle sign on a finite ordinal}
+
+The modules \texttt{DetPoly.Lemma4\_3\_Shaoda} and \texttt{DetPoly.Lemma3\_2\_Shaoda} are
+self-contained developments on the index type $\{0,\dots,n-1\}$, in the namespaces
+\texttt{Lemma43Shaoda} and \texttt{Lemma32}. They use their own definitions of cuts,
+irreducibility and the polynomial adjugate rather than those of
+Chapter~\ref{chap:detpoly}, and everything in them is proved. Transferring
+Theorem~\ref{thm:fin-43} to the library definitions would prove
+Lemmas~\ref{lem:cut-minors}, \ref{lem:adj-cut} and~\ref{lem:cut-factorization}.
+
+\section{Lemma 4.3 on a finite ordinal}
+
+\begin{definition}[Setup]
+\label{def:fin-setup}
+\lean{Lemma43Shaoda.Poly, Lemma43Shaoda.polynomialMatrix, Lemma43Shaoda.genericShift, Lemma43Shaoda.genericAdjugate, Lemma43Shaoda.UsesOnly, Lemma43Shaoda.InCut, Lemma43Shaoda.OutCut, Lemma43Shaoda.splitEquiv, Lemma43Shaoda.cutBlock11, Lemma43Shaoda.cutBlock12, Lemma43Shaoda.cutBlock21, Lemma43Shaoda.cutBlock22, Lemma43Shaoda.IsCut, Lemma43Shaoda.MatrixIrreducible, Lemma43Shaoda.Lemma42Statement}
+\leanok
+For $A\in F^{n\times n}$ put $M=A+\operatorname{diag}(x_0,\dots,x_{n-1})$ over
+$F[x_0,\dots,x_{n-1}]$ and $G=\operatorname{adj}(M)$. A polynomial \emph{uses only} $S$ if
+its variables lie in $S$. For $X\subseteq\{0,\dots,n-1\}$ the four blocks of $A$ along
+$X$, $X^c$ are indexed by subtypes. Here $X$ is a \emph{cut} if $|X|,|X^c|\ge2$ and both
+cross blocks have rank exactly one, and $A$ is \emph{irreducible} if every nonempty proper
+$S$ has a nonzero entry $A_{ij}$ with $i\in S$, $j\notin S$. The \emph{Lemma 4.2 statement}
+says that every entry of $G$ is a nonzero polynomial.
+\end{definition}
+
+\begin{lemma}[Rank one gives an outer product]
+\label{lem:fin-rank-one}
+\lean{Lemma43Shaoda.exists_vecMulVec_of_rank_eq_one}
+\leanok
+A matrix of rank one over a field is an outer product $uv^t$.
+\end{lemma}
+\begin{proof}
+\leanok
+Take a nonzero vector spanning the column space.
+\end{proof}
+
+\begin{lemma}[Shears preserve the determinant]
+\label{lem:fin-shear}
+\lean{Lemma43Shaoda.rowShear, Lemma43Shaoda.det_rowShear, Lemma43Shaoda.colShear, Lemma43Shaoda.det_colShear}
+\leanok
+Adding $c_i$ times row $k$ to every row $i$, with $c_k=0$, does not change the
+determinant, and likewise for columns.
+\end{lemma}
+\begin{proof}
+\leanok
+The linked Lean declarations contain the proof.
+\end{proof}
+
+\begin{lemma}[Off-diagonal adjugate entry of a block matrix]
+\label{lem:fin-block-adj}
+\lean{Lemma43Shaoda.adjugate_fromBlocks_vecMulVec_apply₁₂}
+\leanok
+\uses{lem:fin-shear}
+Over a commutative ring, for
+$M=\left(\begin{smallmatrix}P&uv^t\\L&Q\end{smallmatrix}\right)$ and indices $i$ of the
+first block, $j$ of the second,
+\[ \operatorname{adj}(M)_{ij}=-\det(P\text{ with column }i\text{ replaced by }u)\cdot
+   \det(Q\text{ with row }j\text{ replaced by }v). \]
+This is fraction-free: no inverse of $P$ or $Q$ appears.
+\end{lemma}
+\begin{proof}
+\leanok
+Write the adjugate entry as the determinant of $M$ with a row replaced by a coordinate
+vector, clear the pivot column and row by shears, and split the resulting block
+triangular determinant.
+\end{proof}
+
+\begin{lemma}[Blocks of the generic matrix]
+\label{lem:fin-split}
+\lean{Lemma43Shaoda.splitGeneric, Lemma43Shaoda.splitGeneric_toBlocks₁₂, Lemma43Shaoda.splitGeneric₁₁_apply, Lemma43Shaoda.vars_splitGeneric₁₁_subset, Lemma43Shaoda.splitGeneric₂₂_apply, Lemma43Shaoda.vars_splitGeneric₂₂_subset, Lemma43Shaoda.vars_det_subset}
+\leanok
+\uses{def:fin-setup}
+Reindex $M$ by $X\oplus X^c$. Its upper right block is the constant matrix $A[X,X^c]$,
+and its diagonal blocks have entries using only the variables of $X$, respectively $X^c$.
+If all entries of a polynomial matrix use only $S$, so does its determinant.
+\end{lemma}
+\begin{proof}
+\leanok
+The linked Lean declarations contain the proof.
+\end{proof}
+
+\begin{definition}[The factorization statements]
+\label{def:fin-statement}
+\lean{Lemma43Shaoda.cofactorSign, Lemma43Shaoda.cofactorSign_mul_self, Lemma43Shaoda.CutFactorizationCore, Lemma43Shaoda.Lemma43Statement}
+\leanok
+\uses{def:fin-setup}
+Let $\varepsilon_i=(-1)^{i+1}$, so $\varepsilon_i^2=1$. The \emph{core factorization} says
+there are polynomials $a_i$, $b_j$ with
+\[ G_{ij}=\varepsilon_i\,a_i\,b_j\qquad(i\in X,\ j\notin X), \]
+where $a_i$ uses only $X\setminus\{i\}$ and $b_j$ uses only $X^c\setminus\{j\}$.
+The \emph{Lemma 4.3 statement} adds that all $a_i$ and $b_j$ are nonzero.
+\end{definition}
+
+\begin{theorem}[Factorization across a cut]
+\label{thm:fin-core}
+\lean{Lemma43Shaoda.cutFactorization_of_isCut}
+\leanok
+\uses{def:fin-statement,lem:fin-rank-one,lem:fin-block-adj,lem:fin-split}
+If $X$ is a cut of $A$, the core factorization holds. Irreducibility is not used.
+\end{theorem}
+\begin{proof}
+\leanok
+Write $A[X,X^c]=uv^t$ and apply Lemma~\ref{lem:fin-block-adj} to the reindexed generic
+matrix. The two determinants use only the variables of $X\setminus\{i\}$ and
+$X^c\setminus\{j\}$ by Lemma~\ref{lem:fin-split}.
+\end{proof}
+
+\begin{theorem}[Lemma 4.3 on a finite ordinal]
+\label{thm:fin-43}
+\lean{Lemma43Shaoda.lemma_4_3}
+\leanok
+\uses{thm:fin-core}
+Let $n\ge4$, $A$ irreducible and $X$ a cut. Assuming the Lemma 4.2 statement for $A$,
+the Lemma 4.3 statement holds. Lemma 4.2 (Lemma~\ref{ext:nonzero}) enters as a
+hypothesis, so this proof is complete.
+\end{theorem}
+\begin{proof}
+\leanok
+A vanishing factor would make an entry $G_{ij}$ vanish.
+\end{proof}
+
+\section{Lemma 3.2: the sign of a shuffle}
+
+\begin{definition}[Shuffles and their inversions]
+\label{def:fin-shuffle}
+\lean{Lemma32.indexSum, Lemma32.triangular, Lemma32.shuffle, Lemma32.twoLine, Lemma32.sign_twoLine, Lemma32.crossingInversions, Lemma32.mem_crossingInversions, Lemma32.reverseOrderPairs, Lemma32.firstBlockIndex, Lemma32.secondBlockIndex, Lemma32.inversePositionValuePairs, Lemma32.inputInversions, Lemma32.shufflePair}
+\leanok
+For $T\subseteq\{0,\dots,n-1\}$ let $\Sigma(T)=\sum_{i\in T}(i+1)$ and
+$\tau_k=1+\dots+k$. The \emph{shuffle} of $T$ is the permutation listing $T$ in increasing
+order followed by $T^c$ in increasing order. For $|S|=|T|$ the \emph{two-line permutation}
+is $\operatorname{shuffle}(T)\circ\operatorname{shuffle}(S)^{-1}$; its sign is the product
+of the two shuffle signs. The \emph{crossing inversions} of $T$ are the pairs $(t,c)$ with
+$t\in T$, $c\notin T$, $c<t$. The remaining definitions are the positions of the two
+blocks and auxiliary sets of inverted pairs.
+\end{definition}
+
+\begin{lemma}[Arithmetic]
+\label{lem:fin-arith}
+\lean{Lemma32.triangular_succ, Lemma32.indexSum_erase, Lemma32.card_erase_step, Lemma32.induction_exponent_step, Lemma32.triangular_eq_add_choose, Lemma32.indexSum_eq_sum_val_add_card, Lemma32.two_shuffle_parity}
+\leanok
+\uses{def:fin-shuffle}
+One has $\tau_{k+1}=\tau_k+k+1$ and $\tau_k=k+\binom{k}{2}$, and $\Sigma(T)$ is the sum of
+the elements of $T$ plus $|T|$. Removing an element changes $\Sigma$ and the cardinality
+in the expected way, and $(-1)^{a+c}(-1)^{b+c}=(-1)^{a+b}$.
+\end{lemma}
+\begin{proof}
+\leanok
+The linked Lean declarations contain the proof.
+\end{proof}
+
+\begin{lemma}[The two blocks of a shuffle]
+\label{lem:fin-blocks}
+\lean{Lemma32.shuffle_firstBlockIndex, Lemma32.shuffle_secondBlockIndex, Lemma32.shuffle_firstBlock_mem, Lemma32.shuffle_secondBlock_not_mem, Lemma32.firstBlockIndex_val, Lemma32.secondBlockIndex_val, Lemma32.firstBlockIndex_lt_secondBlockIndex, Lemma32.shuffle_firstBlock_strictMono, Lemma32.shuffle_secondBlock_strictMono, Lemma32.firstBlockIndex_lt_iff, Lemma32.secondBlockIndex_lt_iff, Lemma32.index_from_either_block, Lemma32.shuffle_mem_iff_position_first, Lemma32.shuffle_inverse_first_before_second}
+\leanok
+\uses{def:fin-shuffle}
+The shuffle of $T$ sends the first $|T|$ positions increasingly onto $T$ and the remaining
+positions increasingly onto $T^c$. Every position lies in exactly one block, and first
+block positions precede second block positions.
+\end{lemma}
+\begin{proof}
+\leanok
+The linked Lean declarations contain the proof.
+\end{proof}
+
+\begin{lemma}[Inversions of a shuffle]
+\label{lem:fin-inversions}
+\lean{Lemma32.shuffle_sign_inversion_product, Lemma32.crossingInversions_subset_reverseOrderPairs, Lemma32.crossingInversions_eq_filter_reverseOrderPairs, Lemma32.crossingInversions_eq_filter_univ, Lemma32.crossingInversions_empty, Lemma32.crossingInversions_univ, Lemma32.internalStrictPairs_card, Lemma32.shuffle_inversion_iff_cross, Lemma32.shuffle_inversion_iff_mem_crossing, Lemma32.mem_crossing_iff_inverse_position_inversion, Lemma32.crossingInversions_eq_inversePositionValuePairs, Lemma32.shufflePair_injective, Lemma32.inputInversions_image, Lemma32.inputInversions_card_eq_crossing, Lemma32.shuffle_sign_eq_pow_inversion_sum, Lemma32.inversion_sum_eq_inputInversions_card, Lemma32.shuffle_sign_eq_pow_crossingInversions_card}
+\leanok
+\uses{lem:fin-blocks}
+A pair of positions is inverted by the shuffle of $T$ exactly when the first lies in the
+second block, the second in the first block, and their values form a crossing inversion.
+Hence the inversions of the shuffle are in bijection with the crossing inversions, and
+\[ \operatorname{sgn}(\operatorname{shuffle}(T))=(-1)^{\#\text{crossing inversions of }T}. \]
+\end{lemma}
+\begin{proof}
+\leanok
+Both blocks are increasing, so only cross-block pairs can be inverted. Use the product
+formula for the sign over pairs of positions.
+\end{proof}
+
+\begin{lemma}[Counting crossing inversions]
+\label{lem:fin-count}
+\lean{Lemma32.crossingInversions_card_eq_sum_before, Lemma32.card_all_below, Lemma32.card_below_partition, Lemma32.internal_below_sum_eq_choose, Lemma32.crossing_count_add_choose, Lemma32.crossing_count_add_triangular}
+\leanok
+\uses{lem:fin-inversions,lem:fin-arith}
+The number of crossing inversions of $T$ is $\sum_{t\in T}\#\{c\notin T:c<t\}$, and
+\[ \#\text{crossing inversions of }T+\tau_{|T|}=\Sigma(T). \]
+\end{lemma}
+\begin{proof}
+\leanok
+The elements below $t$ split into those in $T$ and those outside; the former contribute
+$\binom{|T|}{2}$ in total.
+\end{proof}
+
+\begin{theorem}[Sign of a shuffle]
+\label{thm:fin-shuffle-sign}
+\lean{Lemma32.shuffle_sign_induction, Lemma32.shuffle_sign_induction_of_step, Lemma32.shuffle_sign_empty}
+\leanok
+\uses{lem:fin-inversions,lem:fin-count}
+\[ \operatorname{sgn}(\operatorname{shuffle}(T))=(-1)^{\Sigma(T)+\tau_{|T|}}. \]
+A conditional version by insertion induction and the case $T=\varnothing$ are also
+recorded; the final proof does not use them.
+\end{theorem}
+\begin{proof}
+\leanok
+Combine Lemmas~\ref{lem:fin-inversions} and~\ref{lem:fin-count}; the exponents differ by
+$2\tau_{|T|}$.
+\end{proof}
+
+\begin{theorem}[Lemma 3.2]
+\label{thm:fin-32}
+\lean{Lemma32.lemma_3_2}
+\leanok
+\uses{thm:fin-shuffle-sign,lem:fin-arith}
+For $|S|=|T|$, the two-line permutation sending the increasing enumeration of $S$ to that
+of $T$ and of $S^c$ to that of $T^c$ has sign $(-1)^{\Sigma(S)+\Sigma(T)}$.
+The same sign over an arbitrary finite linear order is part of
+Definition~\ref{def:shuffle}.
+\end{theorem}
+\begin{proof}
+\leanok
+Multiply the two shuffle signs; the triangular terms cancel in parity.
+\end{proof}

@@ -1,6 +1,6 @@
 \chapter{LEAN\_Warmup: definitions and the paper roadmap}
 
-The main draft is \texttt{LEAN\_Warmup.ClaudeMathlib}. Its declarations expose the
+The draft for the paper is \texttt{LEAN\_Warmup.ClaudeMathlib}. Its declarations expose the
 intended mathematics, including external results left as \texttt{sorry} theorems.
 Some old draft statements duplicate results now proved in \texttt{DetPoly}; their own
 proofs have not yet been replaced. The following nodes preserve that distinction.
@@ -32,11 +32,12 @@ The linked Lean declarations contain the proof.
 
 \label{def:fiber}
 
-\lean{Matrix.principalSubmatrix, Matrix.principalSubmatrix_apply, Matrix.principalMinor, Matrix.principalMinor_empty, Matrix.principalMinors, Matrix.pmFiber, Matrix.HasTrivialFiber}
+\lean{Matrix.principalSubmatrix, Matrix.principalSubmatrix_eq_toSquareBlockProp, Matrix.principalSubmatrix_apply, Matrix.principalMinor, Matrix.principalMinor_empty, Matrix.principalMinors, Matrix.pmFiber, Matrix.HasTrivialFiber}
 
 \leanok
 
-The principal submatrix is restriction of both indices to a subset.
+The principal submatrix is restriction of both indices to a subset; it agrees with
+Mathlib's square block for the membership predicate.
 For a finite subset $S$, its determinant is $A_S$, with $A_\varnothing=1$.
 The principal minor map is $A\mapsto(S\mapsto A_S)$. Its fiber at $A$ consists of
 matrices with the same principal minors. The predicate ``trivial fiber'' says every
@@ -255,12 +256,13 @@ The draft names $G_A=\operatorname{adj}(M_A)$ as the polynomial adjugate.
 
 The coefficient of $x^{e_S}$ in $f_A$ is the complementary principal minor $A_{S^c}$,
 and $f_A$ is multiaffine. In particular the coefficient of $\prod_{i\in I}x_i$ is one.
-The last assertion is proved from the coefficient formula in Lean, so it still depends
-on that unfinished formula.
+The last assertion is proved from the coefficient formula in Lean.
+Theorem~\ref{thm:diagonal-expansion} and Lemma~\ref{lem:coeff-via-derivative} are two
+routes to the coefficient formula.
 
 \end{lemma}
 
-\noindent\emph{Status: coefficient and multiaffinity proofs unfinished; leading-coefficient proof conditional.}
+\noindent\emph{Status: coefficient and multiaffinity proofs unfinished.}
 
 \begin{lemma}[Polynomial equality detects the fiber]
 
@@ -415,7 +417,8 @@ The paper's signs are absorbed in the factors.
 
 \end{lemma}
 
-\noindent\emph{Status: unfinished proof.}
+\noindent\emph{Status: unfinished proof. Theorem~\ref{thm:fin-43} proves this on a finite
+ordinal with separate definitions, given Lemma~\ref{ext:nonzero}; it remains to transfer it.}
 
 \begin{lemma}[Proportionality implies symmetrizability (Lemma 4.4)]
 
@@ -433,7 +436,7 @@ propagates proportionality with the Rayleigh and resultant identities.
 
 \end{lemma}
 
-\noindent\emph{Status: unfinished proof.}
+\noindent\emph{Status: unfinished proof; not needed.}
 
 \begin{definition}[Cut swap]
 
@@ -467,7 +470,7 @@ the recognition theorem's Rayleigh, support, multiaffinity and resultant conditi
 
 \end{lemma}
 
-\noindent\emph{Status: unfinished proof.}
+\noindent\emph{Status: unfinished proof; superseded by Lemma~\ref{lem:ct-pme}.}
 
 \begin{lemma}[Reducible matrices have nontrivial fibers]
 
@@ -533,19 +536,12 @@ consistent diagonal scaling factors.
 
 \leanok
 
-\uses{lem:reducible-fiber,lem:cut-construction,lem:proportional,ext:no-cut,lem:symmetric-fiber,lem:fiber-poly}
+\uses{def:fiber,def:irred,def:symmetrizable,def:cut}
 
-For $|I|\geq4$, the draft target over a field is
+For $|I|\geq4$, the paper claims over a field
 \[ A\text{ has trivial fiber}\quad\Longleftrightarrow\quad
  A\text{ is irreducible}\ \text{ and }\quad
  \bigl(A\text{ is symmetrizable or }A\text{ has no cut}\bigr). \]
-For necessity, first exclude reducibility. With an irreducible nonsymmetrizable matrix
-and a cut, use the cut swap to construct a second matrix in the fiber. If this matrix
-is diagonally equivalent to $A$, interchange the other pair of factors and try again;
-proportionality in both attempts should force symmetrizability. Both transpose and
-nontranspose alternatives in diagonal equivalence must be handled.
-For sufficiency, use the no-cut external theorem or the symmetrizable-fiber lemma.
-
 \end{theorem}
 
 \noindent\emph{Status: unfinished draft theorem.}

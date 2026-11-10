@@ -249,12 +249,15 @@ The linked Lean declarations contain the proof.
 \uses{lem:mixed-det,lem:constant-minor,lem:mixed-support}
 
 The coefficient of $x^{e_S}$ in $f_A$ is $A_{S^c}$.
-The Lean proof reduces this to the generalized Jacobi formula and the constant-coefficient
-minor identity, so it currently depends on the unfinished mixed-derivative theorem.
-
 \end{lemma}
 
-\noindent\emph{Status: proof written, conditional on the unfinished generalized Jacobi formula.}
+\begin{proof}
+
+\leanok
+
+Reduce to the generalized Jacobi formula and the constant-coefficient minor identity.
+
+\end{proof}
 
 \section{Computable multivariate polynomials}
 
@@ -454,7 +457,8 @@ and the adjugate inverse when the determinant is a unit.
 
 \leanok
 
-In this separate namespace, principal minors are determinants of finite principal
+The diagonal expansion is implemented in \texttt{DetPoly}.
+In its separate namespace, principal minors are determinants of finite principal
 submatrices. The matrix $\operatorname{mixRows}(S,M,N)$ uses rows of $M$ in $S$ and
 rows of $N$ outside $S$.
 
@@ -555,23 +559,8 @@ Term order is unspecified. This instance is unsafe and is used only for display.
 
 \section{Additional matrix identities}
 
-The following APIs are retained in \texttt{LEAN\_Warmup}; the current proofs of
-Theorem 2.3 and Lemma 4.3 do not depend on them.
-
-\begin{lemma}[Block-triangular forms of reducibility]
-
-\label{lem:warmup-block-triangular}
-
-\lean{Matrix.isReducible_iff_blockTriangular, Matrix.blockTriangular_of_subset}
-
-\leanok
-
-\uses{lem:reducible}
-
-Reducibility is equivalent to block triangularity for a surjective Boolean labeling.
-Vanishing entries outside a subset give block triangularity for its membership label.
-
-\end{lemma}
+The following APIs are retained in \texttt{LEAN\_Warmup}; the proof of Theorem 2.3
+does not depend on them.
 
 \begin{lemma}[General cofactors and Laplace expansion]
 
