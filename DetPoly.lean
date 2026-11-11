@@ -1,6 +1,7 @@
 module  -- shake: keep-all --deprecated_module: ignore
 
 public import DetPoly.Basic
+public import DetPoly.CutTranspose
 public import DetPoly.DesnanotJacobi
 public import DetPoly.DiagSimilar
 public import DetPoly.IrreducibleMatrix

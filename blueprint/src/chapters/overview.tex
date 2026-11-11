@@ -51,8 +51,6 @@ a literal Lean import graph.
 
 The Lean proof of Theorem~\ref{thm:main-alt} is complete given:
 \begin{itemize}
-\item cut-transpose preserves principal minors (Lemma~\ref{lem:ct-pme}), the first real
-proof obligation;
 \item reducible matrices have nontrivial fibers (Lemma~\ref{lem:reducible-fiber});
 \item irreducibility of $A$ is irreducibility of $f_A$ (Lemma~\ref{lem:irred-poly}), which
 uses the external Lemma~\ref{ext:nonzero};
@@ -63,6 +61,8 @@ uses the external Lemma~\ref{ext:nonzero};
 \item the hard direction of CGGR Theorem 1.1 (Theorem~\ref{thm:cggr11-hard}), whose proof
 cites Loewy (1986), Theorem 1 (Lemma~\ref{ext:no-cut}) and Hartfiel--Loewy (1984).
 \end{itemize}
+That cut-transposes preserve principal minors (Lemma~\ref{lem:ct-pme}) is proved, over any
+commutative ring (Lemma~\ref{lem:ct-principal-minor}).
 Lemmas 4.3, 4.4 and 4.5 of the paper and the determinantal representation theorem
 (Lemma~\ref{ext:recognition}) are not needed for it.
 

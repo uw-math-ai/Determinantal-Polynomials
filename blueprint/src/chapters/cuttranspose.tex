@@ -81,19 +81,6 @@ By Lemma~\ref{lem:irred-poly}, irreducibility of the matrix is irreducibility of
 
 \section{Cuts and minimal cuts}
 
-\begin{lemma}[Cuts of the transpose]
-\label{lem:cut-transpose-inv}
-\lean{Matrix.HasCut.transpose, Matrix.hasCut_transpose}
-\leanok
-\uses{def:cut}
-$A$ and $A^t$ have the same cuts.
-\end{lemma}
-\begin{proof}
-\leanok
-The two cross blocks of $A^t$ are the transposes of those of $A$, and rank is invariant
-under transpose.
-\end{proof}
-
 \begin{definition}[Minimal cuts]
 \label{def:minimal-cut}
 \lean{Matrix.IsMinimalCut, Matrix.HasCut.isMinimalCut_of_card_eq_two}
@@ -114,76 +101,8 @@ Every cut contains a minimal cut.
 
 \section{The cut-transpose operation}
 
-\begin{definition}[Cut factorization]
-\label{def:cut-factorization}
-\lean{Matrix.IsCutFactorization}
-\leanok
-Functions $p,q,u,v:I\to R$ form a \emph{cut factorization} of $A$ at $X$ if
-$A_{ij}=p_iq_j$ for $i\in X$, $j\notin X$ and $A_{ij}=u_iv_j$ for $i\notin X$, $j\in X$.
-In block form along $X$, $X^c$,
-\[ A=\begin{pmatrix}E&pq^t\\uv^t&N\end{pmatrix}. \]
-Only the values of $p,v$ on $X$ and of $q,u$ on $X^c$ matter. No block order or
-normalized factorization is chosen.
-\end{definition}
-
-\begin{lemma}[Cuts are factorizations]
-\label{lem:cut-iff-factorization}
-\lean{Matrix.IsCutFactorization.rank_le_one, Matrix.HasCut.exists_isCutFactorization, Matrix.hasCut_iff_exists_isCutFactorization}
-\leanok
-\uses{def:cut-factorization,def:cut,lem:rank-one}
-Over a field, $X$ is a cut of $A$ exactly when $2\le|X|$, $2\le|X^c|$ and $A$ has a cut
-factorization at $X$.
-\end{lemma}
-\begin{proof}
-\leanok
-Apply the outer-product criterion of Lemma~\ref{lem:rank-one} to both cross blocks and
-extend the factors by zero.
-\end{proof}
-
-\begin{definition}[Cut-transpose (CGGR Definition 2.10)]
-\label{def:cut-transpose}
-\lean{Matrix.cutTranspose, Matrix.cutTranspose_eq_cutSwap, Matrix.IsCutTranspose, Matrix.HasCut.exists_isCutTranspose}
-\leanok
-\uses{def:cut-factorization,lem:cut-iff-factorization,def:cut-swap}
-For a cut factorization as above, the \emph{cut-transpose} is
-\[ \operatorname{ct}_X(A;p,q,u,v)=\begin{pmatrix}E&pu^t\\qv^t&N^t\end{pmatrix}: \]
-swap $q\leftrightarrow u$ and transpose the $X^c$ block. It is the cut swap of
-Definition~\ref{def:cut-swap} applied to $A$ instead of to $G_A$. A matrix $B$ \emph{is a
-cut-transpose of $A$ at $X$} if it arises from some cut factorization of $A$ at $X$.
-Every cut has a cut-transpose. Statements about CGGR's $\operatorname{ct}(A,X)$ are
-phrased for every such $B$.
-\end{definition}
-
-\begin{lemma}[Involution]
-\label{lem:ct-involution}
-\lean{Matrix.IsCutFactorization.cutTranspose, Matrix.cutTranspose_cutTranspose, Matrix.IsCutTranspose.symm, Matrix.IsCutTranspose.hasCut}
-\leanok
-\uses{def:cut-transpose,lem:cut-iff-factorization}
-The cut-transpose has the cut factorization $(p,u,q,v)$ at $X$, and cut-transposing again
-with it returns $A$ (CGGR Remark 2.11). Hence being a cut-transpose at $X$ is a symmetric
-relation, and $X$ is still a cut of every cut-transpose at $X$.
-\end{lemma}
-\begin{proof}
-\leanok
-Compare entries on the four blocks.
-\end{proof}
-
-\begin{lemma}[Transpose and complement]
-\label{lem:ct-transpose}
-\lean{Matrix.IsCutFactorization.transpose, Matrix.transpose_cutTranspose, Matrix.IsCutTranspose.transpose, Matrix.IsCutFactorization.compl, Matrix.cutTranspose_compl, Matrix.IsCutTranspose.compl}
-\leanok
-\uses{def:cut-transpose}
-If $(p,q,u,v)$ is a cut factorization of $A$ at $X$, then $(v,u,q,p)$ is one of $A^t$ at
-$X$ and $(u,v,p,q)$ is one of $A$ at $X^c$. For these,
-\[ \operatorname{ct}_X(A^t)=\operatorname{ct}_X(A)^t,\qquad
-   \operatorname{ct}_{X^c}(A)=\operatorname{ct}_X(A)^t. \]
-The second identity explains why Lemma 4.5 and Example 4.6 of the paper, which transpose
-different diagonal blocks, agree up to diagonal equivalence.
-\end{lemma}
-\begin{proof}
-\leanok
-Compare entries on the four blocks.
-\end{proof}
+The definitions and the basic API are in Section~\ref{sec:cuts} of Part~\ref{part:detpoly}.
+This section adds what is only stated over a field.
 
 \begin{lemma}[Uniqueness up to diagonal similarity (CGGR Remark 2.11)]
 \label{lem:ct-unique}
@@ -200,18 +119,17 @@ $\lambda\mu$ on $X$ and $1$ on $X^c$.}
 
 \begin{lemma}[Cut-transpose preserves principal minors (CGGR Lemma 2.12)]
 \label{lem:ct-pme}
-\lean{Matrix.IsCutTranspose.pmEquiv}
+\lean{Matrix.cutTranspose_eq_cutSwap, Matrix.IsCutTranspose.pmEquiv}
 \leanok
-\uses{def:cut-transpose,lem:pme-detpoly}
-If $B$ is a cut-transpose of $A$ at $X$, then $A$ and $B$ are PME. No irreducibility or
-cardinality hypothesis is needed. This is the matrix form of Lemma 4.5 of the paper and the
-first real proof obligation of the outline.
+\uses{lem:ct-principal-minor,def:pme,def:cut-swap}
+If $B$ is a cut-transpose of $A$ at $X$, then $A$ and $B$ are PME. This is the matrix form of
+Lemma 4.5 of the paper: the cut-transpose is the cut swap of Definition~\ref{def:cut-swap}
+applied to $A$ instead of to $G_A$.
 \end{lemma}
-\noindent\emph{Status: to do. With $E_x=E+\operatorname{diag}(x_X)$ and
-$N_x=N+\operatorname{diag}(x_{X^c})$, the rank-one Schur complement gives
-\[ f_A=\det E_x\det N_x-(v^t\operatorname{adj}(E_x)p)(q^t\operatorname{adj}(N_x)u), \]
-which is invariant under $q\leftrightarrow u$, $N\mapsto N^t$. This does not use the
-determinantal representation theorem (Lemma~\ref{ext:recognition}).}
+\begin{proof}
+\leanok
+Lemma~\ref{lem:ct-principal-minor}.
+\end{proof}
 
 \begin{lemma}[Compatibility with diagonal equivalence]
 \label{lem:ct-de-compat}
@@ -229,7 +147,7 @@ $\tilde D=\operatorname{diag}(D_X,D_{X^c}^{-1})$ for the induced factorization.}
 \label{lem:de-cuts}
 \lean{Matrix.DiagEquivalent.hasCut}
 \leanok
-\uses{lem:cut-transpose-inv,def:diag}
+\uses{def:cut,def:diag}
 Diagonally equivalent matrices have the same cuts.
 \end{lemma}
 \noindent\emph{Status: to do. Rescale a cut factorization, or use that multiplication by an
@@ -239,41 +157,41 @@ invertible diagonal matrix preserves rank.}
 
 \begin{definition}[Chains and cut-transpose equivalence (CGGR Definition 2.14)]
 \label{def:ct-chain}
-\lean{Matrix.IsCutTransposeChain, Matrix.CutTransposeEquivWrt, Matrix.CutTransposeEquiv, Matrix.DiagEquivalent.cutTransposeEquiv}
+\lean{Matrix.CutTransposeEquivWrt, Matrix.CutTransposeEquiv, Matrix.cutTransposeEquiv_iff_exists_cutTransposeEquivWrt, Matrix.DiagEquivalent.cutTransposeEquiv}
 \leanok
-\uses{def:cut-transpose,def:diag}
-A \emph{cut-transpose chain} from $A$ to $C$ along a list $(X_1,\dots,X_k)$ consists of
-$A=A_0,\dots,A_k=C$ with $X_i$ a cut of $A_{i-1}$ and $A_i$ a cut-transpose of $A_{i-1}$ at
-$X_i$. $A$ and $B$ are \emph{cut-transpose equivalent with respect to} the list if such a
-chain ends at a matrix diagonally equivalent to $B$, and \emph{cut-transpose equivalent} if
-this holds for some list. Diagonally equivalent matrices are cut-transpose equivalent
-through the empty list.
+\uses{def:ct-chain-detpoly,def:diag}
+With cut-transpose paths as in Definition~\ref{def:ct-chain-detpoly}, $A$ and $B$ are
+\emph{cut-transpose equivalent with respect to} a list of cuts if a path from $A$ with these
+cuts ends at a matrix diagonally equivalent to $B$, and \emph{cut-transpose equivalent} if
+some path from $A$ ends at a matrix diagonally equivalent to $B$; equivalently, if the first
+holds for some list. Diagonally equivalent matrices are cut-transpose equivalent through the
+empty path.
 \end{definition}
 
 \begin{lemma}[Theorem 1.1, easy direction]
 \label{lem:chain-pme}
-\lean{Matrix.IsCutTransposeChain.pmEquiv, Matrix.CutTransposeEquivWrt.pmEquiv, Matrix.CutTransposeEquiv.pmEquiv}
+\lean{Matrix.CutTransposePath.pmEquiv, Matrix.CutTransposeEquivWrt.pmEquiv, Matrix.CutTransposeEquiv.pmEquiv}
 \leanok
-\uses{def:ct-chain,lem:ct-pme,lem:pme-basic}
+\uses{def:ct-chain,lem:chain-principal-minor,lem:pme-basic}
 Cut-transpose equivalent matrices are PME.
 \end{lemma}
 \begin{proof}
 \leanok
-Induct on the chain using Lemma~\ref{lem:ct-pme}, then use Lemma~\ref{lem:pme-basic}.
+Lemma~\ref{lem:chain-principal-minor}, then Lemma~\ref{lem:pme-basic}.
 \end{proof}
 
 \begin{lemma}[Chains inside a diagonal-equivalence class]
 \label{lem:chain-de}
-\lean{Matrix.IsCutTransposeChain.diagEquivalent}
+\lean{Matrix.CutTransposePath.diagEquivalent}
 \leanok
 \uses{def:ct-chain,lem:ct-de-compat,lem:de-cuts}
 Suppose every cut-transpose of $A$ at every cut of $A$ is diagonally equivalent to $A$.
-Then every chain starting at a matrix diagonally equivalent to $A$ ends at a matrix
+Then every path starting at a matrix diagonally equivalent to $A$ ends at a matrix
 diagonally equivalent to $A$.
 \end{lemma}
 \begin{proof}
 \leanok
-Induct on the chain. At each step transfer the cut and the cut-transpose to $A$ by
+Induct on the path. At each step transfer the cut and the cut-transpose to $A$ by
 Lemmas~\ref{lem:de-cuts} and~\ref{lem:ct-de-compat}.
 \end{proof}
 
@@ -509,7 +427,7 @@ The cut-transpose condition is vacuous.
 
 \begin{definition}[Examples]
 \label{def:ct-examples}
-\lean{exMat, exActive, exActiveCT}
+\lean{exMat, exActive, exActiveCT, exMatFact, exActiveFact}
 \leanok
 \uses{def:cut-transpose}
 Over $\mathbb{Q}$, with indices $0,\dots,3$ and the cut $X=\{0,1\}$:

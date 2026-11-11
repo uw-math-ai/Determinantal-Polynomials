@@ -125,23 +125,4 @@ theorem detpoly_eq_iff_principalMinor_eq (A B : Matrix n n R) :
 
 end CommRing
 
-section Field
-variable {𝔽 : Type*} [Field 𝔽]
-
-/-- `A` has a cut at `X`: `2 ≤ |X| ≤ n - 2`, `rk A[X,Xᶜ] ≤ 1` and `rk A[Xᶜ,X] ≤ 1`. Proofs
-use the factorization form `rank_le_one_iff_eq_vecMulVec`. The definition is symmetric in
-`X ↔ Xᶜ` (`HasCut.compl`). -/
-def Matrix.HasCut (A : Matrix n n 𝔽) (X : Finset n) : Prop :=
-  2 ≤ X.card ∧ 2 ≤ Xᶜ.card ∧
-    (A.setSubmatrix X (Xᶜ : Finset n)).rank ≤ 1 ∧
-    (A.setSubmatrix (Xᶜ : Finset n) X).rank ≤ 1
-
-/-- The complement of a cut is a cut. -/
-theorem Matrix.HasCut.compl {A : Matrix n n 𝔽} {X : Finset n} (h : A.HasCut X) :
-    A.HasCut Xᶜ := by
-  obtain ⟨h₁, h₂, h₃, h₄⟩ := h
-  exact ⟨h₂, by rwa [compl_compl], by rwa [compl_compl], by rwa [compl_compl]⟩
-
-end Field
-
 end

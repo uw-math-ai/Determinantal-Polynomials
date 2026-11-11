@@ -7,7 +7,7 @@ Authors: Grant Yang
 module
 
 public import LEAN_Warmup.Basic
-public import DetPoly.IrreducibleMatrix
+public import DetPoly.CutTranspose
 public import DetPoly.DiagSimilar
 public import Mathlib
 public meta import DetPoly.Basic
@@ -127,24 +127,6 @@ Reducibility is in `DetPoly.IrreducibleMatrix`. -/
 section Combinatorial
 
 variable {R 𝔽 n : Type*} [Fintype n] [DecidableEq n]
-
-omit [Fintype n] [DecidableEq n] in
-/-- A matrix has rank `≤ 1` iff it is an outer product `u vᵀ`. **NAME ONLY**: Mathlib has the
-`←` direction (`Matrix.rank_vecMulVec_le`) and the module version
-(`Submodule.finrank_le_one_iff_isPrincipal`). -/
-theorem Matrix.rank_le_one_iff_eq_vecMulVec [Field 𝔽] {m p : Type*} [Fintype p]
-    (M : Matrix m p 𝔽) : M.rank ≤ 1 ↔ ∃ u v, M = vecMulVec u v := by
-  refine ⟨fun h ↦ ?_, fun ⟨u, v, h⟩ ↦ h ▸ rank_vecMulVec_le u v⟩
-  have := FiniteDimensional.span_of_finite 𝔽 (Set.finite_range M.col)
-  rw [rank_eq_finrank_span_cols, Submodule.finrank_le_one_iff_isPrincipal,
-    Submodule.isPrincipal_iff] at h
-  obtain ⟨u, hu⟩ := h
-  have : ∀ j, ∃ c : 𝔽, c • u = M.col j := fun j ↦
-    Submodule.mem_span_singleton.mp (hu ▸ Submodule.subset_span ⟨j, rfl⟩)
-  choose c hc using this
-  refine ⟨u, c, ?_⟩
-  ext i j
-  rw [vecMulVec_apply, ← col_apply M j i, ← hc j, Pi.smul_apply, smul_eq_mul, mul_comm]
 
 /-- Diagonal similarity to a symmetric matrix. For a symmetric target, allowing
 transpose gives the same relation, so this also expresses the paper's terminology. -/

@@ -77,23 +77,6 @@ $\prod_{i\in S}x_i$ are distinct for distinct $S$.
 
 \end{proof}
 
-\begin{definition}[Cuts]
-
-\label{def:cut}
-\alsoIn{part:warmup}
-
-\lean{Matrix.HasCut, Matrix.HasCut.compl}
-
-\leanok
-
-\uses{def:submatrix}
-
-For $A$ over a field, a cut is a finite subset $X$ such that
-$2\leq |X|$, $2\leq |X^c|$ and both $A[X,X^c]$ and $A[X^c,X]$ have rank at most one.
-The definition is unchanged on replacing $X$ by $X^c$.
-
-\end{definition}
-
 \begin{definition}[Diagonal similarity and equivalence]
 
 \label{def:diag}
@@ -454,31 +437,201 @@ For equal indices use $\partial_i^2f_A=0$.
 
 \end{proof}
 
-\section{Statements toward Lemma 4.3}
-\label{sec:lemma43}
+\section{Cuts and cut-transposes}
+\label{sec:cuts}
+
+\begin{definition}[Cut factorization]
+\label{def:cut-factorization}
+\alsoIn{part:warmup}
+\lean{Matrix.R1CutFactorization, Matrix.R1CutFactorization.mk', Matrix.R1CutFactorization.two_le_card, Matrix.R1CutFactorization.two_le_card_compl, Matrix.R1CutFactorization.compl, Matrix.R1CutFactorization.transpose, Matrix.HasCut.exists_r1CutFactorization, Matrix.hasCut_iff_exists_r1CutFactorization}
+\leanok
+\uses{def:cut}
+A \emph{rank-one cut factorization} of $A$ consists of a cut $X$ of $A$
+(Definition~\ref{def:cut}) together with $p,q,u,v:I\to R$ such that
+$A_{ij}=p_iq_j$ for $i\in X$, $j\notin X$ and $A_{ij}=u_iv_j$ for $i\notin X$, $j\in X$.
+In block form along $X$, $X^c$,
+\[ A=\begin{pmatrix}E&pq^t\\uv^t&N\end{pmatrix}. \]
+Only the values of $p,v$ on $X$ and of $q,u$ on $X^c$ matter. No block order or
+normalized factorization is chosen. Every cut has a cut factorization. A cut factorization
+at $X$ gives one of $A$ at $X^c$ (exchange the two blocks) and one of $A^t$ at $X$ (namely
+$(v,u,q,p)$).
+\end{definition}
+
+\begin{definition}[Cuts]
+\label{def:cut}
+\alsoIn{part:warmup}
+\lean{Matrix.HasCut, Matrix.HasCut.compl, Matrix.hasCut_compl_iff, Matrix.HasCut.transpose, Matrix.hasCut_transpose}
+\leanok
+\uses{def:submatrix}
+A \emph{cut} of $A$ is a finite subset $X$ such that $2\leq |X|$, $2\leq |X^c|$, and
+$A[X,X^c]=pq^t$, $A[X^c,X]=uv^t$ for some vectors $p,q,u,v$. This makes sense over any commutative ring; over a field it says
+that both cross blocks have rank at most one (Lemma~\ref{lem:cut-iff-factorization}).
+The definition is unchanged on replacing $X$ by $X^c$ or $A$ by $A^t$.
+\end{definition}
+
+\begin{lemma}[Outer-product criterion]
+\label{lem:rank-one}
+\alsoIn{part:warmup}
+\lean{Matrix.rank_le_one_iff_eq_vecMulVec}
+\leanok
+A matrix over a field has rank at most one exactly when it is an outer product $uv^t$.
+\end{lemma}
+\begin{proof}
+\leanok
+The column span is principal.
+\end{proof}
+
+\begin{lemma}[Cuts over a field]
+\label{lem:cut-iff-factorization}
+\alsoIn{part:warmup}
+\lean{Matrix.rank_le_one_of_factor, Matrix.exists_factor_of_rank_le_one, Matrix.hasCut_iff_rank_le_one}
+\leanok
+\uses{def:cut,lem:rank-one}
+Over a field, $X$ is a cut of $A$ exactly when it is a cut in Al Ahmadieh's sense: $2\le|X|$, $2\le|X^c|$ and both
+$A[X,X^c]$ and $A[X^c,X]$ have rank at most one.
+\end{lemma}
+\begin{proof}
+\leanok
+Apply the outer-product criterion of Lemma~\ref{lem:rank-one} to both cross blocks and
+extend the factors by zero.
+\end{proof}
 
 \begin{lemma}[Nonzero cut blocks]
-
 \label{lem:cut-ranks}
 \alsoIn{part:warmup}
-
-\lean{Matrix.isIrred_hasCut_rk1}
-
+\lean{Matrix.HasCut.rank_eq_one, Matrix.R1CutFactorization.rank_eq_one}
 \leanok
-
-\uses{def:cut,lem:reducible}
-
-If $A$ is irreducible and $X$ is a cut, both off-diagonal block ranks equal one.
-
+\uses{lem:cut-iff-factorization,lem:reducible}
+If $A$ is irreducible over a field and $X$ is a cut, both cross blocks have rank one.
 \end{lemma}
-
 \begin{proof}
-
 \leanok
-
 A zero cross block would give a nonempty proper subset as in Lemma~\ref{lem:reducible}.
-
 \end{proof}
+
+\begin{definition}[Cut-transpose (CGGR Definition 2.10)]
+\label{def:cut-transpose}
+\alsoIn{part:warmup}
+\lean{Matrix.cutTransposeWith, Matrix.cutTranspose, Matrix.cutTranspose_apply, Matrix.IsCutTranspose, Matrix.isCutTranspose_cutTranspose, Matrix.HasCut.exists_isCutTranspose, Matrix.IsCutTranspose.hasCut_left}
+\leanok
+\uses{def:cut-factorization}
+For a cut factorization $f=(X,p,q,u,v)$ as above, the \emph{cut-transpose} is
+\[ \operatorname{ct}(A,f)=\begin{pmatrix}E&pu^t\\qv^t&N^t\end{pmatrix}: \]
+swap $q\leftrightarrow u$ and transpose the $X^c$ block. The same block construction makes
+sense for arbitrary vectors. A matrix $B$ \emph{is a cut-transpose of $A$ at $X$} if
+$B=\operatorname{ct}(A,f)$ for some cut factorization $f$ with cut $X$. Every cut has a cut-transpose. Statements about CGGR's
+$\operatorname{ct}(A,X)$ are phrased for every such $B$.
+\end{definition}
+
+\begin{lemma}[Involution]
+\label{lem:ct-involution}
+\alsoIn{part:warmup}
+\lean{Matrix.R1CutFactorization.swap, Matrix.cutTranspose_swap, Matrix.HasCut.cutTranspose, Matrix.IsCutTranspose.symm, Matrix.IsCutTranspose.hasCut_right}
+\leanok
+\uses{def:cut-transpose}
+$\operatorname{ct}(A,f)$ has the cut factorization $(X,p,u,q,v)$, and cut-transposing
+again with it returns $A$ (CGGR Remark 2.11). Hence being a cut-transpose at $X$ is a
+symmetric relation, and $X$ is a cut of every cut-transpose at $X$.
+\end{lemma}
+\begin{proof}
+\leanok
+Compare entries on the four blocks.
+\end{proof}
+
+\begin{lemma}[Transpose, complement, submatrices]
+\label{lem:ct-transpose}
+\alsoIn{part:warmup}
+\lean{Matrix.transpose_cutTranspose, Matrix.cutTranspose_compl, Matrix.submatrix_cutTransposeWith, Matrix.IsCutTranspose.transpose, Matrix.IsCutTranspose.compl}
+\leanok
+\uses{def:cut-transpose}
+For the induced factorizations,
+\[ \operatorname{ct}_X(A)^t=\operatorname{ct}_X(A^t),\qquad
+   \operatorname{ct}_{X^c}(A)=\operatorname{ct}_X(A)^t, \]
+and the block construction commutes with taking principal submatrices. The second identity explains why Lemma 4.5 and
+Example 4.6 of the paper, which transpose different diagonal blocks, agree up to diagonal
+equivalence.
+\end{lemma}
+\begin{proof}
+\leanok
+Compare entries on the four blocks.
+\end{proof}
+
+\begin{lemma}[Matrix determinant lemma]
+\label{lem:det-rank-one-update}
+\lean{Matrix.det_add_vecMulVec}
+\leanok
+Over a commutative ring, $\det(A+uv^t)=\det A+v^t\operatorname{adj}(A)u$.
+\end{lemma}
+\begin{proof}
+\leanok
+Add $v_j u$ to the columns $j$ one at a time. Each step adds
+$v_j\det(A\text{ with column } j\leftarrow u)$, after column operations that subtract
+multiples of the column $u$; these terms sum to $v^t\operatorname{adj}(A)u$ by Cramer's rule.
+\end{proof}
+
+\begin{lemma}[Determinant with rank-one cross blocks]
+\label{lem:det-block-rank-one}
+\lean{Matrix.det_fromBlocks_vecMulVec}
+\leanok
+\uses{lem:det-rank-one-update,lem:fin-block-adj}
+Over a commutative ring,
+\[ \det\begin{pmatrix}E&pq^t\\uv^t&N\end{pmatrix}
+   =\det E\det N-(v^t\operatorname{adj}(E)p)(q^t\operatorname{adj}(N)u). \]
+\end{lemma}
+\begin{proof}
+\leanok
+Apply Lemma~\ref{lem:det-rank-one-update} to the block upper triangular matrix with the
+rank-one update $(0;u)(v;0)^t$, and compute the needed off-diagonal adjugate entries with
+Lemma~\ref{lem:fin-block-adj}.
+\end{proof}
+
+\begin{lemma}[Cut-transpose preserves principal minors (CGGR Lemma 2.12)]
+\label{lem:ct-principal-minor}
+\alsoIn{part:warmup}
+\lean{Matrix.det_cutTransposeWith, Matrix.det_cutTranspose, Matrix.principalMinor_cutTranspose, Matrix.IsCutTranspose.principalMinor_eq}
+\leanok
+\uses{lem:det-block-rank-one,lem:ct-transpose,def:principal-minor}
+Over a commutative ring, $\operatorname{ct}(A,f)$ has the same determinant and the same
+principal minors as $A$, for every cut factorization $f$. For the determinant, the block
+construction only needs $A[X,X^c]=pq^t$ and $A[X^c,X]=uv^t$, with no condition on $|X|$.
+\end{lemma}
+\begin{proof}
+\leanok
+The formula of Lemma~\ref{lem:det-block-rank-one} is invariant under $q\leftrightarrow u$,
+$N\mapsto N^t$, since $u^t\operatorname{adj}(N^t)q=q^t\operatorname{adj}(N)u$. For principal
+minors, restrict the block construction to the principal submatrix
+(Lemma~\ref{lem:ct-transpose}); its cut may be too small, which the determinant statement
+allows.
+\end{proof}
+
+\begin{definition}[Cut-transpose paths]
+\label{def:ct-chain-detpoly}
+\alsoIn{part:warmup}
+\lean{Matrix.CutTransposePath, Matrix.CutTransposePath.length, Matrix.CutTransposePath.cuts, Matrix.CutTransposePath.single, Matrix.CutTransposePath.append, Matrix.CutTransposePath.reverse, Matrix.CutTransposePath.length_nil, Matrix.CutTransposePath.length_cons, Matrix.CutTransposePath.cuts_nil, Matrix.CutTransposePath.cuts_cons, Matrix.CutTransposePath.length_single, Matrix.CutTransposePath.cuts_single, Matrix.CutTransposePath.length_cuts, Matrix.CutTransposePath.cuts_append, Matrix.CutTransposePath.length_append, Matrix.CutTransposePath.cuts_reverse, Matrix.CutTransposePath.length_reverse, Matrix.CutTransposePath.isCutTranspose_of_cons, Matrix.CutTransposeConnected, Matrix.cutTransposeConnected_equivalence, Matrix.IsCutTranspose.exists_path}
+\leanok
+\uses{lem:ct-involution}
+A \emph{cut-transpose path} from $A$ to $C$ consists of $A=A_0,\dots,A_k=C$ and cut
+factorizations $f_i$ of $A_{i-1}$ with $A_i=\operatorname{ct}(A_{i-1},f_i)$. It is data: its
+\emph{length} is $k$ and its \emph{cuts} are the list of cuts of $f_1,\dots,f_k$. Paths
+concatenate and can be reversed (lengths add, cuts concatenate or reverse), so being
+connected by a path is an equivalence relation.
+\end{definition}
+
+\begin{lemma}[Chains preserve principal minors]
+\label{lem:chain-principal-minor}
+\alsoIn{part:warmup}
+\lean{Matrix.CutTransposePath.principalMinor_eq, Matrix.CutTransposeConnected.principalMinor_eq}
+\leanok
+\uses{def:ct-chain-detpoly,lem:ct-principal-minor}
+The ends of a cut-transpose path have the same principal minors.
+\end{lemma}
+\begin{proof}
+\leanok
+Induct on the chain.
+\end{proof}
+
+\section{Statements toward Lemma 4.3}
+\label{sec:lemma43}
 
 \begin{lemma}[Common factors of column-replacement minors]
 
@@ -511,8 +664,8 @@ avoids the generalized Laplace expansion.}
 
 \uses{def:cut,lem:cut-minors,lem:cut-factorization}
 
-An irreducible matrix with cut $X$ has the same cut in $G_A$, after mapping polynomial
-entries to the fraction field of $F[x_i:i\in I]$. Both cross-block ranks are at most one.
+An irreducible matrix with cut $X$ has the same cut in $G_A$, as a matrix over
+$F[x_i:i\in I]$: both cross blocks are outer products of polynomial vectors.
 The alternative main theorem does not need this lemma; compare Lemma~\ref{lem:cggr26}.
 
 \end{lemma}

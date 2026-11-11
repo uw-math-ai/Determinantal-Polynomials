@@ -23,16 +23,14 @@ and statements of its results leading to Theorem 1.1, together with the alternat
 * As in `LEAN_Warmup.ClaudeMathlib`: index type `n` with `[Fintype n] [DecidableEq n]`, subsets
   are `Finset n`, and families indexed by a subset are total functions `n → _`.
 * CGGR define `ct(A, X)` through one fixed rank-one factorization of the cross blocks (the first
-  nonzero row and column). This needs an order and a choice, so we use
-  * `A.IsCutFactorization X p q u v`: `A[X,Xᶜ] = p qᵀ` and `A[Xᶜ,X] = u vᵀ`;
-  * `cutTranspose X A p q u v`: the cut-transpose for that factorization, an explicit matrix;
-  * `IsCutTranspose A X B`: `B` is a cut-transpose of `A` for *some* factorization.
-
-  For irreducible `A` the cross blocks have rank exactly one, so all cut-transposes at `X` are
-  diagonally similar (`IsCutTranspose.diagSimilar`, CGGR Remark 2.11).
+  nonzero row and column). We use the definitions of `DetPoly.CutTranspose` instead:
+  `f : A.R1CutFactorization` (a cut `f.X` with `A[X,Xᶜ] = p qᵀ`, `A[Xᶜ,X] = u vᵀ`),
+  `A.cutTranspose f`, and `IsCutTranspose A X B` (`B = ct(A, X)` for *some* factorization). For
+  irreducible `A` all cut-transposes at `X` are diagonally similar (`IsCutTranspose.diagSimilar`,
+  CGGR Remark 2.11).
 * Statements about `ct(A, X)` are phrased as `∀ B, IsCutTranspose A X B → …`.
-* A cut sequence `(X₁, …, X_k)` is a `List (Finset n)`; `IsCutTransposeChain A Xs C` says that
-  `C` is reached from `A` by cut-transposing at `X₁, …, X_k` in order.
+* A sequence of cut-transposes from `A` to `C` is `p : CutTransposePath A C` (in
+  `DetPoly.CutTranspose`), with `p.length` and the list of cuts `p.cuts`.
 * CGGR's "`A + D` is nonsingular" for a diagonal `D` is `IsUnit (A + diagonal d).det`.
 
 ## Dictionary
@@ -160,21 +158,6 @@ section Cuts
 
 variable {𝔽 n : Type*} [Fintype n] [DecidableEq n] [Field 𝔽]
 
-/-- `A` and `Aᵀ` have the same cuts. -/
-theorem HasCut.transpose {A : Matrix n n 𝔽} {X : Finset n} (h : A.HasCut X) : Aᵀ.HasCut X := by
-  obtain ⟨h₁, h₂, h₃, h₄⟩ := h
-  refine ⟨h₁, h₂, ?_, ?_⟩
-  · rw [show Aᵀ.setSubmatrix (X : Set n) ((Xᶜ : Finset n) : Set n) =
-      (A.setSubmatrix ((Xᶜ : Finset n) : Set n) (X : Set n))ᵀ from rfl, rank_transpose]
-    exact h₄
-  · rw [show Aᵀ.setSubmatrix ((Xᶜ : Finset n) : Set n) (X : Set n) =
-      (A.setSubmatrix (X : Set n) ((Xᶜ : Finset n) : Set n))ᵀ from rfl, rank_transpose]
-    exact h₃
-
-@[simp]
-theorem hasCut_transpose {A : Matrix n n 𝔽} {X : Finset n} : Aᵀ.HasCut X ↔ A.HasCut X :=
-  ⟨fun h ↦ by simpa using h.transpose, HasCut.transpose⟩
-
 /-- `X` is a *minimal cut* of `A`: no cut of `A` is properly contained in `X`. -/
 def IsMinimalCut (A : Matrix n n 𝔽) (X : Finset n) : Prop :=
   A.HasCut X ∧ ∀ Y ⊆ X, A.HasCut Y → Y = X
@@ -191,179 +174,37 @@ theorem HasCut.exists_isMinimalCut {A : Matrix n n 𝔽} {X : Finset n} (h : A.H
 
 end Cuts
 
-/-! ## The cut-transpose operation (Section 2.5) -/
+/-! ## The cut-transpose operation (Section 2.5)
 
-section CutTranspose
+The definitions and the basic API (involution, transpose, complement, Lemma 2.12) are in
+`DetPoly.CutTranspose`. -/
 
-variable {R n : Type*} [DecidableEq n]
-
-/-- `A[X,Xᶜ] = p qᵀ` and `A[Xᶜ,X] = u vᵀ`, i.e. `A = [[E, p qᵀ], [u vᵀ, N]]`. Only the values
-of `p, v` on `X` and of `q, u` on `Xᶜ` matter. -/
-def IsCutFactorization [Mul R] (A : Matrix n n R) (X : Finset n) (p q u v : n → R) : Prop :=
-  (∀ i ∈ X, ∀ j ∉ X, A i j = p i * q j) ∧ (∀ i ∉ X, ∀ j ∈ X, A i j = u i * v j)
-
-/-- The cut-transpose `[[E, p uᵀ], [q vᵀ, Nᵀ]]` of `A = [[E, p qᵀ], [u vᵀ, N]]`
-(Definition 2.10): swap `q ↔ u` and transpose the `Xᶜ` block. This is `cutSwap` applied to
-`A` instead of to `G = (diag(x) + A)^adj`. -/
-def cutTranspose [Mul R] (X : Finset n) (A : Matrix n n R) (p q u v : n → R) : Matrix n n R :=
-  of fun i j ↦
-    if i ∈ X then (if j ∈ X then A i j else p i * u j)
-    else (if j ∈ X then q i * v j else A j i)
-
-theorem cutTranspose_eq_cutSwap [Mul R] (X : Finset n) (A : Matrix n n R) (p q u v : n → R) :
-    cutTranspose X A p q u v = cutSwap X A p q u v := rfl
-
-/-- `B` is a cut-transpose of `A` at `X`, for some rank-one factorization of the cross
-blocks. -/
-def IsCutTranspose [Mul R] (A : Matrix n n R) (X : Finset n) (B : Matrix n n R) : Prop :=
-  ∃ p q u v : n → R, A.IsCutFactorization X p q u v ∧ B = cutTranspose X A p q u v
-
-/-- The cut-transpose has the factorization with `q` and `u` swapped. -/
-theorem IsCutFactorization.cutTranspose [Mul R] {A : Matrix n n R} {X : Finset n}
-    {p q u v : n → R} : (cutTranspose X A p q u v).IsCutFactorization X p u q v :=
-  ⟨fun i hi j hj ↦ by simp [Matrix.cutTranspose, hi, hj],
-    fun i hi j hj ↦ by simp [Matrix.cutTranspose, hi, hj]⟩
-
-/-- `ct(ct(A, X), X) = A` (Remark 2.11), for matching factorizations. -/
-theorem cutTranspose_cutTranspose [Mul R] {A : Matrix n n R} {X : Finset n} {p q u v : n → R}
-    (h : A.IsCutFactorization X p q u v) :
-    cutTranspose X (cutTranspose X A p q u v) p u q v = A := by
-  ext i j
-  by_cases hi : i ∈ X <;> by_cases hj : j ∈ X
-  · simp [Matrix.cutTranspose, hi, hj]
-  · simpa [Matrix.cutTranspose, hi, hj] using (h.1 i hi j hj).symm
-  · simpa [Matrix.cutTranspose, hi, hj] using (h.2 i hi j hj).symm
-  · simp [Matrix.cutTranspose, hi, hj]
-
-/-- Being a cut-transpose at `X` is symmetric. -/
-theorem IsCutTranspose.symm [Mul R] {A B : Matrix n n R} {X : Finset n}
-    (h : IsCutTranspose A X B) : IsCutTranspose B X A := by
-  obtain ⟨p, q, u, v, hf, rfl⟩ := h
-  exact ⟨p, u, q, v, IsCutFactorization.cutTranspose, (cutTranspose_cutTranspose hf).symm⟩
-
-section Comm
-
-variable [CommMagma R]
-
-omit [DecidableEq n] in
-theorem IsCutFactorization.transpose {A : Matrix n n R} {X : Finset n} {p q u v : n → R}
-    (h : A.IsCutFactorization X p q u v) : Aᵀ.IsCutFactorization X v u q p :=
-  ⟨fun i hi j hj ↦ by rw [transpose_apply, h.2 j hj i hi, mul_comm],
-    fun i hi j hj ↦ by rw [transpose_apply, h.1 j hj i hi, mul_comm]⟩
-
-/-- `ct(Aᵀ, X) = ct(A, X)ᵀ` for the induced factorization. -/
-theorem transpose_cutTranspose (X : Finset n) (A : Matrix n n R) (p q u v : n → R) :
-    (cutTranspose X A p q u v)ᵀ = cutTranspose X Aᵀ v u q p := by
-  ext i j
-  by_cases hi : i ∈ X <;> by_cases hj : j ∈ X <;>
-    simp [Matrix.cutTranspose, hi, hj, mul_comm]
-
-theorem IsCutTranspose.transpose {A B : Matrix n n R} {X : Finset n}
-    (h : IsCutTranspose A X B) : IsCutTranspose Aᵀ X Bᵀ := by
-  obtain ⟨p, q, u, v, hf, rfl⟩ := h
-  exact ⟨v, u, q, p, hf.transpose, transpose_cutTranspose X A p q u v⟩
-
-variable [Fintype n]
-
-theorem IsCutFactorization.compl {A : Matrix n n R} {X : Finset n} {p q u v : n → R}
-    (h : A.IsCutFactorization X p q u v) : A.IsCutFactorization Xᶜ u v p q :=
-  ⟨fun i hi j hj ↦ h.2 i (by simpa using hi) j (by simpa using hj),
-    fun i hi j hj ↦ h.1 i (by simpa using hi) j (by simpa using hj)⟩
-
-/-- Transposing the `X` block instead of the `Xᶜ` block gives the transposed matrix. This is
-why Lemma 4.5 and Example 4.6 of Al Ahmadieh's paper agree up to diagonal equivalence. -/
-theorem cutTranspose_compl (X : Finset n) (A : Matrix n n R) (p q u v : n → R) :
-    cutTranspose Xᶜ A u v p q = (cutTranspose X A p q u v)ᵀ := by
-  ext i j
-  by_cases hi : i ∈ X <;> by_cases hj : j ∈ X <;>
-    simp [Matrix.cutTranspose, hi, hj, mul_comm]
-
-theorem IsCutTranspose.compl {A B : Matrix n n R} {X : Finset n}
-    (h : IsCutTranspose A X B) : IsCutTranspose A Xᶜ Bᵀ := by
-  obtain ⟨p, q, u, v, hf, rfl⟩ := h
-  exact ⟨u, v, p, q, hf.compl, (cutTranspose_compl X A p q u v).symm⟩
-
-end Comm
-
-end CutTranspose
+theorem cutTranspose_eq_cutSwap {R n : Type*} [Fintype n] [DecidableEq n] [Mul R]
+    {A : Matrix n n R} (f : A.R1CutFactorization) :
+    A.cutTranspose f = cutSwap f.X A f.p f.q f.u f.v := rfl
 
 section CutTransposeField
 
 variable {𝔽 n : Type*} [Fintype n] [DecidableEq n] [Field 𝔽]
 
-/-- A rank-one factorization of the cross blocks bounds their ranks. -/
-theorem IsCutFactorization.rank_le_one {A : Matrix n n 𝔽} {X : Finset n} {p q u v : n → 𝔽}
-    (h : A.IsCutFactorization X p q u v) :
-    (A.setSubmatrix (X : Set n) ((Xᶜ : Finset n) : Set n)).rank ≤ 1 ∧
-      (A.setSubmatrix ((Xᶜ : Finset n) : Set n) (X : Set n)).rank ≤ 1 := by
-  constructor
-  · refine (rank_le_one_iff_eq_vecMulVec _).mpr ⟨fun i ↦ p i, fun j ↦ q j, ?_⟩
-    ext ⟨i, hi⟩ ⟨j, hj⟩
-    exact h.1 i (by simpa using hi) j (by simpa using hj)
-  · refine (rank_le_one_iff_eq_vecMulVec _).mpr ⟨fun i ↦ u i, fun j ↦ v j, ?_⟩
-    ext ⟨i, hi⟩ ⟨j, hj⟩
-    exact h.2 i (by simpa using hi) j (by simpa using hj)
-
-/-- A cut has a rank-one factorization of both cross blocks. -/
-theorem HasCut.exists_isCutFactorization {A : Matrix n n 𝔽} {X : Finset n} (h : A.HasCut X) :
-    ∃ p q u v : n → 𝔽, A.IsCutFactorization X p q u v := by
-  obtain ⟨-, -, h₃, h₄⟩ := h
-  obtain ⟨p, q, hpq⟩ := (rank_le_one_iff_eq_vecMulVec _).mp h₃
-  obtain ⟨u, v, huv⟩ := (rank_le_one_iff_eq_vecMulVec _).mp h₄
-  refine ⟨fun i ↦ if hi : i ∈ X then p ⟨i, by simpa using hi⟩ else 0,
-    fun j ↦ if hj : j ∈ X then 0 else q ⟨j, by simpa using hj⟩,
-    fun i ↦ if hi : i ∈ X then 0 else u ⟨i, by simpa using hi⟩,
-    fun j ↦ if hj : j ∈ X then v ⟨j, by simpa using hj⟩ else 0, fun i hi j hj ↦ ?_,
-    fun i hi j hj ↦ ?_⟩
-  · simpa [hi, hj, vecMulVec_apply] using
-      congrFun (congrFun hpq ⟨i, by simpa using hi⟩) ⟨j, by simpa using hj⟩
-  · simpa [hi, hj, vecMulVec_apply] using
-      congrFun (congrFun huv ⟨i, by simpa using hi⟩) ⟨j, by simpa using hj⟩
-
-/-- `X` is a cut iff it has the right size and the cross blocks factor. -/
-theorem hasCut_iff_exists_isCutFactorization {A : Matrix n n 𝔽} {X : Finset n} :
-    A.HasCut X ↔ 2 ≤ X.card ∧ 2 ≤ Xᶜ.card ∧ ∃ p q u v : n → 𝔽, A.IsCutFactorization X p q u v :=
-  ⟨fun h ↦ ⟨h.1, h.2.1, h.exists_isCutFactorization⟩,
-    fun ⟨h₁, h₂, _, _, _, _, hf⟩ ↦ ⟨h₁, h₂, hf.rank_le_one⟩⟩
-
-/-- Every cut has a cut-transpose. -/
-theorem HasCut.exists_isCutTranspose {A : Matrix n n 𝔽} {X : Finset n} (h : A.HasCut X) :
-    ∃ B, IsCutTranspose A X B :=
-  let ⟨p, q, u, v, hf⟩ := h.exists_isCutFactorization
-  ⟨_, p, q, u, v, hf, rfl⟩
-
-/-- `X` is still a cut of `ct(A, X)`. -/
-theorem IsCutTranspose.hasCut {A B : Matrix n n 𝔽} {X : Finset n} (h : IsCutTranspose A X B)
-    (hX : A.HasCut X) : B.HasCut X := by
-  obtain ⟨p, q, u, v, -, rfl⟩ := h
-  exact ⟨hX.1, hX.2.1, IsCutFactorization.cutTranspose.rank_le_one⟩
-
 /-- **TODO**, **Remark 2.11**: for irreducible `A`, the cut-transpose at `X` is unique up to
 diagonal similarity. Hint: the cross blocks have rank exactly one
-(`Matrix.isIrred_hasCut_rk1`), so two factorizations differ by `(λp, λ⁻¹q, μu, μ⁻¹v)` on the
+(`Matrix.HasCut.rank_eq_one`), so two factorizations differ by `(λp, λ⁻¹q, μu, μ⁻¹v)` on the
 relevant indices; conjugate by `diag(λμ on X, 1 on Xᶜ)`. -/
 theorem IsCutTranspose.diagSimilar {A B C : Matrix n n 𝔽} {X : Finset n} (hA : A.IsIrred)
-    (hX : A.HasCut X) (hB : IsCutTranspose A X B) (hC : IsCutTranspose A X C) :
+    (hB : IsCutTranspose A X B) (hC : IsCutTranspose A X C) :
     DiagSimilar B C := by
   sorry
 
-omit [Fintype n] in
-/-- **TODO**, **Lemma 2.12** (Al Ahmadieh, Lemma 4.5): cut-transpose preserves all principal
-minors. No irreducibility is needed.
-
-Hint: by `pmEquiv_iff_detpoly_eq` it suffices to show, with `E_x = E + diag(x_X)` and
-`N_x = N + diag(x_{Xᶜ})`, that
-`det [[E_x, p qᵀ], [u vᵀ, N_x]] = det E_x * det N_x - (vᵀ adj(E_x) p) * (qᵀ adj(N_x) u)`,
-which is invariant under `q ↔ u`, `N ↦ Nᵀ`. See `Matrix.det_fromBlocks₁₁` and
-`Matrix.det_add_replicateCol_mul_replicateRow` (both assume invertibility, so work over the
-fraction field or prove the adjugate form over a `CommRing`). -/
+/-- **Lemma 2.12** (Al Ahmadieh, Lemma 4.5): cut-transpose preserves all principal minors.
+This is `Matrix.IsCutTranspose.principalMinor_eq`. -/
 theorem IsCutTranspose.pmEquiv {A B : Matrix n n 𝔽} {X : Finset n} (h : IsCutTranspose A X B) :
-    PMEquiv A B := by
-  sorry
+    PMEquiv A B :=
+  congrFun h.principalMinor_eq
 
 /-- **TODO**. Cut-transpose is compatible with diagonal equivalence: if `A' ~DE A` then every
 cut-transpose of `A'` at `X` is diagonally equivalent to some cut-transpose of `A` at `X`.
-Hint: `ct(Aᵀ, X) = ct(A, X)ᵀ` (`transpose_cutTranspose`), and for `A' = DAD⁻¹` with the
+Hint: `ct(A, X)ᵀ = ct(Aᵀ, X)` (`transpose_cutTranspose`), and for `A' = DAD⁻¹` with the
 induced factorization, `ct(A', X) = D̃ ct(A, X) D̃⁻¹` where `D̃ = diag(D_X, D_{Xᶜ}⁻¹)`. For a
 factorization of `A'` that is not induced from one of `A`, pull it back along `D` instead. -/
 theorem DiagEquivalent.exists_isCutTranspose {A A' B' : Matrix n n 𝔽} {X : Finset n}
@@ -372,8 +213,7 @@ theorem DiagEquivalent.exists_isCutTranspose {A A' B' : Matrix n n 𝔽} {X : Fi
   sorry
 
 /-- **TODO**. Diagonally equivalent matrices have the same cuts. Hint: `HasCut.transpose`, and
-multiplying by invertible diagonal matrices preserves rank; or rescale a factorization
-(`hasCut_iff_exists_isCutFactorization`). -/
+rescale a cut factorization along the diagonal similarity. -/
 theorem DiagEquivalent.hasCut {A B : Matrix n n 𝔽} {X : Finset n} (h : DiagEquivalent A B)
     (hX : A.HasCut X) : B.HasCut X := by
   sorry
@@ -386,52 +226,48 @@ section Chain
 
 variable {𝔽 n : Type*} [Fintype n] [DecidableEq n] [Field 𝔽]
 
-/-- `IsCutTransposeChain A [X₁, …, X_k] C`: there are `A = A₀, A₁, …, A_k = C` such that `Xᵢ` is
-a cut of `Aᵢ₋₁` and `Aᵢ` is a cut-transpose of `Aᵢ₋₁` at `Xᵢ`. -/
-inductive IsCutTransposeChain : Matrix n n 𝔽 → List (Finset n) → Matrix n n 𝔽 → Prop
-  | nil (A : Matrix n n 𝔽) : IsCutTransposeChain A [] A
-  | cons {A B C : Matrix n n 𝔽} {X : Finset n} {Xs : List (Finset n)} :
-      A.HasCut X → IsCutTranspose A X B → IsCutTransposeChain B Xs C →
-      IsCutTransposeChain A (X :: Xs) C
-
-/-- `A` and `B` are *cut-transpose equivalent with respect to* the cut sequence `Xs`. -/
+/-- `A` and `B` are *cut-transpose equivalent with respect to* the cut sequence `Xs`: a path
+of cut-transposes along `Xs` ends at a matrix diagonally equivalent to `B`. -/
 def CutTransposeEquivWrt (A : Matrix n n 𝔽) (Xs : List (Finset n)) (B : Matrix n n 𝔽) : Prop :=
-  ∃ C, IsCutTransposeChain A Xs C ∧ DiagEquivalent C B
+  ∃ (C : Matrix n n 𝔽) (p : CutTransposePath A C), p.cuts = Xs ∧ DiagEquivalent C B
 
-/-- `A` and `B` are *cut-transpose equivalent*. -/
-def CutTransposeEquiv (A B : Matrix n n 𝔽) : Prop := ∃ Xs, CutTransposeEquivWrt A Xs B
+/-- `A` and `B` are *cut-transpose equivalent*: `A` is connected by cut-transposes to a matrix
+diagonally equivalent to `B`. -/
+def CutTransposeEquiv (A B : Matrix n n 𝔽) : Prop :=
+  ∃ C, CutTransposeConnected A C ∧ DiagEquivalent C B
 
-theorem IsCutTransposeChain.pmEquiv {A C : Matrix n n 𝔽} {Xs : List (Finset n)}
-    (h : IsCutTransposeChain A Xs C) : PMEquiv A C := by
-  induction h with
-  | nil A => exact PMEquiv.refl A
-  | cons _ hB _ ih => exact hB.pmEquiv.trans ih
+theorem cutTransposeEquiv_iff_exists_cutTransposeEquivWrt {A B : Matrix n n 𝔽} :
+    CutTransposeEquiv A B ↔ ∃ Xs, CutTransposeEquivWrt A Xs B :=
+  ⟨fun ⟨C, ⟨p⟩, hC⟩ ↦ ⟨p.cuts, C, p, rfl, hC⟩, fun ⟨_, C, p, _, hC⟩ ↦ ⟨C, ⟨p⟩, hC⟩⟩
+
+theorem CutTransposePath.pmEquiv {A C : Matrix n n 𝔽} (p : CutTransposePath A C) :
+    PMEquiv A C :=
+  congrFun p.principalMinor_eq
 
 /-- The easy direction of Theorem 1.1. -/
-theorem CutTransposeEquivWrt.pmEquiv {A B : Matrix n n 𝔽} {Xs : List (Finset n)}
-    (h : CutTransposeEquivWrt A Xs B) : PMEquiv A B :=
-  let ⟨_, hC, hCB⟩ := h
-  hC.pmEquiv.trans hCB.pmEquiv
-
 theorem CutTransposeEquiv.pmEquiv {A B : Matrix n n 𝔽} (h : CutTransposeEquiv A B) :
     PMEquiv A B :=
-  let ⟨_, h⟩ := h
-  h.pmEquiv
+  let ⟨_, ⟨p⟩, hCB⟩ := h
+  p.pmEquiv.trans hCB.pmEquiv
+
+theorem CutTransposeEquivWrt.pmEquiv {A B : Matrix n n 𝔽} {Xs : List (Finset n)}
+    (h : CutTransposeEquivWrt A Xs B) : PMEquiv A B :=
+  (cutTransposeEquiv_iff_exists_cutTransposeEquivWrt.mpr ⟨Xs, h⟩).pmEquiv
 
 theorem DiagEquivalent.cutTransposeEquiv {A B : Matrix n n 𝔽} (h : DiagEquivalent A B) :
     CutTransposeEquiv A B :=
-  ⟨[], A, .nil A, h⟩
+  ⟨A, ⟨.nil A⟩, h⟩
 
 /-- If every cut-transpose of `A` stays in the diagonal-equivalence class of `A`, then so does
-every chain starting in that class. -/
-theorem IsCutTransposeChain.diagEquivalent {A A' C : Matrix n n 𝔽} {Xs : List (Finset n)}
-    (hA : ∀ X B, A.HasCut X → IsCutTranspose A X B → DiagEquivalent B A)
-    (h : IsCutTransposeChain A' Xs C) (hA' : DiagEquivalent A' A) : DiagEquivalent C A := by
-  induction h with
-  | nil A' => exact hA'
-  | cons hX hB _ ih =>
-    obtain ⟨B, hB, hB'⟩ := hA'.exists_isCutTranspose hB
-    exact ih (hB'.trans (hA _ B (hA'.hasCut hX) hB))
+the end of every path starting in that class. -/
+theorem CutTransposePath.diagEquivalent {A A' C : Matrix n n 𝔽}
+    (hA : ∀ X B, IsCutTranspose A X B → DiagEquivalent B A)
+    (p : CutTransposePath A' C) (hA' : DiagEquivalent A' A) : DiagEquivalent C A := by
+  induction p with
+  | nil => exact hA'
+  | cons f hB _ ih =>
+    obtain ⟨B, hB', hBB⟩ := hA'.exists_isCutTranspose (isCutTranspose_of_cons f hB)
+    exact ih (hBB.trans (hA _ B hB'))
 
 end Chain
 
@@ -466,7 +302,7 @@ theorem diagSimilar_adjugate_add_diagonal_iff {A B : Matrix n n 𝔽} {d : n →
 /-- **TODO**, **Lemma 2.13**: cut-transpose and adjugate commute up to diagonal similarity.
 (That `X` is a cut of `A^adj` is part of the lemma.) -/
 theorem IsCutTranspose.adjugate {A B : Matrix n n 𝔽} {X : Finset n} (hA : A.IsIrred)
-    (hX : A.HasCut X) (h : IsCutTranspose A X B) :
+    (h : IsCutTranspose A X B) :
     A.adjugate.HasCut X ∧ ∃ B', IsCutTranspose A.adjugate X B' ∧ DiagSimilar B.adjugate B' := by
   sorry
 
@@ -506,20 +342,20 @@ theorem hasTrivialFiber_of_card_le_three (hn : Fintype.card n ≤ 3) {A : Matrix
 theorem diagEquivalent_or_cutTranspose_of_card_eq_four (hn : Fintype.card n = 4)
     {A B : Matrix n n 𝔽} (hA : A.OffDiagNeZero) (h : PMEquiv A B) :
     DiagEquivalent A B ∨ ((∃ X, A.HasCut X ∧ B.HasCut X) ∧
-      ∀ X, A.HasCut X → B.HasCut X → ∀ C, IsCutTranspose A X C → DiagEquivalent C B) := by
+      ∀ X, B.HasCut X → ∀ C, IsCutTranspose A X C → DiagEquivalent C B) := by
   sorry
 
 /-- **TODO**, **Lemma 3.2 (1)**: if `T` or `Tᶜ` is contained in `S` or `Sᶜ`, then `T` is a cut
 of `A` iff it is a cut of `ct(A, S)`. -/
 theorem IsCutTranspose.hasCut_iff_of_nested {A C : Matrix n n 𝔽} {S T : Finset n}
-    (hA : A.OffDiagNeZero) (hS : A.HasCut S) (hC : IsCutTranspose A S C)
+    (hA : A.OffDiagNeZero) (hC : IsCutTranspose A S C)
     (hT : T ⊆ S ∨ T ⊆ Sᶜ ∨ Tᶜ ⊆ S ∨ Tᶜ ⊆ Sᶜ) : C.HasCut T ↔ A.HasCut T := by
   sorry
 
 /-- **TODO**, **Lemma 3.2 (2)**: otherwise, `T` is a cut of `A` iff `T Δ S` is a cut of
 `ct(A, S)`. -/
 theorem IsCutTranspose.hasCut_symmDiff_iff {A C : Matrix n n 𝔽} {S T : Finset n}
-    (hA : A.OffDiagNeZero) (hS : A.HasCut S) (hC : IsCutTranspose A S C)
+    (hA : A.OffDiagNeZero) (hC : IsCutTranspose A S C)
     (hT : ¬ (T ⊆ S ∨ T ⊆ Sᶜ ∨ Tᶜ ⊆ S ∨ Tᶜ ⊆ Sᶜ)) : C.HasCut (symmDiff T S) ↔ A.HasCut T := by
   sorry
 
@@ -583,7 +419,8 @@ theorem pmEquiv_iff_cutTransposeEquivWrt {A B : Matrix n n 𝔽} (hA : A.IsIrred
 
 theorem pmEquiv_iff_cutTransposeEquiv {A B : Matrix n n 𝔽} (hA : A.IsIrred) (hB : B.IsIrred) :
     PMEquiv A B ↔ CutTransposeEquiv A B :=
-  ⟨fun h ↦ let ⟨Xs, _, hXs⟩ := h.exists_cutTransposeEquivWrt hA hB; ⟨Xs, hXs⟩,
+  ⟨fun h ↦ let ⟨Xs, _, hXs⟩ := h.exists_cutTransposeEquivWrt hA hB
+    cutTransposeEquiv_iff_exists_cutTransposeEquivWrt.mpr ⟨Xs, hXs⟩,
     CutTransposeEquiv.pmEquiv⟩
 
 end Characterization
@@ -601,26 +438,26 @@ theorem not_hasTrivialFiber_of_isCutTranspose {A B : Matrix n n 𝔽} {X : Finse
   fun h ↦ hBA (hasTrivialFiber_iff_forall_pmEquiv.mp h B hB.pmEquiv)
 
 /-- **Theorem 4.1**: `A ∈ 𝒟(n)` iff `A` is irreducible and every cut-transpose of
-`A` is diagonally equivalent to `A`. Modulo the `sorry`s it uses: `→` needs
-`IsReducible.not_hasTrivialFiber` and Lemma 2.12; `←` needs Theorem 1.1, Lemma 5.1, and
+`A` is diagonally equivalent to `A`. `→` needs `IsReducible.not_hasTrivialFiber` and Lemma 2.12;
+`←` needs Theorem 1.1, Lemma 5.1, and
 compatibility of cut-transpose with diagonal equivalence. -/
 theorem hasTrivialFiber_iff_forall_isCutTranspose [Nonempty n] (A : Matrix n n 𝔽) :
     A.HasTrivialFiber ↔
-      A.IsIrred ∧ ∀ X B, A.HasCut X → IsCutTranspose A X B → DiagEquivalent B A := by
+      A.IsIrred ∧ ∀ X B, IsCutTranspose A X B → DiagEquivalent B A := by
   constructor
   · intro h
     exact ⟨by_contra fun hA ↦ IsReducible.not_hasTrivialFiber hA h,
-      fun X B _ hB ↦ hasTrivialFiber_iff_forall_pmEquiv.mp h B hB.pmEquiv⟩
+      fun X B hB ↦ hasTrivialFiber_iff_forall_pmEquiv.mp h B hB.pmEquiv⟩
   · rintro ⟨hA, hct⟩
     rw [hasTrivialFiber_iff_forall_pmEquiv]
     intro B hAB
-    obtain ⟨Xs, -, C, hC, hCB⟩ := hAB.exists_cutTransposeEquivWrt hA (hAB.isIrred hA)
-    exact hCB.symm.trans (hC.diagEquivalent hct (DiagEquivalent.refl A))
+    obtain ⟨Xs, -, C, p, -, hCB⟩ := hAB.exists_cutTransposeEquivWrt hA (hAB.isIrred hA)
+    exact hCB.symm.trans (p.diagEquivalent hct (DiagEquivalent.refl A))
 
 /-- The no-cut case (Loewy's theorem) as a special case of the theorem. -/
 theorem hasTrivialFiber_of_noCut' [Nonempty n] {A : Matrix n n 𝔽} (hA : A.IsIrred)
     (hcut : ∀ X, ¬ A.HasCut X) : A.HasTrivialFiber :=
-  (hasTrivialFiber_iff_forall_isCutTranspose A).mpr ⟨hA, fun X _ hX ↦ absurd hX (hcut X)⟩
+  (hasTrivialFiber_iff_forall_isCutTranspose A).mpr ⟨hA, fun X _ hX ↦ absurd hX.hasCut_left (hcut X)⟩
 
 end
 
@@ -633,21 +470,46 @@ with both cross blocks all ones, so `p = q = u = v = 1`. -/
 
 /-- Shaoda's example matrix -/
 def exMat : Matrix (Fin 4) (Fin 4) ℚ :=
-  !![0, 2, 1, 1; 3, 0, 1, 1; 1, 1, 0, 1; 1, 1, 1, 0]
+  !![0, 2, 1, 1;
+     3, 0, 1, 1;
+     1, 1, 0, 1;
+     1, 1, 1, 0]
 
 /-- A matrix whose cut-transpose at `{0, 1}` is not diagonally equivalent to it. -/
 def exActive : Matrix (Fin 4) (Fin 4) ℚ :=
-  !![0, 2, 1, 1; 3, 0, 1, 1; 1, 1, 0, 2; 1, 1, 3, 0]
+  !![0, 2, 1, 1;
+     3, 0, 1, 1;
+     1, 1, 0, 2;
+     1, 1, 3, 0]
 
 /-- The cut-transpose of `exActive` at `{0, 1}`. -/
 def exActiveCT : Matrix (Fin 4) (Fin 4) ℚ :=
-  !![0, 2, 1, 1; 3, 0, 1, 1; 1, 1, 0, 3; 1, 1, 2, 0]
+  !![0, 2, 1, 1;
+     3, 0, 1, 1;
+     1, 1, 0, 3;
+     1, 1, 2, 0]
 
-set_option linter.hashCommand false in
-#guard cutTranspose {0, 1} exMat 1 1 1 1 = exMat
+/-- The all-ones factorization at `{0, 1}` of `exMat`. -/
+def exMatFact : exMat.R1CutFactorization :=
+  .mk' {0, 1} (by decide) (by decide) 1 1 1 1
+    (by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [exMat])
+    (by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [exMat])
 
-set_option linter.hashCommand false in
-#guard cutTranspose {0, 1} exActive 1 1 1 1 = exActiveCT
+/-- The all-ones factorization at `{0, 1}` of `exActive`. -/
+def exActiveFact : exActive.R1CutFactorization :=
+  .mk' {0, 1} (by decide) (by decide) 1 1 1 1
+    (by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [exActive])
+    (by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [exActive])
+
+example : exMat.cutTranspose exMatFact = exMat := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [cutTranspose_apply, exMatFact, R1CutFactorization.mk', exMat]
+
+example : exActive.cutTranspose exActiveFact = exActiveCT := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [cutTranspose_apply, exActiveFact, R1CutFactorization.mk', exActive, exActiveCT]
 
 set_option linter.hashCommand false in
 #guard (Finset.univ.filter fun S : Finset (Fin 4) ↦
@@ -656,9 +518,11 @@ set_option linter.hashCommand false in
 
 /-- Example 4.6 of Al Ahmadieh's paper transposes the `X` block, so `ex46B` is the transpose
 of a cut-transpose of `ex46A` at `{0, 1}` (`cutTranspose_compl`). -/
-example : cutTranspose {0, 1} ex46A ![1, -3, 0, 0] ![0, 0, 1, -2] ![0, 0, 1, -1] ![1, 2, 0, 0]
-    = ex46Bᵀ := by
+example : ex46A.cutTranspose (.mk' {0, 1} (by decide) (by decide)
+      ![1, -3, 0, 0] ![0, 0, 1, -2] ![0, 0, 1, -1] ![1, 2, 0, 0]
+      (by intro i hi j hj; fin_cases i <;> fin_cases j <;> norm_num [ex46A] at *)
+      (by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [ex46A])) = ex46Bᵀ := by
   ext i j
-  fin_cases i <;> fin_cases j <;> norm_num [cutTranspose, ex46A, ex46B]
+  fin_cases i <;> fin_cases j <;> norm_num [cutTranspose_apply, ex46A, ex46B]
 
 end
