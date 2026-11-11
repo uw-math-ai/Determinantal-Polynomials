@@ -52,21 +52,14 @@ variable {R A n : Type*} [CommRing R] [CommRing A] [Algebra R A] [DecidableEq n]
 determinant of `M` with row `i` differentiated. -/
 theorem leibniz_det (D : Derivation R A A) (M : Matrix n n A) :
     D M.det = ∑ i, (M.updateRow i fun j ↦ D (M i j)).det := by
-  simp_rw [det_apply, map_sum]
-  rw [sum_comm]
-  refine sum_congr rfl ?_
-  intro σ _
-  simp_rw [Units.smul_def]
-  rw [map_zsmul, leibniz_prod, ← smul_sum]
+  simp only [det_apply, map_sum, Units.smul_def, map_zsmul, D.leibniz_prod, smul_sum]
+  conv_rhs => rw [sum_comm]
+  refine sum_congr rfl fun σ _ ↦ ?_
   conv_rhs => rw [← Equiv.sum_comp σ]
-  congr 1
-  refine sum_congr rfl ?_
-  intro j _
+  refine sum_congr rfl fun j _ ↦ ?_
   rw [← mul_prod_erase univ _ (mem_univ j), updateRow_self, smul_eq_mul, mul_comm]
-  congr 1
-  refine prod_congr rfl ?_
-  intro _ hk
-  rw [updateRow_ne (σ.injective.ne (ne_of_mem_erase hk))]
+  exact congrArg _ <| congrArg _ <| prod_congr rfl fun k hk ↦
+    (congrFun (updateRow_ne (σ.injective.ne (ne_of_mem_erase hk))) k).symm
 
 end Derivation
 

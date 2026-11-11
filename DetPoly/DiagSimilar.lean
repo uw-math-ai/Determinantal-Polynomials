@@ -7,6 +7,7 @@ Authors: Anders Lewis, Grant Yang
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import DetPoly.Basic
 
 /-! # Diagonal similarity and diagonal equivalence
 
@@ -17,7 +18,10 @@ following Al Ahmadieh, "The fiber of the principal minor map".
 @[expose] public section
 namespace Matrix
 
-variable {R n : Type*} [CommSemiring R] [Fintype n] [DecidableEq n]
+variable {R n : Type*} [Fintype n] [DecidableEq n]
+
+section CommSemiring
+variable [CommSemiring R]
 
 /-- Conjugacy by an invertible diagonal matrix. -/
 def DiagSimilar (M N : Matrix n n R) : Prop :=
@@ -43,6 +47,12 @@ theorem DiagSimilar.transpose {M N : Matrix n n R} (h : DiagSimilar M N) :
   rcases h with ⟨d, rfl⟩
   refine ⟨d⁻¹, ?_⟩
   simp [transpose_mul, Matrix.mul_assoc]
+
+/-- Diagonal similarity preserves the zero pattern. -/
+theorem DiagSimilar.apply_eq_zero_iff {M N : Matrix n n R} (h : DiagSimilar M N) (i j : n) :
+    M i j = 0 ↔ N i j = 0 := by
+  obtain ⟨d, rfl⟩ := h
+  simp [diagonal_mul, mul_diagonal]
 
 /-- Diagonal similarity, allowing a transpose, as in the principal minor paper. -/
 def DiagEquivalent (M N : Matrix n n R) : Prop :=
@@ -108,7 +118,33 @@ theorem diagEquivalent_iff_diagSimilar_of_isSymm {M N : Matrix n n R} (hN : N.Is
     DiagEquivalent M N ↔ DiagSimilar M N := by
   simp [DiagEquivalent, hN.eq]
 
+end CommSemiring
 
+variable [CommRing R]
+
+omit [Fintype n] in
+@[simp]
+theorem principalMinor_transpose (M : Matrix n n R) : Mᵀ.principalMinor = M.principalMinor :=
+  funext fun _ ↦ det_transpose _
+
+/-- Diagonally similar matrices have the same principal minors. -/
+theorem DiagSimilar.principalMinor_eq {M N : Matrix n n R} (h : DiagSimilar M N) :
+    M.principalMinor = N.principalMinor := by
+  obtain ⟨d, rfl⟩ := h
+  ext S
+  have : (diagonal (fun i ↦ (d i).val) * N * diagonal (fun i ↦ (d i)⁻¹.val)).setSubmatrix S S =
+      diagonal (fun i : S ↦ (d i).val) * N.setSubmatrix S S *
+        diagonal (fun i : S ↦ (d i)⁻¹.val) := by
+    ext; simp
+  rw [principalMinor, this, det_mul_comm, ← Matrix.mul_assoc, diagonal_mul_diagonal]
+  simp
+
+/-- Diagonally equivalent matrices have the same principal minors. -/
+theorem DiagEquivalent.principalMinor_eq {M N : Matrix n n R} (h : DiagEquivalent M N) :
+    M.principalMinor = N.principalMinor := by
+  rcases h with h | h
+  · exact h.principalMinor_eq
+  · rw [h.principalMinor_eq, principalMinor_transpose]
 
 end Matrix
 

@@ -23,7 +23,8 @@ scope.
 
 \texttt{DetPoly} is the library. It contains the definitions, diagonal similarity and
 equivalence, irreducible matrices, the Desnanot--Jacobi identity, Jacobi's formula for a
-derivation, and Theorem 2.3, all proved (Chapter~\ref{chap:detpoly}). Two statements toward
+derivation, the principal minor expansion of $f_A$, and Theorem 2.3, all proved
+(Chapter~\ref{chap:detpoly}). Two statements toward
 Lemma 4.3 in the library's own terms are unfinished. It also contains two self-contained
 developments on the index type $\{0,\dots,n-1\}$: a complete proof of Lemma 4.3 given
 Lemma 4.2, and of the shuffle sign of Lemma 3.2.
@@ -32,9 +33,7 @@ Lemma 4.2, and of the shuffle sign of Lemma 3.2.
 the outline of CGGR with the alternate theorem, generalized Laplace expansion, tools for
 multivariate polynomials, a computable polynomial model, and problem-set proofs.
 Warmup modules may import the library; the library does not import the warmups.
-\texttt{LEAN\_Warmup.JoeWarmup} exports no declarations, and the diagonal expansion of
-Theorem~\ref{thm:diagonal-expansion} currently exists in both libraries under the same
-names.
+\texttt{LEAN\_Warmup.JoeWarmup} exports no declarations.
 
 \section{Reading the dependency graph}
 
@@ -58,7 +57,7 @@ proof obligation;
 \item irreducibility of $A$ is irreducibility of $f_A$ (Lemma~\ref{lem:irred-poly}), which
 uses the external Lemma~\ref{ext:nonzero};
 \item equality of fibers is equality of determinantal polynomials
-(Lemma~\ref{lem:fiber-poly});
+(Theorem~\ref{thm:detpoly-expansion});
 \item compatibility of cut-transposes and cuts with diagonal equivalence
 (Lemmas~\ref{lem:ct-de-compat} and~\ref{lem:de-cuts});
 \item the hard direction of CGGR Theorem 1.1 (Theorem~\ref{thm:cggr11-hard}), whose proof

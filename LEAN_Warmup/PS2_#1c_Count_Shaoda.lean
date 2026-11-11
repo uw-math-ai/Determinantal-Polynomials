@@ -1,4 +1,11 @@
-import Mathlib
+/-
+Copyright (c) 2026 University of Washington Math AI Lab. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Shaoda Ji
+-/
+module
+
+public import Mathlib
 
 /-!
 # Counting argument for the diagonal determinant expansion
@@ -68,6 +75,8 @@ and the separate determinant theorem are both stable.
 
 open scoped BigOperators
 
+@[expose] public section
+
 namespace DetCounting
 
 /-!
@@ -102,6 +111,7 @@ where
     b' = a + n b.
 -/
 
+/-- The pair `(Aₙ, Bₙ)`, defined by `Bₙ₊₁ = Aₙ + n Bₙ` and `Aₙ₊₁ = Aₙ + Bₙ₊₁`. -/
 def countState : ℕ → ℕ × ℕ
   | 0 => (1, 0)
   | n + 1 =>
@@ -114,9 +124,11 @@ def countState : ℕ → ℕ × ℕ
 `Acount n` and `Bcount n` are the two components of this state.
 -/
 
+/-- `Aₙ`, the number of terms of `det(A + diag(x₁, …, xₙ))`. -/
 def Acount (n : ℕ) : ℕ :=
   (countState n).1
 
+/-- `Bₙ`, the number of terms of `det(A + diag(0, x₂, …, xₙ))`. -/
 def Bcount (n : ℕ) : ℕ :=
   (countState n).2
 
@@ -290,6 +302,7 @@ The left side is still the natural-number count `Acount n`, simply coerced
 to ℚ.
 -/
 
+/-- `∑_{k=0}^n n!/k!`, in `ℚ`. -/
 def factorialQuotientCount (n : ℕ) : ℚ :=
   ∑ k ∈ Finset.range (n + 1),
     (Nat.factorial n : ℚ) / (Nat.factorial k : ℚ)
@@ -390,6 +403,7 @@ Thus the direct combinatorial count is
     Σ_{k=0}^n choose(n,k) (n-k)!.
 -/
 
+/-- `∑_{k=0}^n (n choose k) (n-k)!`, the number of terms of `∑_S A_{Sᶜ} ∏_{i∈S} xᵢ`. -/
 def rhsTermCount (n : ℕ) : ℕ :=
   ∑ k ∈ Finset.range (n + 1),
     n.choose k * Nat.factorial (n - k)
@@ -505,3 +519,5 @@ theorem counting_argument_final_factorial (n : ℕ) :
   exact Acount_closed_form n
 
 end DetCounting
+
+end

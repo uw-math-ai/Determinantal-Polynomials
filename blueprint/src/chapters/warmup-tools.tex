@@ -9,7 +9,7 @@ formula. They remain in the exploratory library, with their current names and de
 
 \label{lem:setzero-api}
 
-\lean{setZero_X, setZero_X_self, setZero_X_of_ne, setZero_C, setZero_monomial, support_setZero_subset, degreeOf_setZero_le, setZero_mem_supported_of_mem, setZero_eq_self_iff, setZero_setZero, setZero_comm, setZero_commute, pderiv_setZero_self, pderiv_setZero_of_ne, setZero_map, eval_setZero}
+\lean{setZero_X, setZero_X_self, setZero_X_of_ne, setZero_C, setZero_monomial, support_setZero_subset, degreeOf_setZero_le, setZero_mem_supported_of_mem, setZero_eq_self_iff, setZero_setZero, setZero_comm, pderiv_setZero_self, pderiv_setZero_of_ne, setZero_map, eval_setZero}
 
 \leanok
 
@@ -177,7 +177,7 @@ The linked Lean declarations contain the proof.
 
 \label{lem:mixed-support}
 
-\lean{coeff_add_exponent_ne_zero_of_coeff_pderivOp_ne_zero, pderivOp_prod_X_mem_supported, IsMultiaffine.pderivOp_prod_X, coeff_exponent_eq_constantCoeff_pderivOp}
+\lean{coeff_add_exponent_ne_zero_of_coeff_pderivOp_ne_zero, pderivOp_prod_X_mem_supported, IsMultiaffine.pderivOp_prod_X}
 
 \leanok
 
@@ -185,7 +185,7 @@ The linked Lean declarations contain the proof.
 
 A nonzero coefficient of $\partial_S f$ forces the corresponding shifted coefficient
 of $f$ to be nonzero. For multiaffine $f$, $\partial_S f$ is supported outside $S$
-and remains multiaffine. For any $f$, $[x^{e_S}]f=(\partial_S f)(0)$.
+and remains multiaffine.
 
 \end{lemma}
 
@@ -238,26 +238,7 @@ The linked Lean declarations contain the proof.
 
 \end{proof}
 
-\begin{lemma}[Coefficient formula from mixed derivatives]
 
-\label{lem:coeff-via-derivative}
-
-\lean{Matrix.coeff_detPoly_of_pderivOp}
-
-\leanok
-
-\uses{lem:mixed-det,lem:constant-minor,lem:mixed-support}
-
-The coefficient of $x^{e_S}$ in $f_A$ is $A_{S^c}$.
-\end{lemma}
-
-\begin{proof}
-
-\leanok
-
-Reduce to the generalized Jacobi formula and the constant-coefficient minor identity.
-
-\end{proof}
 
 \section{Computable multivariate polynomials}
 
@@ -349,7 +330,7 @@ Rayleigh difference, characteristic matrix, resultant, determinantal polynomial 
 polynomial adjugate. The Boolean comparison returns true exactly when $f_A=f_B$.
 This certificate does not use the unfinished principal-minor coefficient theorem;
 interpreting the Boolean test as principal-minor equality still uses
-Lemma~\ref{lem:fiber-poly}.
+Theorem~\ref{thm:detpoly-expansion}.
 
 \end{lemma}
 
@@ -457,7 +438,8 @@ and the adjugate inverse when the determinant is a unit.
 
 \leanok
 
-The diagonal expansion is implemented in \texttt{DetPoly}.
+This is a problem-set proof of the expansion; the library version is
+Theorem~\ref{thm:detpoly-expansion}.
 In its separate namespace, principal minors are determinants of finite principal
 submatrices. The matrix $\operatorname{mixRows}(S,M,N)$ uses rows of $M$ in $S$ and
 rows of $N$ outside $S$.
@@ -501,8 +483,8 @@ The linked Lean declarations contain the proof.
 
 For arbitrary $x:I\to R$,
 \[ \det(A+\operatorname{diag}(x))=\sum_{S\subseteq I}A_{S^c}\prod_{i\in S}x_i. \]
-This completed identity is a second route toward the draft polynomial coefficient formula:
-one must still specialize the coefficients to polynomials and extract the squarefree coefficient.
+This is the problem-set version of \texttt{Matrix.det\_diagonal\_add}
+(Theorem~\ref{thm:detpoly-expansion}).
 
 \end{theorem}
 
@@ -512,6 +494,34 @@ one must still specialize the coefficients to polynomials and extract the square
 
 Expand the determinant multilinearly in the sum of the original and diagonal row
 families. Index the choices by subsets $S$, then evaluate each mixed-row determinant.
+
+\end{proof}
+
+\begin{theorem}[Number of terms in the diagonal expansion]
+
+\label{thm:diagonal-expansion-count}
+
+\lean{DetCounting.countState, DetCounting.Acount, DetCounting.Bcount, DetCounting.Acount_zero, DetCounting.Bcount_zero, DetCounting.Acount_one, DetCounting.Bcount_one, DetCounting.Bcount_succ, DetCounting.Acount_succ, DetCounting.Acount_second_order_additive, DetCounting.Bcount_closed_step, DetCounting.Acount_first_order, DetCounting.factorialQuotientCount, DetCounting.factorialQuotientCount_succ, DetCounting.Acount_eq_factorialQuotientCount, DetCounting.Acount_closed_form, DetCounting.rhsTermCount, DetCounting.choose_mul_complement_factorial, DetCounting.rhsTermCount_cast_eq_factorialQuotientCount, DetCounting.Acount_eq_rhsTermCount, DetCounting.counting_argument_final_nat, DetCounting.counting_argument_final_factorial}
+
+\leanok
+
+\uses{thm:diagonal-expansion}
+
+Let $A_n$ and $B_n$ be defined by the recurrences $A_n=A_{n-1}+B_n$ and
+$B_n=A_{n-1}+(n-1)B_{n-1}$, which count the terms of $\det(A+\operatorname{diag}(x))$ and
+of $\det(A+\operatorname{diag}(0,x_2,\ldots,x_n))$ under cofactor expansion. Then
+\[ A_n=\sum_{k=0}^n\binom nk(n-k)!=\sum_{k=0}^n\frac{n!}{k!}. \]
+The identification of $A_n$ with the size of the support of an actual polynomial is not
+formalized.
+
+\end{theorem}
+
+\begin{proof}
+
+\leanok
+
+Derive the first-order recurrence $A_{n+1}=(n+1)A_n+1$ and compare it with the recurrences
+satisfied by the two closed forms.
 
 \end{proof}
 

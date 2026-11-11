@@ -2,37 +2,16 @@
 
 The draft for the paper is \texttt{LEAN\_Warmup.ClaudeMathlib}. Its declarations expose the
 intended mathematics, including external results left as \texttt{sorry} theorems.
-Some old draft statements duplicate results now proved in \texttt{DetPoly}; their own
-proofs have not yet been replaced. The following nodes preserve that distinction.
+Draft statements that duplicated results proved in \texttt{DetPoly} have been removed;
+the nodes below refer to the library results instead.
 
 \section{Principal minors and fibers}
-
-\begin{lemma}[Entries of diagonal rescaling]
-
-\label{lem:diag-entry}
-
-\lean{diagonal_mul_mul_diagonal_apply}
-
-\leanok
-
-For arbitrary diagonal factors, the entry formula is
-\[ (\operatorname{diag}(a)N\operatorname{diag}(b))_{ij}=a_iN_{ij}b_j. \]
-
-\end{lemma}
-
-\begin{proof}
-
-\leanok
-
-The linked Lean declarations contain the proof.
-
-\end{proof}
 
 \begin{definition}[The principal minor map]
 
 \label{def:fiber}
 
-\lean{Matrix.principalSubmatrix, Matrix.principalSubmatrix_eq_toSquareBlockProp, Matrix.principalSubmatrix_apply, Matrix.principalMinor, Matrix.principalMinor_empty, Matrix.principalMinors, Matrix.pmFiber, Matrix.HasTrivialFiber}
+\lean{Matrix.principalSubmatrix, Matrix.principalSubmatrix_eq_toSquareBlockProp, Matrix.principalMinor_empty, Matrix.pmFiber, Matrix.HasTrivialFiber}
 
 \leanok
 
@@ -44,30 +23,6 @@ matrices with the same principal minors. The predicate ``trivial fiber'' says ev
 matrix in that fiber is diagonally equivalent to $A$.
 
 \end{definition}
-
-\begin{lemma}[Diagonal equivalence preserves principal minors]
-
-\label{lem:diag-fiber}
-
-\lean{Matrix.DiagEquivalent.mem_pmFiber, Matrix.DiagSimilar.mem_pmFiber}
-
-\leanok
-
-\uses{def:fiber,def:diag}
-
-Diagonal equivalence, and hence diagonal similarity, places a matrix in the same
-principal minor fiber.
-
-\end{lemma}
-
-\begin{proof}
-
-\leanok
-
-Restrict diagonal conjugation to each principal submatrix; the determinants of the
-unit diagonal factors cancel. Transposition preserves determinants.
-
-\end{proof}
 
 \begin{lemma}[Outer-product criterion]
 
@@ -248,53 +203,37 @@ The draft names $G_A=\operatorname{adj}(M_A)$ as the polynomial adjugate.
 
 \label{lem:coeff-draft}
 
-\lean{Matrix.coeff_detpoly, Matrix.detpoly_isMultiaffine, Matrix.coeff_univ_detpoly}
+\lean{Matrix.coeff_univ_detpoly}
 
 \leanok
 
-\uses{def:detpoly,def:fiber,def:multiaffine}
+\uses{def:detpoly,thm:detpoly-expansion}
 
-The coefficient of $x^{e_S}$ in $f_A$ is the complementary principal minor $A_{S^c}$,
-and $f_A$ is multiaffine. In particular the coefficient of $\prod_{i\in I}x_i$ is one.
-The last assertion is proved from the coefficient formula in Lean.
-Theorem~\ref{thm:diagonal-expansion} and Lemma~\ref{lem:coeff-via-derivative} are two
-routes to the coefficient formula.
+The coefficient of $\prod_{i\in I}x_i$ in $f_A$ is one.
 
 \end{lemma}
 
-\noindent\emph{Status: coefficient and multiaffinity proofs unfinished.}
-
-\begin{lemma}[Polynomial equality detects the fiber]
-
-\label{lem:fiber-poly}
-
-\lean{Matrix.detpoly_eq_iff}
+\begin{proof}
 
 \leanok
 
-\uses{lem:coeff-draft}
+By Theorem~\ref{thm:detpoly-expansion} it is $A_\varnothing=1$.
 
-One has $f_A=f_B$ exactly when $B$ belongs to the principal minor fiber of $A$.
-
-\end{lemma}
-
-\noindent\emph{Status: unfinished proof.}
+\end{proof}
 
 \begin{lemma}[Draft derivative and adjugate properties]
 
 \label{lem:adj-properties}
 
-\lean{Matrix.pderiv_detpoly, Matrix.adjPoly_mem_supported, Matrix.adjPoly_isMultiaffine, Matrix.adjPoly_diag_conj}
+\lean{Matrix.adjPoly_mem_supported, Matrix.adjPoly_isMultiaffine, Matrix.adjPoly_diag_conj}
 
 \leanok
 
-\uses{def:adjpoly,lem:detpoly-derivatives,def:multiaffine}
+\uses{def:adjpoly,def:multiaffine}
 
-The draft asserts $\partial_i f_A=(G_A)_{ii}$; off-diagonal $(G_A)_{ij}$ is supported
-outside $\{i,j\}$; every adjugate entry is multiaffine; and diagonal conjugation
-rescales the adjugate entries in the same way as the matrix entries.
-The first assertion already has a completed library proof in Lemma~\ref{lem:detpoly-derivatives},
-but this draft declaration still contains \texttt{sorry}.
+Off-diagonal $(G_A)_{ij}$ is supported outside $\{i,j\}$; every adjugate entry is
+multiaffine; and diagonal conjugation rescales the adjugate entries in the same way as
+the matrix entries.
 
 \end{lemma}
 
@@ -321,17 +260,16 @@ This is the degree-one operation used in the paper.
 
 \label{lem:rayleigh-draft}
 
-\lean{Matrix.adjugate_mul_adjugate_sub, Matrix.rayleighDiff_detpoly, Matrix.res_adjPoly}
+\lean{Matrix.res_adjPoly}
 
 \leanok
 
-\uses{def:resultant,thm:desnanot,thm:rayleigh,def:adjpoly}
+\uses{def:resultant,thm:desnanot,def:adjpoly}
 
-The draft includes the adjugate form of Desnanot--Jacobi and
-$\Delta_{ij}(f_A)=(G_A)_{ij}(G_A)_{ji}$. Both are already proved in the library as
-Theorems~\ref{thm:desnanot} and~\ref{thm:rayleigh}, but these draft declarations remain unfinished.
-The further resultant identity, for pairwise distinct indices, is
-$\operatorname{res}_k((G_A)_{ij},f_A)=(G_A)_{ik}(G_A)_{kj}$.
+For pairwise distinct indices,
+$\operatorname{res}_k((G_A)_{ij},f_A)=(G_A)_{ik}(G_A)_{kj}$. Together with
+$\Delta_{ij}(f_A)=(G_A)_{ij}(G_A)_{ji}$ (Theorem~\ref{thm:rayleigh}) this is the ``only if''
+direction of Theorem 2.1.
 
 \end{lemma}
 
@@ -480,16 +418,20 @@ the recognition theorem's Rayleigh, support, multiaffinity and resultant conditi
 
 \leanok
 
-\uses{lem:reducible,def:fiber,def:diag}
+\uses{def:fiber,thm:reducible-not-diag-equivalent}
 
 If $A$ is reducible, its principal minor fiber is nontrivial. This statement has no
-$|I|\geq4$ hypothesis. The proposed construction changes a strictly off-diagonal block
-of a block upper triangular matrix, preserving its principal minors and changing its
-zero pattern to prevent diagonal equivalence.
+$|I|\geq4$ hypothesis.
 
 \end{lemma}
 
-\noindent\emph{Status: unfinished proof.}
+\begin{proof}
+
+\leanok
+
+This is Theorem~\ref{thm:reducible-not-diag-equivalent}.
+
+\end{proof}
 
 \begin{lemma}[Polynomial irreducibility (Lemma 5.1)]
 
@@ -517,7 +459,7 @@ factorization criterion of Lemma~\ref{lem:22}. The reverse route uses block tria
 
 \leanok
 
-\uses{def:symmetrizable,lem:reducible-fiber,thm:rayleigh,lem:rayleigh-draft,lem:fiber-poly}
+\uses{def:symmetrizable,lem:reducible-fiber,thm:rayleigh,lem:rayleigh-draft,thm:detpoly-expansion}
 
 For a symmetrizable matrix with $|I|\geq4$, the principal minor fiber is trivial
 exactly when the matrix is irreducible. The proposed sufficiency proof compares

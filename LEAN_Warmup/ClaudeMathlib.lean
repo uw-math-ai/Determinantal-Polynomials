@@ -10,6 +10,7 @@ public import LEAN_Warmup.Basic
 public import DetPoly.IrreducibleMatrix
 public import DetPoly.DiagSimilar
 public import Mathlib
+public meta import DetPoly.Basic
 
 /-!
 # Definitions and statements for "The fiber of the principal minor map"
@@ -57,12 +58,15 @@ Theorem 4.1. Tags used in docstrings:
 | `Δᵢⱼ(f)` | `rayleighDiff i j f` |
 | `res_{x_k}(g, h)` | `res k g h` (**not** `Polynomial.resultant`) |
 
- Results **MISSING** form Mathlib:
+ Results **MISSING** from Mathlib:
 
- * the Desnanot–Jacobi identity (and Jacobi's complementary-minor theorem in general);
  * the generalized Laplace expansion along a *set* of rows (Theorem 3.1);
- * Jacobi's formula `∂ᵢ det = adj_ii` for a multivariate matrix;
  * symmetrizable matrices (`IsSymmetrizable`).
+
+ Proved in `DetPoly`: `f_A = f_B ↔ A_S = B_S` (`detpoly_eq_iff_principalMinor_eq`), `f_A`
+ multiaffine (`Matrix.detpoly_mem_restrictDegree`), Jacobi's formula `∂ᵢ f_A = G_ii`
+ (`pderiv_detpoly`), Desnanot–Jacobi (`Matrix.adjugate_mul_adjugate_sub_adjugate_mul_adjugate`)
+ and Theorem 2.3 (`rayleighDiff_detpoly`).
 
  ## Two places where the paper should be double-checked
 
@@ -94,35 +98,11 @@ Theorem 4.1. Tags used in docstrings:
 
 open Matrix MvPolynomial
 
-/-! ## Diagonal equivalence -/
-
-section DiagEquivalent
-
-variable {R n : Type*} [Fintype n] [DecidableEq n]
-
-variable [CommSemiring R]
-
-/-- Conjugating by diagonals rescales entries. -/
-theorem diagonal_mul_mul_diagonal_apply (a b : n → R) (N : Matrix n n R) (i j : n) :
-    (diagonal a * N * diagonal b) i j = a i * N i j * b j := by
-  rw [mul_diagonal, diagonal_mul]
-
-end DiagEquivalent
-
 /-! ## Principal minors, the principal minor map, and its fibers -/
 
 section Minors
 
 variable {R n : Type*} [Fintype n] [DecidableEq n] [CommRing R]
-
-omit [Fintype n] [DecidableEq n] [CommRing R] in
-@[simp]
-theorem Matrix.principalSubmatrix_apply (A : Matrix n n R) (S : Finset n) (i j : S) :
-    A.principalSubmatrix S i j = A i j := rfl
-
-/-- The principal minor `A_S`. **NAME ONLY**: Mathlib has no name for it. -/
-def Matrix.principalMinor (A : Matrix n n R) (S : Finset n) : R :=
-  (A.principalSubmatrix S).det
 
 omit [Fintype n] in
 /-- `A_∅ = 1`, since the empty determinant is `1`. -/
@@ -130,41 +110,13 @@ omit [Fintype n] in
 theorem Matrix.principalMinor_empty (A : Matrix n n R) : A.principalMinor ∅ = 1 := by
   simp [principalMinor]
 
-/-- The principal minor map `φ : A ↦ (A_S)_{S ⊆ [n]}`. -/
-def Matrix.principalMinors (A : Matrix n n R) : Finset n → R := A.principalMinor
-
-/-- The fiber of `A` under the principal minor map. -/
+/-- The fiber of `A` under the principal minor map `A ↦ (A_S)_{S ⊆ [n]}`. -/
 def Matrix.pmFiber (A : Matrix n n R) : Set (Matrix n n R) :=
-  {B | B.principalMinors = A.principalMinors}
+  {B | B.principalMinor = A.principalMinor}
 
 /-- `A ∈ 𝒟(n)`: the fiber of `A` is a single point up to diagonal equivalence. -/
 def Matrix.HasTrivialFiber (A : Matrix n n R) : Prop :=
   ∀ B ∈ A.pmFiber, DiagEquivalent B A
-
-/-- Diagonally equivalent matrices have the same principal minors. -/
-theorem Matrix.DiagEquivalent.mem_pmFiber {A B : Matrix n n R}
-    (h : DiagEquivalent B A) : B ∈ A.pmFiber := by
-  rcases h with ⟨d, rfl⟩ | ⟨d, rfl⟩ <;> ext S <;>
-    simp only [principalMinors, principalMinor]
-  · have : (diagonal (fun i ↦ (d i).val) * A * diagonal (fun i ↦ (d i)⁻¹.val)).principalSubmatrix S
-        = diagonal (fun i : S ↦ (d i).val) * A.principalSubmatrix S *
-          diagonal (fun i : S ↦ (d i)⁻¹.val) := by
-      ext i j; simp
-    rw [this, det_mul, det_mul, det_diagonal, det_diagonal, mul_right_comm,
-      ← Finset.prod_mul_distrib]
-    simp
-  · have : (diagonal (fun i ↦ (d i).val) * Aᵀ * diagonal (fun i ↦ (d i)⁻¹.val)).principalSubmatrix S
-        = diagonal (fun i : S ↦ (d i).val) * (A.principalSubmatrix S)ᵀ *
-          diagonal (fun i : S ↦ (d i)⁻¹.val) := by
-      ext i j; simp
-    rw [this, det_mul, det_mul, det_diagonal, det_diagonal, det_transpose, mul_right_comm,
-      ← Finset.prod_mul_distrib]
-    simp
-
-/-- Diagonally similar matrices have the same principal minors. -/
-theorem Matrix.DiagSimilar.mem_pmFiber {A B : Matrix n n R} (h : DiagSimilar B A) :
-    B ∈ A.pmFiber :=
-  DiagEquivalent.mem_pmFiber h.diagEquivalent
 
 end Minors
 
@@ -425,33 +377,10 @@ variable {R 𝔽 n : Type*} [Fintype n] [DecidableEq n] [CommRing R]
 noncomputable def Matrix.adjPoly (A : Matrix n n R) : Matrix n n (MvPolynomial n R) :=
   A.mvCharmatrix.adjugate
 
-/-- **TODO**: the coefficient of `∏_{i ∈ S} xᵢ` in `f_A` is the complementary minor `A_{Sᶜ}`.
-The expansion is `det_add_diagonal_formula` (`DetPoly/PS2_#1c_MultiLin_Shaoda.lean`). Mathlib's
-univariate analogue is `Matrix.coeff_det_one_add_X_smul_eq_sum_minors`. -/
-theorem Matrix.coeff_detpoly (A : Matrix n n R) (S : Finset n) :
-    A.detpoly.coeff S.exponent = A.principalMinor Sᶜ := by
-  sorry
-
-/-- **TODO** -/
-theorem Matrix.detpoly_isMultiaffine (A : Matrix n n R) : IsMultiaffine A.detpoly := by
-  sorry
-
 /-- The leading coefficient is `1`, the normalization in Theorem 2.1. -/
 theorem Matrix.coeff_univ_detpoly (A : Matrix n n R) :
     A.detpoly.coeff Finset.univ.exponent = 1 := by
-  rw [coeff_detpoly, Finset.compl_univ, principalMinor_empty]
-
-/-- **TODO**: same fiber iff same determinantal polynomial. -/
-theorem Matrix.detpoly_eq_iff {A B : Matrix n n R} :
-    B.detpoly = A.detpoly ↔ B ∈ A.pmFiber := by
-  sorry
-
-/-- **TODO**, **MISSING** (Jacobi's formula): `∂ᵢ f_A = G_ii`. Mathlib only has univariate
-versions (`Matrix.derivative_det_one_add_X_smul`). Hint: expand along row `i`
-(`det_eq_sum_mul_adjugate_row`); the cofactors along row `i` are free of `xᵢ`. -/
-theorem Matrix.pderiv_detpoly (A : Matrix n n R) (i : n) :
-    pderiv i A.detpoly = A.adjPoly i i := by
-  sorry
+  rw [Finset.exponent, coeff_detpoly, Finset.compl_univ, principalMinor_empty]
 
 /-- **TODO**: `G_ij ∈ R[x_k : k ≠ i, j]` for `i ≠ j`. -/
 theorem Matrix.adjPoly_mem_supported (A : Matrix n n R) {i j : n} (hij : i ≠ j) :
@@ -497,19 +426,6 @@ theorem res_mul_left {k : n} {c : MvPolynomial n R} (hc : c ∈ supported R ({k}
 -- `LEAN_Warmup.Grant.MvPolynomial`.
 
 variable [Fintype n]
-
-/-- **TODO**, **MISSING**: the Desnanot–Jacobi identity, in adjugate form (no signs). Nearby
-Mathlib API: `adjugate_adjugate`, `det_adjugate`, and Schur complements
-(`LinearAlgebra/Matrix/SchurComplement.lean`). -/
-theorem Matrix.adjugate_mul_adjugate_sub {M : Matrix n n R} {i j : n} (hij : i ≠ j) :
-    M.adjugate i i * M.adjugate j j - M.adjugate i j * M.adjugate j i =
-      M.det * (M.principalSubmatrix ({i, j}ᶜ : Finset n)).det := by
-  sorry
-
-/-- **Theorem 2.3**. It also holds for `i = j`, where both sides are `G_ii²`. -/
-theorem Matrix.rayleighDiff_detpoly (A : Matrix n n R) (i j : n) :
-    rayleighDiff i j A.detpoly = A.adjPoly i j * A.adjPoly j i := by
-  sorry
 
 /-- **TODO**: condition (b) of Theorem 2.1 for the adjugate ("only if" direction). -/
 theorem Matrix.res_adjPoly (A : Matrix n n R) {i j k : n} (hij : i ≠ j) (hki : k ≠ i)
@@ -601,8 +517,9 @@ theorem Matrix.exists_adjPoly_eq_cutSwap (hn : 4 ≤ Fintype.card n) {A : Matrix
 /-- **Theorem 4.1** (`⇒`), reducible case: reducible matrices have nontrivial fibers. This
 needs no `n ≥ 4`. -/
 theorem Matrix.IsReducible.not_hasTrivialFiber {A : Matrix n n 𝔽} (hA : A.IsReducible) :
-    ¬ A.HasTrivialFiber := by
-  sorry
+    ¬ A.HasTrivialFiber := fun h ↦
+  have ⟨B, hAB, hB⟩ := hA.exists_principalMinor_eq_not_diagEquivalent
+  hB (h B hAB.symm).symm
 
 /-- **Lemma 5.1**. `[Nonempty n]` excludes the `0 × 0` matrix, which is irreducible while
 `f = 1` is not. -/

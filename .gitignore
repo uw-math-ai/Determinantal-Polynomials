@@ -2,7 +2,8 @@
 
 blueprint/print/
 blueprint/web/
-blueprint/src/web.paux
+blueprint/src/web.*
+!blueprint/src/web.tex
 
 # Jekyll home page: build output, caches, and locally installed gems
 home_page/_site/

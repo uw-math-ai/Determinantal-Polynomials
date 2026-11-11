@@ -14,3 +14,5 @@ public import LEAN_Warmup.Grant.PDerivOp
 public import LEAN_Warmup.JoeWarmup
 public import LEAN_Warmup.LironTest
 public import LEAN_Warmup.PS1_P1_Bach
+public import LEAN_Warmup.«PS2_#1c_Count_Shaoda»
+public import LEAN_Warmup.«PS2_#1c_MultiLin_Shaoda»

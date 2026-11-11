@@ -10,6 +10,7 @@ of Section~\ref{sec:lemma43}.
 \begin{definition}[Determinantal polynomial and Rayleigh difference]
 
 \label{def:detpoly}
+\alsoIn{part:warmup}
 
 \lean{rayleighDiff, Matrix.mvCharmatrix, Matrix.detpoly}
 
@@ -33,9 +34,53 @@ submatrix indexed by the corresponding subtypes. A second name takes finite subs
 
 \end{definition}
 
+\begin{definition}[Principal minors]
+
+\label{def:principal-minor}
+
+\lean{Matrix.principalMinor}
+
+\leanok
+
+\uses{def:submatrix}
+
+For a finite subset $S$, $A_S=\det A[S,S]$.
+
+\end{definition}
+
+\begin{theorem}[Principal minor expansion of $f_A$]
+
+\label{thm:detpoly-expansion}
+\alsoIn{part:warmup}
+
+\lean{Matrix.det_diagonal_add, Matrix.detpoly_eq_sum, Finset.sum_single_one_injective,
+  Matrix.coeff_detpoly, detpoly_eq_iff_principalMinor_eq, Matrix.detpoly_mem_restrictDegree}
+
+\leanok
+
+\uses{def:detpoly,def:principal-minor}
+
+For $x\in R^I$, $\det(\operatorname{diag}(x)+A)=\sum_{S\subseteq I}A_{S^c}\prod_{i\in S}x_i$.
+Hence $f_A$ is multiaffine, the coefficient of $\prod_{i\in S}x_i$ in $f_A$ is $A_{S^c}$,
+and $f_A=f_B$ if and only if $A$ and $B$ have the same principal minors.
+
+\end{theorem}
+
+\begin{proof}
+
+\leanok
+
+Write each row of $\operatorname{diag}(x)+A$ as $x_ie_i+A_i$ and expand by multilinearity
+of the determinant in the rows. For a subset $S$ of rows taking $x_ie_i$, pull out
+$\prod_{i\in S}x_i$; the identity rows on $S$ leave $\det A[S^c,S^c]$. The monomials
+$\prod_{i\in S}x_i$ are distinct for distinct $S$.
+
+\end{proof}
+
 \begin{definition}[Cuts]
 
 \label{def:cut}
+\alsoIn{part:warmup}
 
 \lean{Matrix.HasCut, Matrix.HasCut.compl}
 
@@ -52,6 +97,7 @@ The definition is unchanged on replacing $X$ by $X^c$.
 \begin{definition}[Diagonal similarity and equivalence]
 
 \label{def:diag}
+\alsoIn{part:warmup}
 
 \lean{Matrix.DiagSimilar, Matrix.DiagSimilar.equivalence, Matrix.DiagSimilar.transpose, Matrix.DiagEquivalent, Matrix.DiagEquivalent.equivalence, Matrix.DiagSimilar.refl, Matrix.DiagSimilar.symm, Matrix.DiagSimilar.trans, Matrix.diagSimilarSetoid, Matrix.DiagEquivalent.refl, Matrix.DiagEquivalent.symm, Matrix.DiagEquivalent.trans, Matrix.diagEquivalentSetoid, Matrix.DiagSimilar.diagEquivalent, Matrix.diagEquivalent_iff_diagSimilar_of_isSymm}
 
@@ -65,11 +111,37 @@ For symmetric $N$, equivalence to $N$ reduces to similarity to $N$.
 
 \end{definition}
 
+\begin{lemma}[Diagonal equivalence preserves principal minors]
+
+\label{lem:diag-principal-minor}
+\alsoIn{part:warmup}
+
+\lean{Matrix.principalMinor_transpose, Matrix.DiagSimilar.principalMinor_eq, Matrix.DiagEquivalent.principalMinor_eq}
+
+\leanok
+
+\uses{def:diag,def:principal-minor}
+
+If $M$ and $N$ are diagonally equivalent, then $M_S=N_S$ for every $S$.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+Restricted to $S$, $DND^{-1}$ is $D_SN[S,S]D_S^{-1}$, and
+$\det(D_SN[S,S]D_S^{-1})=\det(D_S^{-1}D_SN[S,S])=\det N[S,S]$.
+Transposition preserves determinants.
+
+\end{proof}
+
 \section{Irreducibility and block triangular matrices}
 
 \begin{definition}[Nonzero-entry quiver]
 
 \label{def:irred}
+\alsoIn{part:warmup}
 
 \lean{Matrix.toQuiver', Matrix.IsIrred, Matrix.IsReducible}
 
@@ -84,6 +156,7 @@ No order or positivity on the coefficient type is needed.
 \begin{lemma}[Reducibility criteria]
 
 \label{lem:reducible}
+\alsoIn{part:warmup}
 
 \lean{Matrix.isReducible_iff_exists_set, Matrix.isReducible_iff_exists_finset}
 
@@ -128,11 +201,63 @@ The linked Lean declarations contain the proof.
 
 \end{proof}
 
+\begin{lemma}[Determinants of block triangular matrices]
+
+\label{lem:block-triangular-det}
+
+\lean{Matrix.BlockTriangular.det_eq_det}
+
+\leanok
+
+If $M$ and $N$ are block triangular for the same labeling and agree on the diagonal blocks,
+then $\det M=\det N$.
+
+\end{lemma}
+
+\begin{proof}
+
+\leanok
+
+Both determinants are the product of the determinants of the diagonal blocks.
+
+\end{proof}
+
+\begin{theorem}[Reducible matrices: Theorem 4.1 $\Rightarrow$, reducible case]
+
+\label{thm:reducible-not-diag-equivalent}
+\alsoIn{part:warmup}
+
+\lean{Matrix.IsReducible.exists_principalMinor_eq_not_diagEquivalent,
+  Matrix.DiagSimilar.apply_eq_zero_iff}
+
+\leanok
+
+\uses{lem:block-triangular,lem:block-triangular-det,def:diag,def:principal-minor}
+
+Let $R$ be a nontrivial commutative ring. If $A$ is reducible, some $B$ has the same principal
+minors as $A$ but is not diagonally equivalent to $A$.
+
+\end{theorem}
+
+\begin{proof}
+
+\leanok
+
+Write $A=\begin{pmatrix}E&F\\0&G\end{pmatrix}$ and pick $i$ in the first block and $j$ in
+the second. Let $B$ be $A$ with $a_{ij}$ replaced by $1$ if $a_{ij}=0$ and by $0$ otherwise.
+Every principal submatrix of $A$ or $B$ is block triangular with the same diagonal blocks, so
+the principal minors agree. Diagonal similarity preserves which entries are zero. Now
+$B\sim_{DS}A$ fails at $(i,j)$. If $B\sim_{DS}A^t$, then $b_{ij}=0$ because
+$a_{ji}=0$, so $a_{ij}\neq0$. But also $b_{ji}=a_{ji}=0$, so $a_{ij}=0$, a contradiction.
+
+\end{proof}
+
 \section{Cofactors without an ordered index set}
 
 \begin{lemma}[Principal cofactors]
 
 \label{lem:laplace}
+\alsoIn{part:warmup}
 
 \lean{Matrix.det_updateRow_single_self, Matrix.adjugate_apply_self, Matrix.adjugate_submatrix_apply_self}
 
@@ -179,6 +304,7 @@ The linked Lean declarations contain the proof.
 \begin{theorem}[Desnanot--Jacobi identity]
 
 \label{thm:desnanot}
+\alsoIn{part:warmup}
 
 \lean{Matrix.adjugate_mul_adjugate_sub_adjugate_mul_adjugate}
 
@@ -279,6 +405,7 @@ The linked Lean declarations contain the proof.
 \begin{lemma}[First and second partial derivatives]
 
 \label{lem:detpoly-derivatives}
+\alsoIn{part:warmup}
 
 \lean{pderiv_detpoly, pderiv_pderiv_detpoly, pderiv_pderiv_detpoly_self}
 
@@ -304,6 +431,7 @@ The linked Lean declarations contain the proof.
 \begin{theorem}[Rayleigh identity (Theorem 2.3)]
 
 \label{thm:rayleigh}
+\alsoIn{part:warmup}
 
 \lean{rayleighDiff_detpoly}
 
@@ -332,6 +460,7 @@ For equal indices use $\partial_i^2f_A=0$.
 \begin{lemma}[Nonzero cut blocks]
 
 \label{lem:cut-ranks}
+\alsoIn{part:warmup}
 
 \lean{Matrix.isIrred_hasCut_rk1}
 
@@ -354,6 +483,7 @@ A zero cross block would give a nonempty proper subset as in Lemma~\ref{lem:redu
 \begin{lemma}[Common factors of column-replacement minors]
 
 \label{lem:cut-minors}
+\alsoIn{part:warmup}
 
 \lean{Matrix.hasCut_minors_multiples}
 

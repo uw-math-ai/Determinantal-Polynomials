@@ -23,6 +23,9 @@
 \NewDocumentCommand{\uses}{m}
  {\clist_map_inline:nn{#1}{\vphantom{\ref{##1}}}%
   \ignorespaces}
+\NewDocumentCommand{\alsoIn}{m}
+ {\clist_map_inline:nn{#1}{\vphantom{\ref{##1}}}%
+  \ignorespaces}
 \NewDocumentCommand{\proves}{m}
  {\clist_map_inline:nn{#1}{\vphantom{\ref{##1}}}%
   \ignorespaces}

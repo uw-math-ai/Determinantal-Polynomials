@@ -40,12 +40,7 @@ omit [Fintype m] in
 theorem pderiv_diagonal_X_add_apply (v : m → n) (B : Matrix m m R) (i : n) (l c : m) :
     pderiv i ((diagonal (fun l ↦ X (v l)) + B.map C : Matrix m m (MvPolynomial n R)) l c) =
       if v l = i then (Pi.single l 1 : m → MvPolynomial n R) c else 0 := by
-  by_cases hlc : l = c
-  · subst hlc
-    by_cases hl : v l = i
-    · simp [hl]
-    · simp [hl, pderiv_X]
-  · simp [hlc, Ne.symm hlc]
+  by_cases hlc : l = c <;> by_cases hl : v l = i <;> simp_all [pderiv_X, Ne.symm]
 
 /-- `∂ᵢ det(diag(x ∘ v) + B)` is the sum of the diagonal adjugate entries at `l` with
 `v l = i`. -/
@@ -81,14 +76,6 @@ theorem pderiv_det_diagonal_X_add_of_notMem (v : m → n) (B : Matrix m m R) {i 
     absurd ⟨l, (Finset.mem_filter.1 hl).2⟩ hi]
 
 end pderiv
-
-theorem Matrix.mvCharmatrix_submatrix [DecidableEq m] (A : Matrix n n R) {e : m → n}
-    (he : e.Injective) :
-    A.mvCharmatrix.submatrix e e = diagonal (fun l ↦ X (e l)) + (A.submatrix e e).map C := by
-  ext a b
-  by_cases hab : a = b
-  · subst hab; simp
-  · simp [hab, he.ne hab]
 
 variable [Fintype n]
 

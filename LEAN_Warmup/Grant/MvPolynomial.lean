@@ -85,10 +85,6 @@ theorem setZero_comm (i j : n) (p : MvPolynomial n R) :
   simp only [coeff_setZero]
   split_ifs <;> rfl
 
-theorem setZero_commute (i j : n) :
-    Function.Commute (setZero (R := R) i) (setZero j) :=
-  setZero_comm i j
-
 @[simp]
 theorem pderiv_setZero_self (k : n) (p : MvPolynomial n R) : pderiv k (setZero k p) = 0 :=
   pderiv_eq_zero_of_mem_supported (setZero_mem_supported k p)

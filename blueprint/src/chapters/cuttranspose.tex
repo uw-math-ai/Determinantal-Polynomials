@@ -25,14 +25,14 @@ The relation is reflexive, symmetric and transitive.
 \label{lem:pme-basic}
 \lean{Matrix.pmEquiv_transpose, Matrix.PMEquiv.transpose, Matrix.DiagEquivalent.pmEquiv, Matrix.DiagSimilar.pmEquiv, Matrix.hasTrivialFiber_iff_forall_pmEquiv}
 \leanok
-\uses{def:pme,lem:diag-fiber}
+\uses{def:pme,lem:diag-principal-minor}
 A matrix is PME to its transpose, and PME is preserved by transposing both matrices.
 Diagonally equivalent matrices are PME. The fiber of $A$ is trivial exactly when every
 matrix PME to $A$ is diagonally equivalent to $A$.
 \end{lemma}
 \begin{proof}
 \leanok
-Transposition preserves determinants; the rest restates Lemma~\ref{lem:diag-fiber}.
+Transposition preserves determinants; the rest restates Lemma~\ref{lem:diag-principal-minor}.
 \end{proof}
 
 \begin{lemma}[Principal submatrices]
@@ -49,12 +49,12 @@ minor of $A$ at the image of $S$.}
 \label{lem:pme-detpoly}
 \lean{Matrix.pmEquiv_iff_detpoly_eq}
 \leanok
-\uses{def:pme,lem:fiber-poly}
+\uses{def:pme,thm:detpoly-expansion}
 $A$ and $B$ are PME exactly when $f_A=f_B$.
 \end{lemma}
 \begin{proof}
 \leanok
-This is Lemma~\ref{lem:fiber-poly}.
+This is Theorem~\ref{thm:detpoly-expansion}.
 \end{proof}
 
 \begin{definition}[Nonzero off-diagonal entries]

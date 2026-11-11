@@ -107,7 +107,7 @@ variable [Fintype n]
 
 /-- Diagonally equivalent matrices are PME. -/
 theorem DiagEquivalent.pmEquiv {A B : Matrix n n R} (h : DiagEquivalent A B) : PMEquiv A B :=
-  pmEquiv_iff_mem_pmFiber.mpr (DiagEquivalent.mem_pmFiber h.symm)
+  congrFun h.principalMinor_eq
 
 /-- Diagonally similar matrices are PME. -/
 theorem DiagSimilar.pmEquiv {A B : Matrix n n R} (h : DiagSimilar A B) : PMEquiv A B :=
@@ -115,7 +115,7 @@ theorem DiagSimilar.pmEquiv {A B : Matrix n n R} (h : DiagSimilar A B) : PMEquiv
 
 /-- PME is equality of determinantal polynomials. -/
 theorem pmEquiv_iff_detpoly_eq {A B : Matrix n n R} : PMEquiv A B ↔ A.detpoly = B.detpoly := by
-  rw [pmEquiv_iff_mem_pmFiber, ← detpoly_eq_iff, eq_comm]
+  rw [detpoly_eq_iff_principalMinor_eq, funext_iff, PMEquiv]
 
 /-- `A ∈ 𝒟(n)` iff everything PME to `A` is diagonally equivalent to `A`. -/
 theorem hasTrivialFiber_iff_forall_pmEquiv {A : Matrix n n R} :

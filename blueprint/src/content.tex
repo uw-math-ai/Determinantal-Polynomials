@@ -1,8 +1,13 @@
 % Shared mathematical content for the web and print blueprints.
+% Each \part gets its own dependency graph (`dep_by=part` in web.tex).
 \tableofcontents
 \input{chapters/overview}
+\part{DetPoly}
+\label{part:detpoly}
 \input{chapters/detpoly}
 \input{chapters/detpoly-fin}
+\part{LEAN\_Warmup}
+\label{part:warmup}
 \input{chapters/warmup}
 \input{chapters/cuttranspose}
 \input{chapters/warmup-tools}
