@@ -278,6 +278,7 @@ Matrix.DiagSimilar.pmEquiv
 Matrix.hasTrivialFiber_iff_forall_pmEquiv
 Matrix.PMEquiv.principalSubmatrix
 Matrix.pmEquiv_iff_detpoly_eq
+Matrix.PMEquiv.det_add_diagonal_eq
 Matrix.OffDiagNeZero
 Matrix.OffDiagNeZero.isIrred
 Matrix.OffDiagNeZero.transpose

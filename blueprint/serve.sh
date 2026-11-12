@@ -18,6 +18,8 @@ Usage: blueprint/serve.sh [options]
   -p, --port PORT   port to serve on (default 8000)
       --no-docs     skip \`lake build DetPoly:docs LEAN_Warmup:docs\` (reuse .lake/build/doc)
       --no-pdf      skip \`leanblueprint pdf\` (reuse blueprint/print/print.pdf if present)
+      --no-blueprint skip leanblueprint web and pdf builds (reuse existing output)
+      --no-jekyll   skip the Jekyll build (reuse home_page/_site)
       --no-build    skip all builds; only assemble the site and serve it
       --no-serve    build and assemble, but do not start the server
   -h, --help        show this help
@@ -30,13 +32,16 @@ port=8000
 build_docs=1
 build_pdf=1
 build_blueprint=1
+build_jekyll=1
 serve=1
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -p|--port) port="$2"; shift 2 ;;
     --no-docs) build_docs=0; shift ;;
     --no-pdf) build_pdf=0; shift ;;
-    --no-build) build_docs=0; build_pdf=0; build_blueprint=0; shift ;;
+    --no-blueprint) build_blueprint=0; build_pdf=0; shift ;;
+    --no-jekyll) build_jekyll=0; shift ;;
+    --no-build) build_docs=0; build_pdf=0; build_blueprint=0; build_jekyll=0; shift ;;
     --no-serve) serve=0; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "unknown option: $1" >&2; usage >&2; exit 1 ;;
@@ -62,23 +67,27 @@ if (( build_pdf )); then
   uv run leanblueprint pdf
 fi
 
-step "Building home page (Jekyll)"
-# Point {{ site.url }} at the local server instead of GitHub Pages.
-override="$(mktemp --suffix=.yml)"
-trap 'rm -f "$override"' EXIT
-printf 'url: "http://localhost:%s"\n' "$port" > "$override"
-rm -f "$site/docs"  # our symlink from a previous run; keep Jekyll's cleaner away from it
-jekyll_cmd="bundle check >/dev/null 2>&1 || bundle install
-bundle exec jekyll build --config _config.yml,'$override'"
-if command -v nix >/dev/null; then
-  (cd home_page && nix --extra-experimental-features 'nix-command flakes' \
-    develop . --command bash -euc "$jekyll_cmd")
-else
-  (cd home_page && BUNDLE_PATH=vendor/bundle bash -euc "$jekyll_cmd")
+if (( build_jekyll )); then
+  step "Building home page (Jekyll)"
+  # Point {{ site.url }} at the local server instead of GitHub Pages.
+  override="$(mktemp --suffix=.yml)"
+  trap 'rm -f "$override"' EXIT
+  printf 'url: "http://localhost:%s"\n' "$port" > "$override"
+  rm -f "$site/docs"  # our symlink from a previous run; keep Jekyll's cleaner away from it
+  jekyll_cmd="bundle check >/dev/null 2>&1 || bundle install
+  bundle exec jekyll build --config _config.yml,'$override'"
+  if command -v nix >/dev/null; then
+    (cd home_page && nix --extra-experimental-features 'nix-command flakes' \
+      develop . --command bash -euc "$jekyll_cmd")
+  else
+    (cd home_page && BUNDLE_PATH=vendor/bundle bash -euc "$jekyll_cmd")
+  fi
 fi
 
 step "Assembling site in home_page/_site"
 [[ -d blueprint/web ]] || { echo "blueprint/web missing; run without --no-build" >&2; exit 1; }
+mkdir -p "$site"
+rm -f "$site/docs"
 rm -rf "$site/blueprint" "$site/blueprint.pdf"
 cp -r blueprint/web "$site/blueprint"
 dochome="$(sed -n 's/^\\dochome{\(.*\)}.*/\1/p' blueprint/src/web.tex)"

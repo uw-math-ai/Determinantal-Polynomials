@@ -32,6 +32,10 @@ and statements of its results leading to Theorem 1.1, together with the alternat
 * A sequence of cut-transposes from `A` to `C` is `p : CutTransposePath A C` (in
   `DetPoly.CutTranspose`), with `p.length` and the list of cuts `p.cuts`.
 * CGGR's "`A + D` is nonsingular" for a diagonal `D` is `IsUnit (A + diagonal d).det`.
+* CGGR's Lemmas 2.1, 2.9 and 2.15 compare `(A + D)^adj` and `(B + D)^adj`. These lose the scalar
+  `det(A + D)` (`adj(-M) = adj M` for odd `n`), so we add the hypothesis
+  `(A + diagonal d).det = (B + diagonal d).det`, which PME matrices satisfy
+  (`PMEquiv.det_add_diagonal_eq`).
 
 ## Dictionary
 
@@ -110,6 +114,12 @@ theorem DiagEquivalent.pmEquiv {A B : Matrix n n R} (h : DiagEquivalent A B) : P
 /-- Diagonally similar matrices are PME. -/
 theorem DiagSimilar.pmEquiv {A B : Matrix n n R} (h : DiagSimilar A B) : PMEquiv A B :=
   h.diagEquivalent.pmEquiv
+
+/-- PME matrices have the same determinant after any diagonal shift (`f_A(d) = f_B(d)`). -/
+theorem PMEquiv.det_add_diagonal_eq {A B : Matrix n n R} (h : PMEquiv A B) (d : n → R) :
+    (A + diagonal d).det = (B + diagonal d).det := by
+  rw [add_comm, det_diagonal_add, add_comm, det_diagonal_add]
+  exact Finset.sum_congr rfl fun S _ ↦ by rw [h Sᶜ]
 
 /-- PME is equality of determinantal polynomials. -/
 theorem pmEquiv_iff_detpoly_eq {A B : Matrix n n R} : PMEquiv A B ↔ A.detpoly = B.detpoly := by
@@ -279,9 +289,12 @@ section Adjugate
 
 variable {𝔽 n : Type*} [Fintype n] [DecidableEq n] [Field 𝔽]
 
-/-- **EXTERNAL**, **Lemma 2.1** (from [Hartfiel–Loewy 1984, Lemma 4]). -/
+/-- **EXTERNAL**, **Lemma 2.1** (from [Hartfiel–Loewy 1984, Lemma 4]).
+We also assume `det(A + D) = det(B + D)`, which holds when `A` and `B` are PME. Hint:
+`adj M = det M • M⁻¹` and the principal minors of `M⁻¹` are those of `M` on complements divided
+by `det M` (Jacobi's complementary minor formula). -/
 theorem pmEquiv_adjugate_add_diagonal_iff {A B : Matrix n n 𝔽} {d : n → 𝔽}
-    (hA : IsUnit (A + diagonal d).det) (hB : IsUnit (B + diagonal d).det) :
+    (hA : IsUnit (A + diagonal d).det) (hdet : (A + diagonal d).det = (B + diagonal d).det) :
     PMEquiv (A + diagonal d).adjugate (B + diagonal d).adjugate ↔ PMEquiv A B := by
   sorry
 
@@ -293,23 +306,30 @@ theorem hasCut_adjugate_add_diagonal_iff {A : Matrix n n 𝔽} {d : n → 𝔽}
     (A + diagonal d).adjugate.HasCut X ↔ A.HasCut X := by
   sorry
 
-/-- **EXTERNAL**, **Lemma 2.9** (from [Hartfiel–Loewy 1984, Lemma 4]). -/
+/-- **EXTERNAL**, **Lemma 2.9** (from [Hartfiel–Loewy 1984, Lemma 4]). As in Lemma 2.1, we add
+`det(A + D) = det(B + D)` to CGGR's hypotheses. Hint: `adj M = det M • M⁻¹`, and
+`D (A + diag d) D⁻¹ = D A D⁻¹ + diag d` for diagonal `D`. -/
 theorem diagSimilar_adjugate_add_diagonal_iff {A B : Matrix n n 𝔽} {d : n → 𝔽}
-    (hA : IsUnit (A + diagonal d).det) (hB : IsUnit (B + diagonal d).det) :
+    (hA : IsUnit (A + diagonal d).det) (hdet : (A + diagonal d).det = (B + diagonal d).det) :
     DiagSimilar (A + diagonal d).adjugate (B + diagonal d).adjugate ↔ DiagSimilar A B := by
   sorry
 
 /-- **TODO**, **Lemma 2.13**: cut-transpose and adjugate commute up to diagonal similarity.
-(That `X` is a cut of `A^adj` is part of the lemma.) -/
+(That `X` is a cut of `A^adj` is part of the lemma.)
+Note `A` must benonsingular: a cut-transpose can change the rank, so `A^adj = 0` while
+`ct(A, X)^adj ≠ 0`. CGGR only apply it to nonsingular `A + D`. Hint: by the nullity theorem,
+`rank A⁻¹[X, Xᶜ] = rank A[X, Xᶜ]`. -/
 theorem IsCutTranspose.adjugate {A B : Matrix n n 𝔽} {X : Finset n} (hA : A.IsIrred)
-    (h : IsCutTranspose A X B) :
+    (hdet : IsUnit A.det) (h : IsCutTranspose A X B) :
     A.adjugate.HasCut X ∧ ∃ B', IsCutTranspose A.adjugate X B' ∧ DiagSimilar B.adjugate B' := by
   sorry
 
-/-- **TODO**, **Lemma 2.15**. -/
+/-- **TODO**, **Lemma 2.15**. As in Lemma 2.1, we add `det(A + D) = det(B + D)` to CGGR's
+hypotheses: for odd `n` and irreducible nonsingular `A` with zero diagonal, `B = -A` and `d = 0`
+violate the statement without it. -/
 theorem cutTransposeEquivWrt_adjugate_add_diagonal_iff {A B : Matrix n n 𝔽} (hA : A.IsIrred)
     (hB : B.IsIrred) {d : n → 𝔽} (hAd : IsUnit (A + diagonal d).det)
-    (hBd : IsUnit (B + diagonal d).det) (Xs : List (Finset n)) :
+    (hdet : (A + diagonal d).det = (B + diagonal d).det) (Xs : List (Finset n)) :
     CutTransposeEquivWrt (A + diagonal d).adjugate Xs (B + diagonal d).adjugate ↔
       CutTransposeEquivWrt A Xs B := by
   sorry
@@ -393,13 +413,14 @@ theorem PMEquiv.hasCut_of_isMinimalCut {A B : Matrix n n 𝔽} (hA : A.OffDiagNe
   sorry
 
 /-- **TODO**, **Lemma 3.9**: if `S` is a minimal cut of `A` and a cut of `B`, `s ∈ S`, and
-`A[Sᶜ + s] ~DS B[Sᶜ + s]`, then `A ~DS B` or `ct(A, S) ~DS B`. -/
+`A[Sᶜ + s] ~DS B[Sᶜ + s]`, then `A ~DS B` or `ct(A, Sᶜ) ~DS B`. We write `ct(A, Sᶜ)` as `Cᵀ` for
+a cut-transpose `C` of `A` at `S` (`cutTranspose_compl`, `transpose_cutTranspose`). -/
 theorem PMEquiv.diagSimilar_or_cutTranspose {A B : Matrix n n 𝔽} (hA : A.OffDiagNeZero)
     (hB : B.OffDiagNeZero) (h : PMEquiv A B) {S : Finset n} (hS : A.IsMinimalCut S)
     (hSB : B.HasCut S) {s : n} (hs : s ∈ S)
     (hDS : DiagSimilar (A.principalSubmatrix ((insert s Sᶜ : Finset n) : Set n))
       (B.principalSubmatrix ((insert s Sᶜ : Finset n) : Set n))) :
-    DiagSimilar A B ∨ ∀ C, IsCutTranspose A S C → DiagSimilar C B := by
+    DiagSimilar A B ∨ ∀ C, IsCutTranspose A S C → DiagSimilar Cᵀ B := by
   sorry
 
 /-- **EXTERNAL**, **Theorem 1.1**, hard direction: irreducible PME matrices are cut-transpose
@@ -457,7 +478,8 @@ theorem hasTrivialFiber_iff_forall_isCutTranspose [Nonempty n] (A : Matrix n n �
 /-- The no-cut case (Loewy's theorem) as a special case of the theorem. -/
 theorem hasTrivialFiber_of_noCut' [Nonempty n] {A : Matrix n n 𝔽} (hA : A.IsIrred)
     (hcut : ∀ X, ¬ A.HasCut X) : A.HasTrivialFiber :=
-  (hasTrivialFiber_iff_forall_isCutTranspose A).mpr ⟨hA, fun X _ hX ↦ absurd hX.hasCut_left (hcut X)⟩
+  (hasTrivialFiber_iff_forall_isCutTranspose A).mpr 
+    ⟨hA, fun X _ hX ↦ absurd hX.hasCut_left (hcut X)⟩
 
 end
 

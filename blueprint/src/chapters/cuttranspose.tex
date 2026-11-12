@@ -47,10 +47,11 @@ minor of $A$ at the image of $S$.}
 
 \begin{lemma}[PME and determinantal polynomials]
 \label{lem:pme-detpoly}
-\lean{Matrix.pmEquiv_iff_detpoly_eq}
+\lean{Matrix.pmEquiv_iff_detpoly_eq, Matrix.PMEquiv.det_add_diagonal_eq}
 \leanok
 \uses{def:pme,thm:detpoly-expansion}
-$A$ and $B$ are PME exactly when $f_A=f_B$.
+$A$ and $B$ are PME exactly when $f_A=f_B$. In particular PME matrices satisfy
+$\det(A+D)=\det(B+D)$ for every diagonal $D$.
 \end{lemma}
 \begin{proof}
 \leanok
@@ -205,9 +206,12 @@ a unit.
 \label{ext:cggr21}
 \lean{Matrix.pmEquiv_adjugate_add_diagonal_iff}
 \leanok
-\uses{def:pme}
-If $A+D$ and $B+D$ are nonsingular for a diagonal $D$, then
+\uses{def:pme,lem:pme-detpoly}
+If $A+D$ is nonsingular for a diagonal $D$ and $\det(A+D)=\det(B+D)$, then
 $\operatorname{adj}(A+D)$ and $\operatorname{adj}(B+D)$ are PME exactly when $A$ and $B$ are.
+CGGR assume only that $A+D$ and $B+D$ are nonsingular, which is not enough: for $n=3$, $D=0$,
+$A=I$, $B=-I$ the adjugates are both $I$. The determinant condition holds when $A$ and $B$ are
+PME (Lemma~\ref{lem:pme-detpoly}).
 \end{lemma}
 \noindent\emph{Status: external, from Hartfiel--Loewy (1984), Lemma 4.}
 
@@ -226,8 +230,9 @@ specializing $x\mapsto d$.}
 \lean{Matrix.diagSimilar_adjugate_add_diagonal_iff}
 \leanok
 \uses{def:diag}
-If $A+D$ and $B+D$ are nonsingular, then $\operatorname{adj}(A+D)$ and
-$\operatorname{adj}(B+D)$ are diagonally similar exactly when $A$ and $B$ are.
+If $A+D$ is nonsingular and $\det(A+D)=\det(B+D)$, then $\operatorname{adj}(A+D)$ and
+$\operatorname{adj}(B+D)$ are diagonally similar exactly when $A$ and $B$ are. (The
+counterexample in Lemma~\ref{ext:cggr21} shows that the determinant condition is needed.)
 \end{lemma}
 \noindent\emph{Status: external, from Hartfiel--Loewy (1984), Lemma 4.}
 
@@ -236,9 +241,13 @@ $\operatorname{adj}(B+D)$ are diagonally similar exactly when $A$ and $B$ are.
 \lean{Matrix.IsCutTranspose.adjugate}
 \leanok
 \uses{def:cut-transpose,lem:ct-unique}
-If $A$ is irreducible with a cut $X$ and $B$ is a cut-transpose of $A$ at $X$, then $X$ is
+If $A$ is irreducible and nonsingular with a cut $X$ and $B$ is a cut-transpose of $A$ at
+$X$, then $X$ is
 a cut of $\operatorname{adj}(A)$ and $\operatorname{adj}(B)$ is diagonally similar to a
 cut-transpose of $\operatorname{adj}(A)$ at $X$.
+Note that we need nonsingularity: a cut-transpose can change the
+rank, so $\operatorname{adj}(A)=0$ while $\operatorname{adj}(B)\neq0$. They only apply it to
+nonsingular $A+D$.
 \end{lemma}
 \noindent\emph{Status: to do.}
 
@@ -247,7 +256,8 @@ cut-transpose of $\operatorname{adj}(A)$ at $X$.
 \lean{Matrix.cutTransposeEquivWrt_adjugate_add_diagonal_iff}
 \leanok
 \uses{def:ct-chain,lem:cggr26,ext:cggr29,lem:cggr213}
-For irreducible $A,B$ with $A+D$ and $B+D$ nonsingular, $\operatorname{adj}(A+D)$ and
+For irreducible $A,B$ with $A+D$ nonsingular and $\det(A+D)=\det(B+D)$,
+$\operatorname{adj}(A+D)$ and
 $\operatorname{adj}(B+D)$ are cut-transpose equivalent with respect to a list exactly when
 $A$ and $B$ are.
 \end{lemma}
@@ -348,7 +358,11 @@ than two is a cut of $B$.
 \uses{def:offdiag,def:pme,def:minimal-cut,def:cut-transpose}
 Let $A,B$ be PME with nonzero off-diagonal entries, $S$ a minimal cut of $A$ and a cut of
 $B$, and $s\in S$. If $A[S^c\cup\{s\}]$ and $B[S^c\cup\{s\}]$ are diagonally similar, then
-$A$ is diagonally similar to $B$, or every cut-transpose of $A$ at $S$ is.
+$A$ is diagonally similar to $B$, or $\operatorname{ct}(A,S^c)$ is, that is, the transpose
+of a cut-transpose of $A$ at $S$. The complement matters: for $A=A^*$ (the contrast example),
+$S=\{1,2\}$, $s=1$ and $B=\operatorname{ct}_{\{1,2\}}(A^*)^T$, all hypotheses hold, but $B$ is
+not diagonally similar to $\operatorname{ct}_{\{1,2\}}(A^*)$ (compare the 3-cycle products
+$b_{12}b_{23}b_{31}=3$ and $2$).
 \end{lemma}
 \noindent\emph{Status: to do.}
 
