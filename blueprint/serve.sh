@@ -16,9 +16,8 @@ usage() {
 Usage: blueprint/serve.sh [options]
 
   -p, --port PORT   port to serve on (default 8000)
-      --no-docs     skip \`lake build DetPoly:docs LEAN_Warmup:docs\` (reuse .lake/build/doc)
-      --no-pdf      skip \`leanblueprint pdf\` (reuse blueprint/print/print.pdf if present)
-      --no-blueprint skip leanblueprint web and pdf builds (reuse existing output)
+      --no-docs     skip \`lake build\` and lints (reuse .lake/build/doc)
+      --no-blueprint skip leanblueprint all builds (reuse existing output)
       --no-jekyll   skip the Jekyll build (reuse home_page/_site)
       --no-build    skip all builds; only assemble the site and serve it
       --no-serve    build and assemble, but do not start the server
@@ -30,7 +29,6 @@ EOF
 
 port=8000
 build_docs=1
-build_pdf=1
 build_blueprint=1
 build_jekyll=1
 serve=1
@@ -38,10 +36,9 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     -p|--port) port="$2"; shift 2 ;;
     --no-docs) build_docs=0; shift ;;
-    --no-pdf) build_pdf=0; shift ;;
-    --no-blueprint) build_blueprint=0; build_pdf=0; shift ;;
+    --no-blueprint) build_blueprint=0; shift ;;
     --no-jekyll) build_jekyll=0; shift ;;
-    --no-build) build_docs=0; build_pdf=0; build_blueprint=0; build_jekyll=0; shift ;;
+    --no-build) build_docs=0; build_blueprint=0; build_jekyll=0; shift ;;
     --no-serve) serve=0; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "unknown option: $1" >&2; usage >&2; exit 1 ;;
@@ -55,16 +52,15 @@ step() { printf '\n==> %s\n' "$*"; }
 
 if (( build_docs )); then
   step "Building API docs (lake build DetPoly:docs LEAN_Warmup:docs)"
+  lake build
+  lake lint
   lake build DetPoly:docs LEAN_Warmup:docs
 fi
 
 if (( build_blueprint )); then
-  step "Building blueprint (web)"
-  uv run leanblueprint web
-fi
-if (( build_pdf )); then
-  step "Building blueprint (pdf)"
-  uv run leanblueprint pdf
+  step "Building blueprint (all)"
+  uv run leanblueprint all
+  uv run leanblueprint checkdecls
 fi
 
 if (( build_jekyll )); then

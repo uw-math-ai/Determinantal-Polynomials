@@ -17,12 +17,12 @@ A *cut* of `A` (Al Ahmadieh, before Lemma 4.3; CGGR Def. 2.5) is a set `X` with 
 
 ## Main definitions
 
-* `Matrix.HasCut A X`: `X` is a cut of `A`, with the cross blocks factored as outer products.
-* `Matrix.R1CutFactorization A`: a cut of `A` together with a chosen factorization of its cross
-  blocks.
-* `Matrix.cutTranspose A f`: the cut-transpose for `f : A.R1CutFactorization`. It is
-  `Matrix.cutTransposeWith`, the block construction from arbitrary vectors, applied to `f`.
-* `Matrix.IsCutTranspose A X B`: `B = ct(A, X)` for some factorization at the cut `X`.
+* `Matrix.R1Factorization A`: a set `X` with vectors `p q u v` such that `A[X,Xᶜ] = p qᵀ` and
+  `A[Xᶜ,X] = u vᵀ`. No size condition.
+* `Matrix.cutTranspose A f`: the matrix `[[E, p uᵀ], [q vᵀ, Nᵀ]]` for `f : A.R1Factorization`.
+* `Matrix.R1CutFactorization A`: an `R1Factorization` with `2 ≤ |X|` and `2 ≤ |Xᶜ|`.
+* `Matrix.HasCut A X`: `X` is a cut of `A`, i.e. `A` has a rank-one cut factorization at `X`.
+* `Matrix.IsCutTranspose A X B`: `B = ct(A, X)` for some cut factorization at `X`.
 * `Matrix.CutTransposePath A C`: a sequence of cut-transposes from `A` to `C`, as data, with
   `length` and `cuts`.
 * `Matrix.CutTransposeConnected A C`: some `CutTransposePath A C` exists.
@@ -41,7 +41,11 @@ A *cut* of `A` (Al Ahmadieh, before Lemma 4.3; CGGR Def. 2.5) is a set `X` with 
 
 ## Implementation notes
 
-`HasCut` asks for outer products rather than `rank ≤ 1`, so it makes sense over any ring (for
+The cut-transpose and its determinant are developed for `R1Factorization`, without the size
+conditions of a cut: restricting to a principal submatrix can leave fewer than two indices of `X`,
+and the principal-minor statement needs the determinant statement for those restrictions.
+
+`HasCut` asks for a factorization rather than `rank ≤ 1`, so it makes sense over any ring (for
 instance for `(diag(x) + A)^adj` over `MvPolynomial n R`); `rank` over a ring that is not a field
 does not mean "outer product". The `X` block comes first and the `Xᶜ` block is transposed, as in
 CGGR.
@@ -57,68 +61,17 @@ variable {R n m : Type*}
 
 section Mul
 
-variable [Mul R]
+variable [Mul R] [Fintype n] [DecidableEq n]
 
-/-! ### The block construction -/
+/-! ### Rank-one factorizations of the cross blocks -/
 
-section DecidableEq
-
-variable [DecidableEq n]
-
-/-- The matrix `[[E, p uᵀ], [q vᵀ, Nᵀ]]` built from `A = [[E, *], [*, N]]` (blocks along `X`,
-`Xᶜ`) and vectors `p q u v`. When `A[X,Xᶜ] = p qᵀ` and `A[Xᶜ,X] = u vᵀ` this is the
-cut-transpose (`Matrix.cutTranspose`). -/
-def cutTransposeWith (A : Matrix n n R) (X : Finset n) (p q u v : n → R) : Matrix n n R :=
-  of fun i j ↦
-    if i ∈ X then (if j ∈ X then A i j else p i * u j)
-    else (if j ∈ X then q i * v j else A j i)
-
-/-- The block construction commutes with reindexing, in particular with principal
-submatrices. -/
-theorem submatrix_cutTransposeWith [Fintype m] [DecidableEq m] (A : Matrix n n R) (X : Finset n)
-    (p q u v : n → R) (e : m → n) :
-    (A.cutTransposeWith X p q u v).submatrix e e =
-      (A.submatrix e e).cutTransposeWith {i | e i ∈ X} (p ∘ e) (q ∘ e) (u ∘ e) (v ∘ e) := by
-  ext i j
-  simp [cutTransposeWith]
-
-end DecidableEq
-
-variable [Fintype n] [DecidableEq n]
-
-/-! ### Cuts -/
-
-/-- `X` is a *cut* of `A`: `2 ≤ |X|`, `2 ≤ |Xᶜ|`, and the cross blocks are outer products,
-`A[X,Xᶜ] = p qᵀ` and `A[Xᶜ,X] = u vᵀ`. Over a field this is Al Ahmadieh's definition
-`rk A[X,Xᶜ] ≤ 1`, `rk A[Xᶜ,X] ≤ 1` (`hasCut_iff_rank_le_one`). -/
-def HasCut (A : Matrix n n R) (X : Finset n) : Prop :=
-  2 ≤ #X ∧ 2 ≤ #Xᶜ ∧ ∃ p q u v : n → R,
-    (∀ i ∈ X, ∀ j ∉ X, A i j = p i * q j) ∧ (∀ i ∉ X, ∀ j ∈ X, A i j = u i * v j)
-
-variable {A : Matrix n n R} {X : Finset n}
-
-/-- The complement of a cut is a cut. -/
-theorem HasCut.compl (h : A.HasCut X) : A.HasCut Xᶜ := by
-  obtain ⟨h₁, h₂, p, q, u, v, hpq, huv⟩ := h
-  exact ⟨h₂, by rwa [compl_compl], u, v, p, q,
-    fun i hi j hj ↦ huv i (by simpa using hi) j (by simpa using hj),
-    fun i hi j hj ↦ hpq i (by simpa using hi) j (by simpa using hj)⟩
-
-@[simp]
-theorem hasCut_compl_iff : A.HasCut Xᶜ ↔ A.HasCut X :=
-  ⟨fun h ↦ by simpa using h.compl, HasCut.compl⟩
-
-/-! ### Cut factorizations -/
-
-variable (A) in
-/-- A *rank-one cut factorization* of `A`: a cut `X` of `A` together with vectors `p q u v`
+variable (A : Matrix n n R) in
+/-- A *rank-one factorization* of the cross blocks of `A`: a set `X` with vectors `p q u v`
 such that `A[X,Xᶜ] = p qᵀ` and `A[Xᶜ,X] = u vᵀ`, i.e. `A = [[E, p qᵀ], [u vᵀ, N]]`. Only the
-values of `p, v` on `X` and of `q, u` on `Xᶜ` matter. Build one with
-`R1CutFactorization.mk'` or `HasCut.exists_r1CutFactorization`. -/
-structure R1CutFactorization where
-  /-- The cut. -/
+values of `p, v` on `X` and of `q, u` on `Xᶜ` matter. -/
+structure R1Factorization where
+  /-- The set along which `A` is split into blocks. -/
   X : Finset n
-  hasCut : A.HasCut X
   /-- The column factor of `A[X,Xᶜ]`. -/
   p : n → R
   /-- The row factor of `A[X,Xᶜ]`. -/
@@ -130,67 +83,68 @@ structure R1CutFactorization where
   apply_mem_notMem : ∀ i ∈ X, ∀ j ∉ X, A i j = p i * q j
   apply_notMem_mem : ∀ i ∉ X, ∀ j ∈ X, A i j = u i * v j
 
-namespace R1CutFactorization
+variable {A : Matrix n n R} {X : Finset n}
 
-/-- Build a cut factorization from the size conditions and the factorization of the cross
-blocks; the `hasCut` field follows from these. -/
+namespace R1Factorization
+
+variable (f : A.R1Factorization)
+
+/-- The same factorization, read along `Xᶜ`: the two cross blocks exchange roles. -/
 @[simps]
-def mk' (X : Finset n) (h₁ : 2 ≤ #X) (h₂ : 2 ≤ #Xᶜ) (p q u v : n → R)
-    (hpq : ∀ i ∈ X, ∀ j ∉ X, A i j = p i * q j) (huv : ∀ i ∉ X, ∀ j ∈ X, A i j = u i * v j) :
-    A.R1CutFactorization :=
-  ⟨X, ⟨h₁, h₂, p, q, u, v, hpq, huv⟩, p, q, u, v, hpq, huv⟩
+def compl : A.R1Factorization where
+  X := f.Xᶜ
+  p := f.u
+  q := f.v
+  u := f.p
+  v := f.q
+  apply_mem_notMem i hi j hj := f.apply_notMem_mem i (by simpa using hi) j (by simpa using hj)
+  apply_notMem_mem i hi j hj := f.apply_mem_notMem i (by simpa using hi) j (by simpa using hj)
 
-variable (f : A.R1CutFactorization)
+/-- Restriction along `e : m → n`, in particular to a principal submatrix. -/
+@[simps]
+def submatrix [Fintype m] (e : m → n) : (A.submatrix e e).R1Factorization where
+  X := {i | e i ∈ f.X}
+  p := f.p ∘ e
+  q := f.q ∘ e
+  u := f.u ∘ e
+  v := f.v ∘ e
+  apply_mem_notMem i hi j hj := f.apply_mem_notMem _ (by simpa using hi) _ (by simpa using hj)
+  apply_notMem_mem i hi j hj := f.apply_notMem_mem _ (by simpa using hi) _ (by simpa using hj)
 
-theorem two_le_card : 2 ≤ #f.X := f.hasCut.1
-
-theorem two_le_card_compl : 2 ≤ #f.Xᶜ := f.hasCut.2.1
-
-/-- The same factorization, read at the complementary cut `Xᶜ`: the two cross blocks
-exchange roles. -/
-@[simps! X p q u v]
-def compl : A.R1CutFactorization :=
-  mk' f.Xᶜ f.two_le_card_compl (by rw [compl_compl]; exact f.two_le_card) f.u f.v f.p f.q
-    (fun i hi j hj ↦ f.apply_notMem_mem i (by simpa using hi) j (by simpa using hj))
-    (fun i hi j hj ↦ f.apply_mem_notMem i (by simpa using hi) j (by simpa using hj))
-
-end R1CutFactorization
-
-/-- Every cut has a cut factorization. -/
-theorem HasCut.exists_r1CutFactorization (h : A.HasCut X) :
-    ∃ f : A.R1CutFactorization, f.X = X := by
-  obtain ⟨h₁, h₂, p, q, u, v, hpq, huv⟩ := h
-  exact ⟨.mk' X h₁ h₂ p q u v hpq huv, rfl⟩
-
-theorem hasCut_iff_exists_r1CutFactorization :
-    A.HasCut X ↔ ∃ f : A.R1CutFactorization, f.X = X :=
-  ⟨HasCut.exists_r1CutFactorization, fun ⟨f, hf⟩ ↦ hf ▸ f.hasCut⟩
+end R1Factorization
 
 /-! ### The cut-transpose -/
 
 variable (A) in
 /-- The cut-transpose `ct(A, X) = [[E, p uᵀ], [q vᵀ, Nᵀ]]` of `A = [[E, p qᵀ], [u vᵀ, N]]`
 (CGGR Def. 2.10): swap `q ↔ u` and transpose the `Xᶜ` block. -/
-def cutTranspose (f : A.R1CutFactorization) : Matrix n n R :=
-  A.cutTransposeWith f.X f.p f.q f.u f.v
+def cutTranspose (f : A.R1Factorization) : Matrix n n R :=
+  of fun i j ↦
+    if i ∈ f.X then (if j ∈ f.X then A i j else f.p i * f.u j)
+    else (if j ∈ f.X then f.q i * f.v j else A j i)
 
-theorem cutTranspose_apply (f : A.R1CutFactorization) (i j : n) :
+omit [Fintype n] in
+theorem cutTranspose_apply (f : A.R1Factorization) (i j : n) :
     A.cutTranspose f i j =
       if i ∈ f.X then (if j ∈ f.X then A i j else f.p i * f.u j)
       else (if j ∈ f.X then f.q i * f.v j else A j i) :=
   rfl
 
-/-- The cut-transpose has the same cut, with the factors `q` and `u` swapped. -/
-@[simps! X p q u v]
-def R1CutFactorization.swap (f : A.R1CutFactorization) :
-    (A.cutTranspose f).R1CutFactorization :=
-  .mk' f.X f.two_le_card f.two_le_card_compl f.p f.u f.q f.v
-    (fun i hi j hj ↦ by simp [cutTranspose_apply, hi, hj])
-    (fun i hi j hj ↦ by simp [cutTranspose_apply, hi, hj])
+/-- The cut-transpose is split along the same set, with the factors `q` and `u` swapped. -/
+@[simps]
+def R1Factorization.swap (f : A.R1Factorization) : (A.cutTranspose f).R1Factorization where
+  X := f.X
+  p := f.p
+  q := f.u
+  u := f.q
+  v := f.v
+  apply_mem_notMem i hi j hj := by simp [cutTranspose_apply, hi, hj]
+  apply_notMem_mem i hi j hj := by simp [cutTranspose_apply, hi, hj]
 
+omit [Fintype n] in
 /-- `ct(ct(A, X), X) = A` (CGGR Remark 2.11), for the swapped factorization. -/
 @[simp]
-theorem cutTranspose_swap (f : A.R1CutFactorization) :
+theorem cutTranspose_swap (f : A.R1Factorization) :
     (A.cutTranspose f).cutTranspose f.swap = A := by
   ext i j
   by_cases hi : i ∈ f.X <;> by_cases hj : j ∈ f.X
@@ -198,6 +152,80 @@ theorem cutTranspose_swap (f : A.R1CutFactorization) :
   · simpa [cutTranspose_apply, hi, hj] using (f.apply_mem_notMem i hi j hj).symm
   · simpa [cutTranspose_apply, hi, hj] using (f.apply_notMem_mem i hi j hj).symm
   · simp [cutTranspose_apply, hi, hj]
+
+omit [Fintype n] in
+/-- The cut-transpose commutes with reindexing, in particular with principal submatrices. -/
+theorem submatrix_cutTranspose [Fintype m] [DecidableEq m] (f : A.R1Factorization)
+    (e : m → n) : (A.cutTranspose f).submatrix e e = (A.submatrix e e).cutTranspose
+      (f.submatrix e) := by
+  ext i j
+  simp [cutTranspose_apply]
+
+/-! ### Cuts -/
+
+variable (A) in
+/-- A *rank-one cut factorization* of `A`: a rank-one factorization of the cross blocks along a
+set `X` with `2 ≤ |X|` and `2 ≤ |Xᶜ|`. -/
+structure R1CutFactorization extends A.R1Factorization where
+  two_le_card : 2 ≤ #X
+  two_le_card_compl : 2 ≤ #Xᶜ
+
+instance : CoeOut A.R1CutFactorization A.R1Factorization :=
+  ⟨R1CutFactorization.toR1Factorization⟩
+
+/-- `X` is a *cut* of `A`: `A` has a rank-one cut factorization at `X`. Over a field this is
+Al Ahmadieh's definition `2 ≤ |X|`, `2 ≤ |Xᶜ|`, `rk A[X,Xᶜ] ≤ 1`, `rk A[Xᶜ,X] ≤ 1`
+(`hasCut_iff_rank_le_one`). -/
+def HasCut (A : Matrix n n R) (X : Finset n) : Prop :=
+  ∃ f : A.R1CutFactorization, f.X = X
+
+namespace R1CutFactorization
+
+variable (f : A.R1CutFactorization)
+
+/-- The cut of a cut factorization is a cut. -/
+theorem hasCut : A.HasCut f.X :=
+  ⟨f, rfl⟩
+
+/-- The same factorization, read at the complementary cut `Xᶜ`. -/
+def compl : A.R1CutFactorization :=
+  ⟨f.toR1Factorization.compl, f.two_le_card_compl, by simpa using f.two_le_card⟩
+
+/-- The cut-transpose has the same cut, with the factors `q` and `u` swapped. -/
+def swap : (A.cutTranspose f).R1CutFactorization :=
+  ⟨f.toR1Factorization.swap, f.two_le_card, f.two_le_card_compl⟩
+
+@[simp] theorem toR1Factorization_compl : f.compl.toR1Factorization = f.toR1Factorization.compl :=
+  rfl
+
+@[simp] theorem toR1Factorization_swap : f.swap.toR1Factorization = f.toR1Factorization.swap :=
+  rfl
+
+end R1CutFactorization
+
+/-- `HasCut` in terms of the size conditions and a rank-one factorization. -/
+theorem hasCut_iff_exists_r1Factorization :
+    A.HasCut X ↔ 2 ≤ #X ∧ 2 ≤ #Xᶜ ∧ ∃ f : A.R1Factorization, f.X = X := by
+  constructor
+  · rintro ⟨f, rfl⟩
+    exact ⟨f.two_le_card, f.two_le_card_compl, f, rfl⟩
+  · rintro ⟨h₁, h₂, f, rfl⟩
+    exact ⟨⟨f, h₁, h₂⟩, rfl⟩
+
+theorem HasCut.two_le_card (h : A.HasCut X) : 2 ≤ #X :=
+  (hasCut_iff_exists_r1Factorization.mp h).1
+
+theorem HasCut.two_le_card_compl (h : A.HasCut X) : 2 ≤ #Xᶜ :=
+  (hasCut_iff_exists_r1Factorization.mp h).2.1
+
+/-- The complement of a cut is a cut. -/
+theorem HasCut.compl (h : A.HasCut X) : A.HasCut Xᶜ := by
+  obtain ⟨f, rfl⟩ := h
+  exact f.compl.hasCut
+
+@[simp]
+theorem hasCut_compl_iff : A.HasCut Xᶜ ↔ A.HasCut X :=
+  ⟨fun h ↦ by simpa using h.compl, HasCut.compl⟩
 
 /-- `X` is still a cut of `ct(A, X)`. -/
 theorem HasCut.cutTranspose (f : A.R1CutFactorization) : (A.cutTranspose f).HasCut f.X :=
@@ -216,7 +244,7 @@ theorem isCutTranspose_cutTranspose (f : A.R1CutFactorization) :
 
 /-- Every cut has a cut-transpose. -/
 theorem HasCut.exists_isCutTranspose (h : A.HasCut X) : ∃ B, IsCutTranspose A X B :=
-  let ⟨f, hf⟩ := h.exists_r1CutFactorization
+  let ⟨f, hf⟩ := h
   ⟨_, f, hf, rfl⟩
 
 theorem IsCutTranspose.hasCut_left (h : IsCutTranspose A X B) : A.HasCut X := by
@@ -230,7 +258,7 @@ theorem IsCutTranspose.hasCut_right (h : IsCutTranspose A X B) : B.HasCut X := b
 /-- Being a cut-transpose at `X` is symmetric. -/
 theorem IsCutTranspose.symm (h : IsCutTranspose A X B) : IsCutTranspose B X A := by
   obtain ⟨f, rfl, rfl⟩ := h
-  exact ⟨f.swap, rfl, (cutTranspose_swap f).symm⟩
+  exact ⟨f.swap, rfl, (cutTranspose_swap f.toR1Factorization).symm⟩
 
 /-! ### Paths of cut-transposes -/
 
@@ -270,7 +298,8 @@ def append :
 /-- The reversed path, using `ct(ct(A, X), X) = A` at each step. -/
 def reverse : {A C : Matrix n n R} → CutTransposePath A C → CutTransposePath C A
   | _, _, nil A => nil A
-  | _, _, cons f rfl p => p.reverse.append (cons f.swap (cutTranspose_swap f).symm (nil _))
+  | _, _, cons f rfl p =>
+    p.reverse.append (cons f.swap (cutTranspose_swap f.toR1Factorization).symm (nil _))
 
 @[simp] theorem length_nil : (nil A).length = 0 := rfl
 
@@ -308,7 +337,7 @@ theorem length_append (p : CutTransposePath A B) (q : CutTransposePath B C) :
 theorem cuts_reverse (p : CutTransposePath A C) : p.reverse.cuts = p.cuts.reverse := by
   induction p with
   | nil => rfl
-  | cons f hB p ih => subst hB; simp [reverse, ih]
+  | cons f hB p ih => subst hB; simp [reverse, ih, cuts, R1CutFactorization.swap]
 
 @[simp]
 theorem length_reverse (p : CutTransposePath A C) : p.reverse.length = p.length := by
@@ -347,25 +376,20 @@ section CommMagma
 
 variable [CommMagma R] [Fintype n] [DecidableEq n] {A B : Matrix n n R} {X : Finset n}
 
-theorem HasCut.transpose (h : A.HasCut X) : Aᵀ.HasCut X := by
-  obtain ⟨h₁, h₂, p, q, u, v, hpq, huv⟩ := h
-  exact ⟨h₁, h₂, v, u, q, p,
-    fun i hi j hj ↦ by rw [transpose_apply, huv j hj i hi, mul_comm],
-    fun i hi j hj ↦ by rw [transpose_apply, hpq j hj i hi, mul_comm]⟩
+/-- The induced factorization of `Aᵀ`, along the same set. -/
+@[simps]
+def R1Factorization.transpose (f : A.R1Factorization) : Aᵀ.R1Factorization where
+  X := f.X
+  p := f.v
+  q := f.u
+  u := f.q
+  v := f.p
+  apply_mem_notMem i hi j hj := by rw [transpose_apply, f.apply_notMem_mem j hj i hi, mul_comm]
+  apply_notMem_mem i hi j hj := by rw [transpose_apply, f.apply_mem_notMem j hj i hi, mul_comm]
 
-@[simp]
-theorem hasCut_transpose : Aᵀ.HasCut X ↔ A.HasCut X :=
-  ⟨fun h ↦ by simpa using h.transpose, HasCut.transpose⟩
-
-/-- The induced cut factorization of `Aᵀ`, at the same cut. -/
-@[simps! X p q u v]
-def R1CutFactorization.transpose (f : A.R1CutFactorization) : Aᵀ.R1CutFactorization :=
-  .mk' f.X f.two_le_card f.two_le_card_compl f.v f.u f.q f.p
-    (fun i hi j hj ↦ by rw [transpose_apply, f.apply_notMem_mem j hj i hi, mul_comm])
-    (fun i hi j hj ↦ by rw [transpose_apply, f.apply_mem_notMem j hj i hi, mul_comm])
-
+omit [Fintype n] in
 /-- `ct(A, X)ᵀ = ct(Aᵀ, X)` for the induced factorization. -/
-theorem transpose_cutTranspose (f : A.R1CutFactorization) :
+theorem transpose_cutTranspose (f : A.R1Factorization) :
     (A.cutTranspose f)ᵀ = Aᵀ.cutTranspose f.transpose := by
   ext i j
   by_cases hi : i ∈ f.X <;> by_cases hj : j ∈ f.X <;>
@@ -374,19 +398,36 @@ theorem transpose_cutTranspose (f : A.R1CutFactorization) :
 /-- Transposing the `X` block instead of the `Xᶜ` block gives the transposed matrix:
 `ct(A, Xᶜ) = ct(A, X)ᵀ`. This is why Lemma 4.5 and Example 4.6 of Al Ahmadieh's paper agree up
 to diagonal equivalence. -/
-theorem cutTranspose_compl (f : A.R1CutFactorization) :
+theorem cutTranspose_compl (f : A.R1Factorization) :
     A.cutTranspose f.compl = (A.cutTranspose f)ᵀ := by
   ext i j
   by_cases hi : i ∈ f.X <;> by_cases hj : j ∈ f.X <;>
     simp [cutTranspose_apply, hi, hj, mul_comm]
 
+/-- The induced cut factorization of `Aᵀ`, at the same cut. -/
+def R1CutFactorization.transpose (f : A.R1CutFactorization) : Aᵀ.R1CutFactorization :=
+  ⟨f.toR1Factorization.transpose, f.two_le_card, f.two_le_card_compl⟩
+
+@[simp]
+theorem R1CutFactorization.toR1Factorization_transpose (f : A.R1CutFactorization) :
+    f.transpose.toR1Factorization = f.toR1Factorization.transpose :=
+  rfl
+
+theorem HasCut.transpose (h : A.HasCut X) : Aᵀ.HasCut X := by
+  obtain ⟨f, rfl⟩ := h
+  exact f.transpose.hasCut
+
+@[simp]
+theorem hasCut_transpose : Aᵀ.HasCut X ↔ A.HasCut X :=
+  ⟨fun h ↦ by simpa using h.transpose, HasCut.transpose⟩
+
 theorem IsCutTranspose.transpose (h : IsCutTranspose A X B) : IsCutTranspose Aᵀ X Bᵀ := by
   obtain ⟨f, rfl, rfl⟩ := h
-  exact ⟨f.transpose, rfl, transpose_cutTranspose f⟩
+  exact ⟨f.transpose, rfl, transpose_cutTranspose f.toR1Factorization⟩
 
 theorem IsCutTranspose.compl (h : IsCutTranspose A X B) : IsCutTranspose A Xᶜ Bᵀ := by
   obtain ⟨f, rfl, rfl⟩ := h
-  exact ⟨f.compl, rfl, (cutTranspose_compl f).symm⟩
+  exact ⟨f.compl, rfl, (cutTranspose_compl f.toR1Factorization).symm⟩
 
 end CommMagma
 
@@ -457,55 +498,46 @@ theorem det_fromBlocks_vecMulVec {X Y : Type*} [Fintype X] [DecidableEq X] [Fint
   rw [hsplit, det_add_vecMulVec, det_fromBlocks_zero₂₁, key, hE, hN]
   ring
 
-/-- If `A[X,Xᶜ] = p qᵀ` and `A[Xᶜ,X] = u vᵀ`, the block construction `[[E, p uᵀ], [q vᵀ, Nᵀ]]`
-has the same determinant as `A`. No size condition on `X` is needed. -/
-theorem det_cutTransposeWith {A : Matrix n n R} {X : Finset n} {p q u v : n → R}
-    (hpq : ∀ i ∈ X, ∀ j ∉ X, A i j = p i * q j) (huv : ∀ i ∉ X, ∀ j ∈ X, A i j = u i * v j) :
-    (A.cutTransposeWith X p q u v).det = A.det := by
-  let e := Equiv.sumCompl (· ∈ X)
-  let E : Matrix {i // i ∈ X} {i // i ∈ X} R := A.submatrix Subtype.val Subtype.val
-  let N : Matrix {i // i ∉ X} {i // i ∉ X} R := A.submatrix Subtype.val Subtype.val
-  let p' (i : {i // i ∈ X}) := p i
-  let v' (i : {i // i ∈ X}) := v i
-  let q' (i : {i // i ∉ X}) := q i
-  let u' (i : {i // i ∉ X}) := u i
-  have hA : A.submatrix e e = fromBlocks E (vecMulVec p' q') (vecMulVec u' v') N := by
+/-- A cut-transpose has the same determinant. No size condition on `X` is needed. -/
+theorem det_cutTranspose {A : Matrix n n R} (f : A.R1Factorization) :
+    (A.cutTranspose f).det = A.det := by
+  let e := Equiv.sumCompl (· ∈ f.X)
+  let E : Matrix {i // i ∈ f.X} {i // i ∈ f.X} R := A.submatrix Subtype.val Subtype.val
+  let N : Matrix {i // i ∉ f.X} {i // i ∉ f.X} R := A.submatrix Subtype.val Subtype.val
+  let p (i : {i // i ∈ f.X}) := f.p i
+  let v (i : {i // i ∈ f.X}) := f.v i
+  let q (i : {i // i ∉ f.X}) := f.q i
+  let u (i : {i // i ∉ f.X}) := f.u i
+  have hA : A.submatrix e e = fromBlocks E (vecMulVec p q) (vecMulVec u v) N := by
     ext (⟨i, hi⟩ | ⟨i, hi⟩) (⟨j, hj⟩ | ⟨j, hj⟩) <;>
-      simp [e, E, N, p', q', u', v', vecMulVec_apply, hpq, huv, hi, hj]
-  have hB : (A.cutTransposeWith X p q u v).submatrix e e =
-      fromBlocks E (vecMulVec p' u') (vecMulVec q' v') Nᵀ := by
+      simp [e, E, N, p, q, u, v, vecMulVec_apply, f.apply_mem_notMem, f.apply_notMem_mem, hi, hj]
+  have hB : (A.cutTranspose f).submatrix e e =
+      fromBlocks E (vecMulVec p u) (vecMulVec q v) Nᵀ := by
     ext (⟨i, hi⟩ | ⟨i, hi⟩) (⟨j, hj⟩ | ⟨j, hj⟩) <;>
-      simp [e, E, N, p', q', u', v', cutTransposeWith, vecMulVec_apply, hi, hj]
+      simp [e, E, N, p, q, u, v, cutTranspose_apply, vecMulVec_apply, hi, hj]
   rw [← det_submatrix_equiv_self e, ← det_submatrix_equiv_self e A, hA, hB,
     det_fromBlocks_vecMulVec, det_fromBlocks_vecMulVec, det_transpose, ← adjugate_transpose,
-    mulVec_transpose, dotProduct_comm u', ← dotProduct_mulVec]
+    mulVec_transpose, dotProduct_comm u, ← dotProduct_mulVec]
 
-/-- A cut-transpose has the same determinant. -/
-theorem det_cutTranspose {A : Matrix n n R} (f : A.R1CutFactorization) :
-    (A.cutTranspose f).det = A.det :=
-  det_cutTransposeWith f.apply_mem_notMem f.apply_notMem_mem
-
+omit [Fintype n] in
 /-- **CGGR Lemma 2.12** (Al Ahmadieh Lemma 4.5): a cut-transpose has the same principal
 minors. -/
 @[simp]
-theorem principalMinor_cutTranspose {A : Matrix n n R} (f : A.R1CutFactorization) :
+theorem principalMinor_cutTranspose {A : Matrix n n R} (f : A.R1Factorization) :
     (A.cutTranspose f).principalMinor = A.principalMinor := by
   ext S
-  rw [principalMinor, setSubmatrix, cutTranspose, submatrix_cutTransposeWith]
-  exact det_cutTransposeWith
-    (fun i hi j hj ↦ f.apply_mem_notMem _ (by simpa using hi) _ (by simpa using hj))
-    (fun i hi j hj ↦ f.apply_notMem_mem _ (by simpa using hi) _ (by simpa using hj))
+  rw [principalMinor, setSubmatrix, submatrix_cutTranspose, det_cutTranspose]
 
 theorem IsCutTranspose.principalMinor_eq {A B : Matrix n n R} {X : Finset n}
     (h : IsCutTranspose A X B) : A.principalMinor = B.principalMinor := by
   obtain ⟨f, -, rfl⟩ := h
-  exact (principalMinor_cutTranspose f).symm
+  exact (principalMinor_cutTranspose f.toR1Factorization).symm
 
 theorem CutTransposePath.principalMinor_eq {A C : Matrix n n R} (p : CutTransposePath A C) :
     A.principalMinor = C.principalMinor := by
   induction p with
   | nil => rfl
-  | cons f hB _ ih => exact (hB ▸ principalMinor_cutTranspose f).symm.trans ih
+  | cons f hB _ ih => exact (hB ▸ principalMinor_cutTranspose f.toR1Factorization).symm.trans ih
 
 theorem CutTransposeConnected.principalMinor_eq {A C : Matrix n n R}
     (h : CutTransposeConnected A C) : A.principalMinor = C.principalMinor :=
@@ -539,31 +571,30 @@ theorem rank_le_one_iff_eq_vecMulVec {p : Type*} [Fintype p] (M : Matrix m p �
 
 variable [Fintype n] [DecidableEq n] {A : Matrix n n 𝔽} {X : Finset n}
 
-/-- An outer-product factorization of the cross blocks bounds their ranks. -/
-theorem rank_le_one_of_factor {p q u v : n → 𝔽} (hpq : ∀ i ∈ X, ∀ j ∉ X, A i j = p i * q j)
-    (huv : ∀ i ∉ X, ∀ j ∈ X, A i j = u i * v j) :
-    (A.setSubmatrix X (Xᶜ : Finset n)).rank ≤ 1 ∧
-      (A.setSubmatrix (Xᶜ : Finset n) X).rank ≤ 1 := by
+/-- A rank-one factorization bounds the ranks of the cross blocks. -/
+theorem R1Factorization.rank_le_one (f : A.R1Factorization) :
+    (A.setSubmatrix f.X (f.Xᶜ : Finset n)).rank ≤ 1 ∧
+      (A.setSubmatrix (f.Xᶜ : Finset n) f.X).rank ≤ 1 := by
   constructor
-  · refine (rank_le_one_iff_eq_vecMulVec _).mpr ⟨fun i ↦ p i, fun j ↦ q j, ?_⟩
+  · refine (rank_le_one_iff_eq_vecMulVec _).mpr ⟨fun i ↦ f.p i, fun j ↦ f.q j, ?_⟩
     ext ⟨i, hi⟩ ⟨j, hj⟩
-    exact hpq i (by simpa using hi) j (by simpa using hj)
-  · refine (rank_le_one_iff_eq_vecMulVec _).mpr ⟨fun i ↦ u i, fun j ↦ v j, ?_⟩
+    exact f.apply_mem_notMem i (by simpa using hi) j (by simpa using hj)
+  · refine (rank_le_one_iff_eq_vecMulVec _).mpr ⟨fun i ↦ f.u i, fun j ↦ f.v j, ?_⟩
     ext ⟨i, hi⟩ ⟨j, hj⟩
-    exact huv i (by simpa using hi) j (by simpa using hj)
+    exact f.apply_notMem_mem i (by simpa using hi) j (by simpa using hj)
 
-/-- Cross blocks of rank at most one factor as outer products. -/
-theorem exists_factor_of_rank_le_one (h₁ : (A.setSubmatrix X (Xᶜ : Finset n)).rank ≤ 1)
+/-- Cross blocks of rank at most one have a rank-one factorization. -/
+theorem exists_r1Factorization_of_rank_le_one
+    (h₁ : (A.setSubmatrix X (Xᶜ : Finset n)).rank ≤ 1)
     (h₂ : (A.setSubmatrix (Xᶜ : Finset n) X).rank ≤ 1) :
-    ∃ p q u v : n → 𝔽,
-      (∀ i ∈ X, ∀ j ∉ X, A i j = p i * q j) ∧ (∀ i ∉ X, ∀ j ∈ X, A i j = u i * v j) := by
+    ∃ f : A.R1Factorization, f.X = X := by
   obtain ⟨p, q, hpq⟩ := (rank_le_one_iff_eq_vecMulVec _).mp h₁
   obtain ⟨u, v, huv⟩ := (rank_le_one_iff_eq_vecMulVec _).mp h₂
-  refine ⟨fun i ↦ if hi : i ∈ X then p ⟨i, by simpa using hi⟩ else 0,
+  refine ⟨⟨X, fun i ↦ if hi : i ∈ X then p ⟨i, by simpa using hi⟩ else 0,
     fun j ↦ if hj : j ∈ X then 0 else q ⟨j, by simpa using hj⟩,
     fun i ↦ if hi : i ∈ X then 0 else u ⟨i, by simpa using hi⟩,
     fun j ↦ if hj : j ∈ X then v ⟨j, by simpa using hj⟩ else 0, fun i hi j hj ↦ ?_,
-    fun i hi j hj ↦ ?_⟩
+    fun i hi j hj ↦ ?_⟩, rfl⟩
   · simpa [hi, hj, vecMulVec_apply] using
       congrFun (congrFun hpq ⟨i, by simpa using hi⟩) ⟨j, by simpa using hj⟩
   · simpa [hi, hj, vecMulVec_apply] using
@@ -573,9 +604,12 @@ theorem exists_factor_of_rank_le_one (h₁ : (A.setSubmatrix X (Xᶜ : Finset n)
 cross blocks have rank at most one. -/
 theorem hasCut_iff_rank_le_one :
     A.HasCut X ↔ 2 ≤ #X ∧ 2 ≤ #Xᶜ ∧ (A.setSubmatrix X (Xᶜ : Finset n)).rank ≤ 1 ∧
-      (A.setSubmatrix (Xᶜ : Finset n) X).rank ≤ 1 :=
-  ⟨fun ⟨h₁, h₂, _, _, _, _, hpq, huv⟩ ↦ ⟨h₁, h₂, rank_le_one_of_factor hpq huv⟩,
-    fun ⟨h₁, h₂, h₃, h₄⟩ ↦ ⟨h₁, h₂, exists_factor_of_rank_le_one h₃ h₄⟩⟩
+      (A.setSubmatrix (Xᶜ : Finset n) X).rank ≤ 1 := by
+  rw [hasCut_iff_exists_r1Factorization]
+  refine and_congr_right fun _ ↦ and_congr_right fun _ ↦ ⟨?_, fun ⟨h₃, h₄⟩ ↦
+    exists_r1Factorization_of_rank_le_one h₃ h₄⟩
+  rintro ⟨f, rfl⟩
+  exact f.rank_le_one
 
 /-- If `A` is irreducible and `X` is a cut, both cross blocks have rank exactly one. -/
 theorem HasCut.rank_eq_one (hX : A.HasCut X) (hA : A.IsIrred) :

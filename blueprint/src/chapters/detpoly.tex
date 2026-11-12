@@ -440,33 +440,33 @@ For equal indices use $\partial_i^2f_A=0$.
 \section{Cuts and cut-transposes}
 \label{sec:cuts}
 
-\begin{definition}[Cut factorization]
+\begin{definition}[Rank-one factorization of the cross blocks]
 \label{def:cut-factorization}
 \alsoIn{part:warmup}
-\lean{Matrix.R1CutFactorization, Matrix.R1CutFactorization.mk', Matrix.R1CutFactorization.two_le_card, Matrix.R1CutFactorization.two_le_card_compl, Matrix.R1CutFactorization.compl, Matrix.R1CutFactorization.transpose, Matrix.HasCut.exists_r1CutFactorization, Matrix.hasCut_iff_exists_r1CutFactorization}
+\lean{Matrix.R1Factorization, Matrix.R1Factorization.compl, Matrix.R1Factorization.submatrix, Matrix.R1Factorization.transpose}
 \leanok
-\uses{def:cut}
-A \emph{rank-one cut factorization} of $A$ consists of a cut $X$ of $A$
-(Definition~\ref{def:cut}) together with $p,q,u,v:I\to R$ such that
+\uses{def:submatrix}
+A \emph{rank-one factorization} of the cross blocks of $A$ consists of a finite set $X$ and
+$p,q,u,v:I\to R$ such that
 $A_{ij}=p_iq_j$ for $i\in X$, $j\notin X$ and $A_{ij}=u_iv_j$ for $i\notin X$, $j\in X$.
 In block form along $X$, $X^c$,
 \[ A=\begin{pmatrix}E&pq^t\\uv^t&N\end{pmatrix}. \]
-Only the values of $p,v$ on $X$ and of $q,u$ on $X^c$ matter. No block order or
-normalized factorization is chosen. Every cut has a cut factorization. A cut factorization
-at $X$ gives one of $A$ at $X^c$ (exchange the two blocks) and one of $A^t$ at $X$ (namely
-$(v,u,q,p)$).
+No size condition on $X$ is imposed. Only the values of $p,v$ on $X$ and of $q,u$ on $X^c$
+matter. A factorization along $X$ gives one of $A$ along $X^c$ (exchange the two blocks), one
+of $A^t$ along $X$ (namely $(v,u,q,p)$), and one of every principal submatrix (restrict).
 \end{definition}
 
 \begin{definition}[Cuts]
 \label{def:cut}
 \alsoIn{part:warmup}
-\lean{Matrix.HasCut, Matrix.HasCut.compl, Matrix.hasCut_compl_iff, Matrix.HasCut.transpose, Matrix.hasCut_transpose}
+\lean{Matrix.R1CutFactorization, Matrix.R1CutFactorization.compl, Matrix.R1CutFactorization.transpose, Matrix.R1CutFactorization.toR1Factorization_compl, Matrix.R1CutFactorization.toR1Factorization_transpose, Matrix.HasCut, Matrix.R1CutFactorization.hasCut, Matrix.hasCut_iff_exists_r1Factorization, Matrix.HasCut.two_le_card, Matrix.HasCut.two_le_card_compl, Matrix.HasCut.compl, Matrix.hasCut_compl_iff, Matrix.HasCut.transpose, Matrix.hasCut_transpose}
 \leanok
-\uses{def:submatrix}
-A \emph{cut} of $A$ is a finite subset $X$ such that $2\leq |X|$, $2\leq |X^c|$, and
-$A[X,X^c]=pq^t$, $A[X^c,X]=uv^t$ for some vectors $p,q,u,v$. This makes sense over any commutative ring; over a field it says
-that both cross blocks have rank at most one (Lemma~\ref{lem:cut-iff-factorization}).
-The definition is unchanged on replacing $X$ by $X^c$ or $A$ by $A^t$.
+\uses{def:cut-factorization}
+A \emph{rank-one cut factorization} is a rank-one factorization along $X$ with $2\le|X|$ and
+$2\le|X^c|$, and $X$ is a \emph{cut} of $A$ if $A$ has one along $X$. This makes sense over
+any commutative ring; over a field it is Al Ahmadieh's definition, that both cross blocks have
+rank at most one (Lemma~\ref{lem:cut-iff-factorization}). The definition is unchanged on
+replacing $X$ by $X^c$ or $A$ by $A^t$.
 \end{definition}
 
 \begin{lemma}[Outer-product criterion]
@@ -484,7 +484,7 @@ The column span is principal.
 \begin{lemma}[Cuts over a field]
 \label{lem:cut-iff-factorization}
 \alsoIn{part:warmup}
-\lean{Matrix.rank_le_one_of_factor, Matrix.exists_factor_of_rank_le_one, Matrix.hasCut_iff_rank_le_one}
+\lean{Matrix.R1Factorization.rank_le_one, Matrix.exists_r1Factorization_of_rank_le_one, Matrix.hasCut_iff_rank_le_one}
 \leanok
 \uses{def:cut,lem:rank-one}
 Over a field, $X$ is a cut of $A$ exactly when it is a cut in Al Ahmadieh's sense: $2\le|X|$, $2\le|X^c|$ and both
@@ -512,21 +512,21 @@ A zero cross block would give a nonempty proper subset as in Lemma~\ref{lem:redu
 \begin{definition}[Cut-transpose (CGGR Definition 2.10)]
 \label{def:cut-transpose}
 \alsoIn{part:warmup}
-\lean{Matrix.cutTransposeWith, Matrix.cutTranspose, Matrix.cutTranspose_apply, Matrix.IsCutTranspose, Matrix.isCutTranspose_cutTranspose, Matrix.HasCut.exists_isCutTranspose, Matrix.IsCutTranspose.hasCut_left}
+\lean{Matrix.cutTranspose, Matrix.cutTranspose_apply, Matrix.IsCutTranspose, Matrix.isCutTranspose_cutTranspose, Matrix.HasCut.exists_isCutTranspose, Matrix.IsCutTranspose.hasCut_left}
 \leanok
-\uses{def:cut-factorization}
-For a cut factorization $f=(X,p,q,u,v)$ as above, the \emph{cut-transpose} is
+\uses{def:cut}
+For a rank-one factorization $f=(X,p,q,u,v)$ as above, the \emph{cut-transpose} is
 \[ \operatorname{ct}(A,f)=\begin{pmatrix}E&pu^t\\qv^t&N^t\end{pmatrix}: \]
-swap $q\leftrightarrow u$ and transpose the $X^c$ block. The same block construction makes
-sense for arbitrary vectors. A matrix $B$ \emph{is a cut-transpose of $A$ at $X$} if
-$B=\operatorname{ct}(A,f)$ for some cut factorization $f$ with cut $X$. Every cut has a cut-transpose. Statements about CGGR's
-$\operatorname{ct}(A,X)$ are phrased for every such $B$.
+swap $q\leftrightarrow u$ and transpose the $X^c$ block. A matrix $B$ \emph{is a cut-transpose
+of $A$ at $X$} if $B=\operatorname{ct}(A,f)$ for some rank-one cut factorization $f$ with cut
+$X$. Every cut has a cut-transpose. Statements about CGGR's $\operatorname{ct}(A,X)$ are
+phrased for every such $B$.
 \end{definition}
 
 \begin{lemma}[Involution]
 \label{lem:ct-involution}
 \alsoIn{part:warmup}
-\lean{Matrix.R1CutFactorization.swap, Matrix.cutTranspose_swap, Matrix.HasCut.cutTranspose, Matrix.IsCutTranspose.symm, Matrix.IsCutTranspose.hasCut_right}
+\lean{Matrix.R1Factorization.swap, Matrix.R1CutFactorization.swap, Matrix.R1CutFactorization.toR1Factorization_swap, Matrix.cutTranspose_swap, Matrix.HasCut.cutTranspose, Matrix.IsCutTranspose.symm, Matrix.IsCutTranspose.hasCut_right}
 \leanok
 \uses{def:cut-transpose}
 $\operatorname{ct}(A,f)$ has the cut factorization $(X,p,u,q,v)$, and cut-transposing
@@ -541,13 +541,13 @@ Compare entries on the four blocks.
 \begin{lemma}[Transpose, complement, submatrices]
 \label{lem:ct-transpose}
 \alsoIn{part:warmup}
-\lean{Matrix.transpose_cutTranspose, Matrix.cutTranspose_compl, Matrix.submatrix_cutTransposeWith, Matrix.IsCutTranspose.transpose, Matrix.IsCutTranspose.compl}
+\lean{Matrix.transpose_cutTranspose, Matrix.cutTranspose_compl, Matrix.submatrix_cutTranspose, Matrix.IsCutTranspose.transpose, Matrix.IsCutTranspose.compl}
 \leanok
 \uses{def:cut-transpose}
 For the induced factorizations,
 \[ \operatorname{ct}_X(A)^t=\operatorname{ct}_X(A^t),\qquad
    \operatorname{ct}_{X^c}(A)=\operatorname{ct}_X(A)^t, \]
-and the block construction commutes with taking principal submatrices. The second identity explains why Lemma 4.5 and
+and the cut-transpose commutes with taking principal submatrices. The second identity explains why Lemma 4.5 and
 Example 4.6 of the paper, which transpose different diagonal blocks, agree up to diagonal
 equivalence.
 \end{lemma}
@@ -588,20 +588,20 @@ Lemma~\ref{lem:fin-block-adj}.
 \begin{lemma}[Cut-transpose preserves principal minors (CGGR Lemma 2.12)]
 \label{lem:ct-principal-minor}
 \alsoIn{part:warmup}
-\lean{Matrix.det_cutTransposeWith, Matrix.det_cutTranspose, Matrix.principalMinor_cutTranspose, Matrix.IsCutTranspose.principalMinor_eq}
+\lean{Matrix.det_cutTranspose, Matrix.principalMinor_cutTranspose, Matrix.IsCutTranspose.principalMinor_eq}
 \leanok
 \uses{lem:det-block-rank-one,lem:ct-transpose,def:principal-minor}
 Over a commutative ring, $\operatorname{ct}(A,f)$ has the same determinant and the same
-principal minors as $A$, for every cut factorization $f$. For the determinant, the block
-construction only needs $A[X,X^c]=pq^t$ and $A[X^c,X]=uv^t$, with no condition on $|X|$.
+principal minors as $A$, for every rank-one factorization $f$; no condition on $|X|$ is
+needed.
 \end{lemma}
 \begin{proof}
 \leanok
 The formula of Lemma~\ref{lem:det-block-rank-one} is invariant under $q\leftrightarrow u$,
 $N\mapsto N^t$, since $u^t\operatorname{adj}(N^t)q=q^t\operatorname{adj}(N)u$. For principal
-minors, restrict the block construction to the principal submatrix
-(Lemma~\ref{lem:ct-transpose}); its cut may be too small, which the determinant statement
-allows.
+minors, restrict the factorization to the principal submatrix
+(Lemma~\ref{lem:ct-transpose}); its set may be too small to be a cut, which the determinant
+statement allows.
 \end{proof}
 
 \begin{definition}[Cut-transpose paths]

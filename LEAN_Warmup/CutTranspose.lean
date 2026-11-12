@@ -24,8 +24,9 @@ and statements of its results leading to Theorem 1.1, together with the alternat
   are `Finset n`, and families indexed by a subset are total functions `n → _`.
 * CGGR define `ct(A, X)` through one fixed rank-one factorization of the cross blocks (the first
   nonzero row and column). We use the definitions of `DetPoly.CutTranspose` instead:
-  `f : A.R1CutFactorization` (a cut `f.X` with `A[X,Xᶜ] = p qᵀ`, `A[Xᶜ,X] = u vᵀ`),
-  `A.cutTranspose f`, and `IsCutTranspose A X B` (`B = ct(A, X)` for *some* factorization). For
+  `f : A.R1CutFactorization` (a cut `f.X` with `A[X,Xᶜ] = p qᵀ`, `A[Xᶜ,X] = u vᵀ`; it extends
+  `A.R1Factorization`, which has no size condition), `A.cutTranspose f`,
+  and `IsCutTranspose A X B` (`B = ct(A, X)` for *some* factorization). For
   irreducible `A` all cut-transposes at `X` are diagonally similar (`IsCutTranspose.diagSimilar`,
   CGGR Remark 2.11).
 * Statements about `ct(A, X)` are phrased as `∀ B, IsCutTranspose A X B → …`.
@@ -175,7 +176,7 @@ def IsMinimalCut (A : Matrix n n 𝔽) (X : Finset n) : Prop :=
 /-- A cut of size two is minimal. -/
 theorem HasCut.isMinimalCut_of_card_eq_two {A : Matrix n n 𝔽} {X : Finset n} (h : A.HasCut X)
     (hX : X.card = 2) : A.IsMinimalCut X :=
-  ⟨h, fun _ hYX hY ↦ Finset.eq_of_subset_of_card_le hYX (hX ▸ hY.1)⟩
+  ⟨h, fun _ hYX hY ↦ Finset.eq_of_subset_of_card_le hYX (hX ▸ hY.two_le_card)⟩
 
 /-- **TODO**. Every matrix with a cut has a minimal cut (well-founded induction on `⊂`). -/
 theorem HasCut.exists_isMinimalCut {A : Matrix n n 𝔽} {X : Finset n} (h : A.HasCut X) :
@@ -189,8 +190,8 @@ end Cuts
 The definitions and the basic API (involution, transpose, complement, Lemma 2.12) are in
 `DetPoly.CutTranspose`. -/
 
-theorem cutTranspose_eq_cutSwap {R n : Type*} [Fintype n] [DecidableEq n] [Mul R]
-    {A : Matrix n n R} (f : A.R1CutFactorization) :
+theorem cutTranspose_eq_cutSwap {R n : Type*} [DecidableEq n] [Mul R]
+    {A : Matrix n n R} (f : A.R1Factorization) :
     A.cutTranspose f = cutSwap f.X A f.p f.q f.u f.v := rfl
 
 section CutTransposeField
@@ -513,25 +514,25 @@ def exActiveCT : Matrix (Fin 4) (Fin 4) ℚ :=
 
 /-- The all-ones factorization at `{0, 1}` of `exMat`. -/
 def exMatFact : exMat.R1CutFactorization :=
-  .mk' {0, 1} (by decide) (by decide) 1 1 1 1
-    (by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [exMat])
-    (by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [exMat])
+  ⟨⟨{0, 1}, 1, 1, 1, 1,
+    by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [exMat],
+    by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [exMat]⟩, by decide, by decide⟩
 
 /-- The all-ones factorization at `{0, 1}` of `exActive`. -/
 def exActiveFact : exActive.R1CutFactorization :=
-  .mk' {0, 1} (by decide) (by decide) 1 1 1 1
-    (by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [exActive])
-    (by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [exActive])
+  ⟨⟨{0, 1}, 1, 1, 1, 1,
+    by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [exActive],
+    by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [exActive]⟩, by decide, by decide⟩
 
 example : exMat.cutTranspose exMatFact = exMat := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [cutTranspose_apply, exMatFact, R1CutFactorization.mk', exMat]
+    simp [cutTranspose_apply, exMatFact, exMat]
 
 example : exActive.cutTranspose exActiveFact = exActiveCT := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [cutTranspose_apply, exActiveFact, R1CutFactorization.mk', exActive, exActiveCT]
+    simp [cutTranspose_apply, exActiveFact, exActive, exActiveCT]
 
 set_option linter.hashCommand false in
 #guard (Finset.univ.filter fun S : Finset (Fin 4) ↦
@@ -540,10 +541,10 @@ set_option linter.hashCommand false in
 
 /-- Example 4.6 of Al Ahmadieh's paper transposes the `X` block, so `ex46B` is the transpose
 of a cut-transpose of `ex46A` at `{0, 1}` (`cutTranspose_compl`). -/
-example : ex46A.cutTranspose (.mk' {0, 1} (by decide) (by decide)
-      ![1, -3, 0, 0] ![0, 0, 1, -2] ![0, 0, 1, -1] ![1, 2, 0, 0]
-      (by intro i hi j hj; fin_cases i <;> fin_cases j <;> norm_num [ex46A] at *)
-      (by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [ex46A])) = ex46Bᵀ := by
+example : ex46A.cutTranspose
+    ⟨{0, 1}, ![1, -3, 0, 0], ![0, 0, 1, -2], ![0, 0, 1, -1], ![1, 2, 0, 0],
+      by intro i hi j hj; fin_cases i <;> fin_cases j <;> norm_num [ex46A] at *,
+      by intro i hi j hj; fin_cases i <;> fin_cases j <;> simp_all [ex46A]⟩ = ex46Bᵀ := by
   ext i j
   fin_cases i <;> fin_cases j <;> norm_num [cutTranspose_apply, ex46A, ex46B]
 
