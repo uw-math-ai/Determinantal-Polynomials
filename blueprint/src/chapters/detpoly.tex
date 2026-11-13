@@ -1,0 +1,422 @@
+% Part DetPoly: one chapter per topic of `DetPoly/`.
+% Throughout, R is a commutative ring and n a finite index type.
+
+\chapter{Determinantal polynomials}
+
+\begin{definition}[Submatrices and principal minors]
+\label{def:principal-minor}
+\alsoIn{part:warmup}
+\lean{Matrix.setSubmatrix, Matrix.principalMinor, Matrix.submatrix_sumCompl_eq_fromBlocks}
+\leanok
+For $S,T\subseteq n$, $A[S,T]$ is the submatrix on rows $S$ and columns $T$.
+For $S\subseteq n$ finite, $A_S=\det A[S,S]$.
+\end{definition}
+
+\begin{definition}[Determinantal polynomial]
+\label{def:detpoly}
+\alsoIn{part:warmup}
+\lean{Matrix.mvCharmatrix, Matrix.detpoly, Matrix.mvCharmatrix_submatrix}
+\leanok
+$M_A=\operatorname{diag}(x)+A\in R[x]^{n\times n}$ and $f_A=\det M_A$.
+\end{definition}
+
+\begin{definition}[Rayleigh difference]
+\label{def:rayleigh}
+\alsoIn{part:warmup}
+\lean{rayleighDiff}
+\leanok
+$\Delta_{ij}(f)=\partial_i f\,\partial_j f-f\,\partial_i\partial_j f$.
+\end{definition}
+
+\begin{theorem}[Principal minor expansion]
+\label{thm:det-diagonal-add}
+\lean{Matrix.det_diagonal_add}
+\leanok
+\uses{def:principal-minor}
+For $x\in R^n$, $\det(\operatorname{diag}(x)+A)=\sum_{S\subseteq n}\prod_{i\in S}x_i\cdot A_{S^c}$.
+\end{theorem}
+
+\begin{proof}
+\leanok
+Expand by multilinearity in the rows, choosing the row $x_ie_i$ for $i\in S$ and the row
+$A_i$ otherwise.
+\end{proof}
+
+\begin{corollary}[Coefficients of $f_A$]
+\label{cor:coeff-detpoly}
+\alsoIn{part:warmup}
+\lean{Matrix.detpoly_eq_sum, Finset.sum_single_one_injective, Matrix.coeff_detpoly,
+  Matrix.detpoly_mem_restrictDegree, detpoly_eq_iff_principalMinor_eq}
+\leanok
+\uses{def:detpoly}
+The coefficient of $\prod_{i\in S}x_i$ in $f_A$ is $A_{S^c}$. Hence $f_A$ is multiaffine, and
+$f_A=f_B$ iff $A_S=B_S$ for all $S$.
+\end{corollary}
+
+\begin{proof}
+\leanok
+\uses{thm:det-diagonal-add}
+Apply Theorem~\ref{thm:det-diagonal-add} over $R[x]$; distinct $S$ give distinct monomials.
+\end{proof}
+
+\begin{theorem}[Desnanot--Jacobi]
+\label{thm:desnanot-jacobi}
+\alsoIn{part:warmup}
+\lean{Matrix.det_toSquareBlockProp_pair, Matrix.adjugate_mul_adjugate_sub_adjugate_mul_adjugate}
+\leanok
+For $M\in R^{n\times n}$ and $i\ne j$,
+$\operatorname{adj}(M)_{ii}\operatorname{adj}(M)_{jj}-\operatorname{adj}(M)_{ij}\operatorname{adj}(M)_{ji}
+=\det M\cdot\det M[\{i,j\}^c,\{i,j\}^c]$.
+\end{theorem}
+
+\begin{proof}
+\leanok
+Let $C$ be the identity with columns $i,j$ replaced by those of $\operatorname{adj}M$. Both $C$
+and $MC$ are block triangular along $\{i,j\}^c$, which gives
+$\det M\cdot\mathrm{LHS}=\det M\cdot\mathrm{RHS}$. Cancel $\det M$ for the generic matrix over
+$\mathbb Z[x_{kl}]$ and specialize.
+\end{proof}
+
+\begin{lemma}[Derivatives of $f_A$]
+\label{lem:pderiv-detpoly}
+\alsoIn{part:warmup}
+\lean{pderiv_detPoly_eq, pderiv_pderiv_detPoly_eq}
+\leanok
+\uses{def:detpoly}
+$\partial_i f_A=\det M_A[\{i\}^c,\{i\}^c]$, and for $i\ne j$,
+$\partial_i\partial_j f_A=\det M_A[\{i,j\}^c,\{i,j\}^c]$.
+\end{lemma}
+
+\begin{proof}
+\uses{cor:coeff-detpoly}
+$x_i$ occurs only in the $(i,i)$ entry; expand along row $i$, or compare the expansions of
+Corollary~\ref{cor:coeff-detpoly} for $A$ and $A[\{i\}^c,\{i\}^c]$.
+\end{proof}
+
+\begin{theorem}[Al Ahmadieh, Thm 2.3]
+\label{thm:rayleigh-detpoly}
+\alsoIn{part:warmup}
+\lean{theorem2_3}
+\leanok
+\uses{def:rayleigh, def:detpoly}
+With $G=\operatorname{adj}M_A$, $\Delta_{ij}(f_A)=G_{ij}G_{ji}$.
+\end{theorem}
+
+\begin{proof}
+\uses{lem:pderiv-detpoly, thm:desnanot-jacobi}
+For $i\ne j$, $\partial_if_A=G_{ii}$ and $\partial_i\partial_jf_A=\det M_A[\{i,j\}^c,\{i,j\}^c]$;
+apply Theorem~\ref{thm:desnanot-jacobi} to $M_A$.
+\end{proof}
+
+\chapter{Diagonal equivalence and irreducibility}
+
+\begin{definition}[Diagonal similarity and equivalence]
+\label{def:diag}
+\alsoIn{part:warmup}
+\lean{Matrix.DiagSimilar, Matrix.DiagEquivalent, Matrix.DiagSimilar.equivalence,
+  Matrix.DiagEquivalent.equivalence, Matrix.diagSimilarSetoid, Matrix.diagEquivalentSetoid,
+  Matrix.DiagSimilar.transpose, Matrix.DiagSimilar.diagEquivalent,
+  Matrix.diagEquivalent_iff_diagSimilar_of_isSymm}
+\leanok
+$M\sim_{DS}N$ if $M=DND^{-1}$ for an invertible diagonal $D$.
+$M\sim_{DE}N$ if $M\sim_{DS}N$ or $M\sim_{DS}N^T$. Both are equivalence relations.
+\end{definition}
+
+\begin{lemma}[Diagonal similarity preserves zero patterns]
+\label{lem:diag-zero}
+\lean{Matrix.DiagSimilar.apply_eq_zero_iff}
+\leanok
+\uses{def:diag}
+If $M\sim_{DS}N$ then $M_{ij}=0\iff N_{ij}=0$.
+\end{lemma}
+
+\begin{proof}
+\leanok
+$M_{ij}=d_iN_{ij}d_j^{-1}$.
+\end{proof}
+
+\begin{lemma}[Diagonal equivalence preserves principal minors]
+\label{lem:diag-principal-minor}
+\lean{Matrix.principalMinor_transpose, Matrix.DiagSimilar.principalMinor_eq,
+  Matrix.DiagEquivalent.principalMinor_eq}
+\leanok
+\uses{def:diag, def:principal-minor}
+If $M\sim_{DE}N$ then $M_S=N_S$ for all $S$.
+\end{lemma}
+
+\begin{proof}
+\leanok
+$(DND^{-1})[S,S]=D_SN[S,S]D_S^{-1}$, and $\det N^T=\det N$.
+\end{proof}
+
+\begin{definition}[Irreducible matrix]
+\label{def:irred}
+\alsoIn{part:warmup}
+\lean{Matrix.toQuiver', Matrix.IsIrred, Matrix.IsReducible}
+\leanok
+$A$ is irreducible if the digraph with an edge $i\to j$ iff $A_{ij}\ne0$ is strongly
+connected, and reducible otherwise.
+\end{definition}
+
+\begin{lemma}[Reducibility via a set]
+\label{lem:reducible-iff}
+\alsoIn{part:warmup}
+\lean{Matrix.isReducible_iff_exists_set, Matrix.isReducible_iff_exists_finset,
+  Matrix.isReducible_iff_blockTriangular, Matrix.blockTriangular_of_subset}
+\leanok
+\uses{def:irred}
+$A$ is reducible iff there is a nonempty proper $S\subseteq n$ with $A_{ij}=0$ for all
+$i\notin S$, $j\in S$, iff $A$ is block triangular for a surjective labelling $n\to\{0,1\}$.
+\end{lemma}
+
+\begin{proof}
+\leanok
+Take $S$ to be the set of vertices that can reach a vertex $j$ not reachable from some $i$.
+\end{proof}
+
+\begin{lemma}[Determinants of block triangular matrices]
+\label{lem:blocktri-det}
+\lean{Matrix.BlockTriangular.det_eq_det}
+\leanok
+Two matrices that are block triangular for the same labelling and agree on the diagonal
+blocks have the same determinant.
+\end{lemma}
+
+\begin{proof}
+\leanok
+Both determinants are the product of the determinants of the diagonal blocks.
+\end{proof}
+
+\begin{theorem}[Al Ahmadieh, Thm 4.1 ($\Rightarrow$), reducible case]
+\label{thm:reducible-fiber}
+\alsoIn{part:warmup}
+\lean{Matrix.IsReducible.exists_principalMinor_eq_not_diagEquivalent}
+\leanok
+\uses{def:irred, def:diag, def:principal-minor}
+If $R$ is nontrivial and $A$ is reducible, some $B$ has the same principal minors as $A$ but
+$B\not\sim_{DE}A$.
+\end{theorem}
+
+\begin{proof}
+\leanok
+\uses{lem:reducible-iff, lem:blocktri-det, lem:diag-zero}
+Write $A=\begin{pmatrix}E&F\\0&G\end{pmatrix}$ and flip whether one entry of $F$ is zero.
+Principal minors only see $E$ and $G$, while diagonal equivalence preserves the zero pattern
+of $A$ or of $A^T$.
+\end{proof}
+
+\chapter{Rank-one updates}
+
+\begin{lemma}[Matrix determinant lemma]
+\label{lem:det-add-vecMulVec}
+\lean{Matrix.det_add_vecMulVec}
+\leanok
+$\det(A+uv^T)=\det A+v^T\operatorname{adj}(A)u$.
+\end{lemma}
+
+\begin{proof}
+\leanok
+Add $v_ju$ to the columns $j$ one at a time; each step adds $v_j\det(A\text{ with column }j
+\text{ replaced by }u)$.
+\end{proof}
+
+\begin{lemma}[Adjugate of a block matrix with a rank-one block]
+\label{lem:adj-fromBlocks}
+\alsoIn{part:warmup}
+\lean{Matrix.adjugate_fromBlocks_vecMulVec_apply₁₂}
+\leanok
+For $M=\begin{pmatrix}A&uv^T\\C&D\end{pmatrix}$, $i$ in the first block and $j$ in the second,
+$\operatorname{adj}(M)_{ij}=-\det(A\text{ with column }i\text{ replaced by }u)\cdot
+\det(D\text{ with row }j\text{ replaced by }v)$.
+\end{lemma}
+
+\begin{proof}
+\leanok
+$\operatorname{adj}(M)_{ij}=\det N$ where row $j$ of $N$ is $e_i$. Column operations using that
+row turn column $i$ into $(u,e_j)$ and then clear the upper right block.
+\end{proof}
+
+\begin{lemma}[Determinant of a block matrix with rank-one off-diagonal blocks]
+\label{lem:det-fromBlocks}
+\lean{Matrix.det_fromBlocks_vecMulVec}
+\leanok
+$\det\begin{pmatrix}A&pq^T\\uv^T&D\end{pmatrix}
+=\det A\det D-(v^T\operatorname{adj}(A)p)(q^T\operatorname{adj}(D)u)$.
+\end{lemma}
+
+\begin{proof}
+\leanok
+\uses{lem:det-add-vecMulVec, lem:adj-fromBlocks}
+The matrix is $\begin{pmatrix}A&pq^T\\0&D\end{pmatrix}+(0,u)(v,0)^T$. Apply
+Lemma~\ref{lem:det-add-vecMulVec} and evaluate the adjugate entries in the upper right block
+by Lemma~\ref{lem:adj-fromBlocks}.
+\end{proof}
+
+\begin{lemma}[Rank at most one over a field]
+\label{lem:rank-le-one}
+\lean{Matrix.rank_le_one_iff_eq_vecMulVec, Matrix.one_le_rank_of_apply_ne_zero}
+\leanok
+Over a field, $\operatorname{rk}M\le1$ iff $M=uv^T$ for some $u,v$; and
+$\operatorname{rk}M\ge1$ if $M$ has a nonzero entry.
+\end{lemma}
+
+\begin{proof}
+\leanok
+The column space is spanned by a single vector $u$; write column $j$ as $v_ju$.
+\end{proof}
+
+\chapter{Cuts and cut-transposes}
+
+\begin{definition}[Rank-one factorization]
+\label{def:r1fact}
+\lean{Matrix.R1Factorization, Matrix.R1Factorization.block₁₁, Matrix.R1Factorization.block₁₂,
+  Matrix.R1Factorization.block₂₁, Matrix.R1Factorization.block₂₂,
+  Matrix.R1Factorization.block₁₂_eq, Matrix.R1Factorization.block₂₁_eq,
+  Matrix.R1Factorization.submatrix_sumCompl, Matrix.R1Factorization.compl,
+  Matrix.R1Factorization.submatrix}
+\leanok
+\uses{def:principal-minor}
+A set $X\subseteq n$ with vectors $p,q,u,v$ such that $A[X,X^c]=pq^T$ and $A[X^c,X]=uv^T$,
+i.e.\ $A=\begin{pmatrix}E&pq^T\\uv^T&N\end{pmatrix}$ along $X,X^c$. It restricts to principal
+submatrices and can be read along $X^c$.
+\end{definition}
+
+\begin{definition}[Cut-transpose, CGGR Def 2.10]
+\label{def:cut-transpose}
+\lean{Matrix.cutTranspose, Matrix.cutTranspose_apply, Matrix.R1Factorization.swap,
+  Matrix.cutTranspose_swap, Matrix.submatrix_cutTranspose,
+  Matrix.submatrix_sumCompl_cutTranspose}
+\leanok
+\uses{def:r1fact}
+$\operatorname{ct}(A,X)=\begin{pmatrix}E&pu^T\\qv^T&N^T\end{pmatrix}$. It commutes with taking
+principal submatrices, and $\operatorname{ct}(\operatorname{ct}(A,X),X)=A$ for the swapped
+factorization.
+\end{definition}
+
+\begin{definition}[Cut]
+\label{def:cut}
+\alsoIn{part:warmup}
+\lean{Matrix.R1CutFactorization, Matrix.HasCut, Matrix.hasCut_iff_exists_r1Factorization,
+  Matrix.HasCut.compl, Matrix.hasCut_compl_iff, Matrix.HasCut.cutTranspose,
+  Matrix.IsCutTranspose, Matrix.HasCut.exists_isCutTranspose, Matrix.IsCutTranspose.symm,
+  Matrix.IsCutTranspose.hasCut_left, Matrix.IsCutTranspose.hasCut_right}
+\leanok
+\uses{def:cut-transpose}
+$X$ is a cut of $A$ if $|X|\ge2$, $|X^c|\ge2$ and $A$ has a rank-one factorization along $X$.
+$B$ is a cut-transpose of $A$ at $X$ if $B=\operatorname{ct}(A,X)$ for such a factorization.
+\end{definition}
+
+\begin{definition}[Cut-transpose paths]
+\label{def:ct-path}
+\lean{Matrix.CutTransposePath, Matrix.CutTransposePath.length, Matrix.CutTransposePath.cuts,
+  Matrix.CutTransposePath.append, Matrix.CutTransposePath.reverse,
+  Matrix.CutTransposeConnected, Matrix.cutTransposeConnected_equivalence,
+  Matrix.IsCutTranspose.exists_path}
+\leanok
+\uses{def:cut}
+A sequence $A=A_0,\dots,A_k=C$ with $A_{i+1}=\operatorname{ct}(A_i,X_i)$ for cuts $X_i$ of
+$A_i$. Being connected by such a path is an equivalence relation.
+\end{definition}
+
+\begin{lemma}[Transposes and complements]
+\label{lem:ct-transpose}
+\lean{Matrix.R1Factorization.transpose, Matrix.transpose_cutTranspose,
+  Matrix.cutTranspose_compl, Matrix.HasCut.transpose, Matrix.hasCut_transpose,
+  Matrix.IsCutTranspose.transpose, Matrix.IsCutTranspose.compl}
+\leanok
+\uses{def:cut}
+$\operatorname{ct}(A,X)^T=\operatorname{ct}(A^T,X)$ and
+$\operatorname{ct}(A,X^c)=\operatorname{ct}(A,X)^T$. $X$ is a cut of $A^T$ iff it is a cut of
+$A$.
+\end{lemma}
+
+\begin{proof}
+\leanok
+Entrywise.
+\end{proof}
+
+\begin{lemma}[Cut-transpose preserves the determinant]
+\label{lem:det-ct}
+\lean{Matrix.det_cutTranspose}
+\leanok
+\uses{def:cut-transpose}
+$\det\operatorname{ct}(A,X)=\det A$, for any rank-one factorization (no size condition).
+\end{lemma}
+
+\begin{proof}
+\leanok
+\uses{lem:det-fromBlocks}
+By Lemma~\ref{lem:det-fromBlocks},
+$\det A=\det E\det N-(v^T\operatorname{adj}(E)p)(q^T\operatorname{adj}(N)u)$, which is
+invariant under $q\leftrightarrow u$, $N\mapsto N^T$.
+\end{proof}
+
+\begin{theorem}[CGGR Lemma 2.12]
+\label{thm:pm-ct}
+\lean{Matrix.principalMinor_cutTranspose, Matrix.IsCutTranspose.principalMinor_eq,
+  Matrix.CutTransposePath.principalMinor_eq, Matrix.CutTransposeConnected.principalMinor_eq}
+\leanok
+\uses{def:cut, def:ct-path, def:principal-minor}
+Cut-transposes, and hence cut-transpose paths, preserve principal minors.
+\end{theorem}
+
+\begin{proof}
+\leanok
+\uses{lem:det-ct}
+A principal submatrix of $\operatorname{ct}(A,X)$ is the cut-transpose of the corresponding
+principal submatrix of $A$; apply Lemma~\ref{lem:det-ct}.
+\end{proof}
+
+\begin{lemma}[Cuts over a field]
+\label{lem:cut-rank}
+\lean{Matrix.R1Factorization.rank_le_one, Matrix.exists_r1Factorization_of_rank_le_one,
+  Matrix.hasCut_iff_rank_le_one, Matrix.HasCut.rank_eq_one,
+  Matrix.R1CutFactorization.rank_eq_one}
+\leanok
+\uses{def:cut, def:irred}
+Over a field, $X$ is a cut iff $|X|,|X^c|\ge2$ and
+$\operatorname{rk}A[X,X^c],\operatorname{rk}A[X^c,X]\le1$. If $A$ is irreducible, both ranks
+equal $1$.
+\end{lemma}
+
+\begin{proof}
+\leanok
+\uses{lem:rank-le-one, lem:reducible-iff}
+Lemma~\ref{lem:rank-le-one}. If a cross block were zero, $X$ or $X^c$ would witness
+reducibility (Lemma~\ref{lem:reducible-iff}).
+\end{proof}
+
+\chapter{Lemma 4.3}
+
+Throughout, $\mathbb F$ is a field and $G=\operatorname{adj}M_A$ over $\mathbb F[x]$.
+
+\begin{lemma}[Al Ahmadieh, Lemma 4.3, minors]
+\label{lem:43-minors}
+\lean{Matrix.hasCut_minors_multiples}
+\leanok
+\uses{def:cut, def:detpoly, def:irred}
+If $A$ is irreducible with a cut $X$, there are $a_i\in\mathbb F[x_k:k\in X\setminus\{i\}]$
+and $c_j\in\mathbb F$ such that for $i\in X$, $j\notin X$, the minor of $M_A$ on rows $X$ and
+columns $X$ with $i$ replaced by $j$ equals $c_ja_i$.
+\end{lemma}
+
+\begin{proof}
+Write $A[X,X^c]=pq^T$. Replacing column $i$ of $M_A[X,X]$ by column $j$ of $A[X,X^c]$, which
+is $q_jp$, and pulling out $q_j$ leaves a determinant free of $x_i$ and of $j$.
+\end{proof}
+
+\begin{lemma}[Al Ahmadieh, Lemma 4.3, cut form]
+\label{lem:43}
+\lean{Matrix.hasCut_adjPoly_of_hasCut}
+\leanok
+\uses{def:cut, def:detpoly, def:irred}
+If $A$ is irreducible with a cut $X$, then $X$ is a cut of $G$ over $\mathbb F[x]$.
+\end{lemma}
+
+\begin{proof}
+\uses{lem:adj-fromBlocks}
+Reindex $M_A$ along $X\oplus X^c$ (Definition~\ref{def:r1fact}). By
+Lemma~\ref{lem:adj-fromBlocks}, $G_{ij}=-\det(E_x\text{ with column }i\text{ replaced by }p)
+\cdot\det(N_x\text{ with row }j\text{ replaced by }q)$ for $i\in X$, $j\notin X$, an outer
+product. Do the same for $X^c$.
+\end{proof}
