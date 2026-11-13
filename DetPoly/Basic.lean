@@ -26,6 +26,14 @@ abbrev Matrix.setSubmatrix {m : Type*} (A : Matrix n m R) (S : Set n) (T : Set m
     : Matrix S T R :=
   A.submatrix (↑) (↑)
 
+/-- `A` in block form along `S` and `Sᶜ`. -/
+theorem Matrix.submatrix_sumCompl_eq_fromBlocks (A : Matrix n n R) (S : Set n)
+    [DecidablePred (· ∈ S)] :
+    A.submatrix (Equiv.Set.sumCompl S) (Equiv.Set.sumCompl S) =
+      fromBlocks (A.setSubmatrix S S) (A.setSubmatrix S Sᶜ) (A.setSubmatrix Sᶜ S)
+        (A.setSubmatrix Sᶜ Sᶜ) := by
+  ext (i | i) (j | j) <;> rfl
+
 variable [DecidableEq n] [Fintype n]
 
 section CommRing

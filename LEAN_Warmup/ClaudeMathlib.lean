@@ -6,7 +6,7 @@ Authors: Grant Yang
 
 module
 
-public import DetPoly.Cut
+public import DetPoly.CutTranspose
 public import DetPoly.DiagSimilar
 public import Mathlib
 public meta import DetPoly.Basic
