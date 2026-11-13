@@ -5,7 +5,9 @@ Authors: Grant Yang
 -/
 module
 
-public import Mathlib
+public import Mathlib.Combinatorics.Quiver.ConnectedComponent
+public import Mathlib.LinearAlgebra.Matrix.Block
+public import DetPoly.DiagSimilar
 
 /-!
 # Reducible and irreducible matrices
@@ -41,7 +43,11 @@ namespace Matrix
 
 open Quiver
 
-variable {R n : Type*} [Zero R]
+variable {R n : Type*}
+
+section Zero
+
+variable [Zero R]
 
 /-- The directed graph (quiver) associated with a matrix `A`, with an edge `i ⟶ j` iff
 `A i j ≠ 0`. This is `Matrix.toQuiver` with "positive" replaced by "nonzero". -/
@@ -120,6 +126,63 @@ theorem blockTriangular_of_subset (A : Matrix n n R) (S : Finset n)
   obtain ⟨-, h⟩ := lt_iff_le_not_ge.mp hij
   simp only [le_Prop_eq, not_imp, not_not] at h
   exact hS i h.1 j h.2
+
+end Zero
+
+section DiagEquiv
+
+variable [DecidableEq n] [Fintype n]
+
+/-- Two block triangular matrices that agree on the diagonal blocks have the same
+determinant. -/
+theorem BlockTriangular.det_eq_det {R α : Type*} [CommRing R] [LinearOrder α] {m : Type*}
+    [Fintype m] [DecidableEq m] {b : m → α} {M N : Matrix m m R} (hM : M.BlockTriangular b)
+    (hN : N.BlockTriangular b) (h : ∀ i j, b i = b j → M i j = N i j) : M.det = N.det := by
+  classical
+  rw [hM.det, hN.det]
+  refine Finset.prod_congr rfl fun a _ ↦ congrArg det ?_
+  ext i j
+  exact h _ _ (i.2.trans j.2.symm)
+
+/-- **Al Ahmadieh, Theorem 4.1 (⇒), reducible case.** A reducible matrix has a matrix with the
+same principal minors that is not diagonally equivalent to it. If `A = [[E, F], [0, G]]`,
+change one entry of `F`: the principal minors only see `E` and `G`, while diagonal
+equivalence preserves the zero pattern of `A` or of `Aᵀ`. -/
+theorem IsReducible.exists_principalMinor_eq_not_diagEquivalent [CommRing R] [Nontrivial R]
+    {A : Matrix n n R} (hA : A.IsReducible) :
+    ∃ B : Matrix n n R, A.principalMinor = B.principalMinor ∧ ¬ A.DiagEquivalent B := by
+  classical
+  obtain ⟨b, hb, hAb⟩ := isReducible_iff_blockTriangular.mp hA
+  obtain ⟨i, hi⟩ := hb false
+  obtain ⟨j, hj⟩ := hb true
+  have hji : A j i = 0 := hAb (by simp [hi, hj])
+  have hij : i ≠ j := by rintro rfl; simp_all
+  -- `B` is `A` with the entry `(i, j)` of the upper right block made zero iff it was nonzero.
+  let B := A.updateRow i (Function.update (A i) j (if A i j = 0 then 1 else 0))
+  have hB : ∀ k l, (k, l) ≠ (i, j) → B k l = A k l := by
+    intro k l hkl
+    by_cases hk : k = i
+    · subst hk; simp_all [B]
+    · simp [B, hk]
+  have hBb : B.BlockTriangular b := fun k l hlk ↦ by
+    rw [hB k l (by rintro ⟨⟩; rw [hi, hj] at hlk; exact absurd hlk (by decide))]
+    exact hAb hlk
+  refine ⟨B, funext fun T ↦ ?_, ?_⟩
+  · refine (hAb.submatrix (f := Subtype.val (p := (· ∈ (T : Set n))))).det_eq_det
+      hBb.submatrix fun k l hkl ↦ (hB _ _ ?_).symm
+    rintro ⟨⟩
+    simp_all
+  · have hBij : B i j = if A i j = 0 then 1 else 0 := by simp [B]
+    rintro (h | h)
+    · have := h.apply_eq_zero_iff i j
+      split_ifs at hBij <;> simp_all
+    · have h₁ := h.apply_eq_zero_iff i j
+      have h₂ := h.apply_eq_zero_iff j i
+      rw [transpose_apply, hB j i (by simp [hij.symm])] at h₁
+      rw [transpose_apply] at h₂
+      split_ifs at hBij <;> simp_all
+
+end DiagEquiv
 
 end Matrix
 

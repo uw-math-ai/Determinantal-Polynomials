@@ -1,0 +1,270 @@
+% Part LEAN_Warmup: the drafts in `LEAN_Warmup/ClaudeMathlib.lean` and `LEAN_Warmup/Grant/`.
+% The problem-set warmups are not included.
+% Throughout, F is a field and G = adj(diag(x) + A).
+
+\chapter{Outline of Al Ahmadieh's paper}
+
+\begin{definition}[Fiber of the principal minor map]
+\label{def:fiber}
+\lean{Matrix.pmFiber, Matrix.HasTrivialFiber, Matrix.principalMinor_empty}
+\leanok
+\uses{def:principal-minor, def:diag}
+The fiber of $A$ is $\{B: B_S=A_S\ \forall S\}$. $A\in\mathcal D(n)$ if every $B$ in the fiber
+satisfies $B\sim_{DE}A$.
+\end{definition}
+
+\begin{definition}[Symmetrizable]
+\label{def:symmetrizable}
+\lean{Matrix.IsDiagSimilarSymm, Matrix.IsSymmetrizable, Matrix.IsDiagSimilarSymm.isSymmetrizable}
+\leanok
+\uses{def:diag}
+$A$ is symmetrizable if $\mu A$ is symmetric for an invertible diagonal $\mu$. If $A$ is
+diagonally similar to a symmetric matrix, it is symmetrizable.
+\end{definition}
+
+\begin{lemma}[Symmetrizable over an algebraically closed field]
+\label{lem:symmetrizable-alg-closed}
+\lean{Matrix.IsSymmetrizable.isDiagSimilarSymm}
+\leanok
+\uses{def:symmetrizable}
+Over an algebraically closed field, a symmetrizable matrix is diagonally similar to a
+symmetric matrix.
+\end{lemma}
+
+\begin{proof}
+If $\mu A$ is symmetric, $D=\operatorname{diag}(\sqrt{\mu_i})$ makes $DAD^{-1}$ symmetric.
+\end{proof}
+
+\begin{definition}[Multiaffine polynomials and restriction]
+\label{def:multiaffine}
+\lean{IsMultiaffine, Finset.exponent, setZero, coeff_setZero, eq_setZero_add_X_mul_pderiv}
+\leanok
+$f$ is multiaffine if $\deg_{x_i}f\le1$ for all $i$. $f|_{x_k=0}$ is the substitution
+$x_k\mapsto0$; for $f$ affine in $x_k$, $f=f|_{x_k=0}+x_k\partial_kf$.
+\end{definition}
+
+\begin{definition}[Resultant]
+\label{def:res}
+\lean{res, res_mul_left}
+\leanok
+\uses{def:multiaffine}
+$\operatorname{res}_{x_k}(g,h)=g|_{x_k=0}\,\partial_kh-h|_{x_k=0}\,\partial_kg$.
+\end{definition}
+
+\begin{definition}[Adjugate polynomial matrix]
+\label{def:adjpoly}
+\lean{Matrix.adjPoly, Matrix.coeff_univ_detpoly}
+\leanok
+\uses{def:detpoly, cor:coeff-detpoly}
+$G=\operatorname{adj}(\operatorname{diag}(x)+A)$.
+\end{definition}
+
+\begin{lemma}[Entries of $G$]
+\label{lem:adjpoly-props}
+\lean{Matrix.adjPoly_mem_supported, Matrix.adjPoly_isMultiaffine, Matrix.adjPoly_diag_conj}
+\leanok
+\uses{def:adjpoly, def:multiaffine, def:diag}
+Each $G_{ij}$ is multiaffine, $G_{ij}\in R[x_k:k\ne i,j]$ for $i\ne j$, and
+$G_{DAD^{-1}}=DG_AD^{-1}$.
+\end{lemma}
+
+\begin{proof}
+For $i\ne j$, $G_{ij}$ is a signed minor of $M_A$ avoiding row $j$ and column $i$, which
+contain the only occurrences of $x_j$, $x_i$. For the last claim, use
+$\operatorname{adj}(XY)=\operatorname{adj}Y\operatorname{adj}X$ and that $\operatorname{diag}(x)$
+commutes with $D$.
+\end{proof}
+
+\begin{lemma}[Resultant condition for $G$]
+\label{lem:res-adjpoly}
+\lean{Matrix.res_adjPoly}
+\leanok
+\uses{def:res, def:adjpoly}
+For distinct $i,j,k$, $\operatorname{res}_{x_k}(G_{ij},f_A)=G_{ik}G_{kj}$.
+\end{lemma}
+
+\begin{proof}
+\uses{thm:desnanot-jacobi, lem:pderiv-detpoly}
+$\operatorname{res}_{x_k}(G_{ij},f_A)=G_{kk}G_{ij}-f_A\,\partial_kG_{ij}$; apply
+Desnanot--Jacobi to the indices $k$ and $i$, $j$ of $M_A$.
+\end{proof}
+
+\begin{theorem}[AV22 Thm 3.1, Al Ahmadieh Thm 2.1 ($\Leftarrow$)]
+\label{thm:av22}
+\lean{exists_detpoly_eq_of_rayleigh}
+\leanok
+\uses{def:res, def:rayleigh, def:adjpoly}
+Let $f$ be multiaffine with $[x_1\cdots x_n]f=1$. If $\Delta_{ij}(f)=g_{ij}g_{ji}$ with
+$g_{ij}\in\mathbb F[x_k:k\ne i,j]$ multiaffine and
+$\operatorname{res}_{x_k}(g_{ij},f)=g_{ik}g_{kj}$, then $f=f_B$ for some $B$ with
+$G_B{}_{ij}=g_{ij}$ for $i\ne j$.
+\end{theorem}
+
+\noindent\emph{Status: external.}
+
+\begin{lemma}[Al Ahmadieh Lemma 4.2; Hartfiel--Loewy 1984 Thm 1]
+\label{lem:42}
+\lean{Matrix.adjPoly_ne_zero}
+\leanok
+\uses{def:adjpoly, def:irred}
+If $A$ is irreducible, every $G_{ij}\ne0$.
+\end{lemma}
+
+\noindent\emph{Status: external.}
+
+\begin{theorem}[Loewy 1986 Thm 1]
+\label{thm:loewy}
+\lean{Matrix.hasTrivialFiber_of_noCut}
+\leanok
+\uses{def:fiber, def:irred, def:cut}
+For $n\ge4$, an irreducible $A$ with no cut is in $\mathcal D(n)$.
+\end{theorem}
+
+\noindent\emph{Status: external.}
+
+\begin{lemma}[Al Ahmadieh Lemma 4.3, factored form]
+\label{lem:43-factored}
+\lean{Matrix.adjPoly_eq_mul_of_hasCut}
+\leanok
+\uses{def:adjpoly, def:cut, def:irred}
+If $A$ is irreducible with a cut $X$, then $G_{ij}=a_ib_j$ for $i\in X$, $j\notin X$, with
+nonzero $a_i\in\mathbb F[x_k:k\in X\setminus\{i\}]$, $b_j\in\mathbb F[x_k:k\in X^c\setminus\{j\}]$.
+\end{lemma}
+
+\begin{proof}
+\uses{lem:adj-fromBlocks, lem:42}
+Lemma~\ref{lem:adj-fromBlocks} gives the factorization; Lemma~\ref{lem:42} gives
+$a_i,b_j\ne0$.
+\end{proof}
+
+\begin{lemma}[Al Ahmadieh Lemma 4.4]
+\label{lem:44}
+\lean{Matrix.isSymmetrizable_of_adjPoly_proportional}
+\leanok
+\uses{def:adjpoly, def:cut, def:symmetrizable}
+If $A$ is irreducible with a cut $X$ and $G_{ij}=\alpha_{ij}G_{ji}$ with $\alpha_{ij}\in\mathbb F$
+for all $i\in X$, $j\notin X$, then $A$ is symmetrizable.
+\end{lemma}
+
+\begin{lemma}[Al Ahmadieh Lemma 4.5]
+\label{lem:45}
+\lean{cutSwap, Matrix.exists_adjPoly_eq_cutSwap}
+\leanok
+\uses{def:adjpoly, def:cut}
+With $G=\begin{pmatrix}P&(a_ib_j)\\(c_id_j)&Q\end{pmatrix}$ as in Lemma~\ref{lem:43-factored},
+there is $B$ with $f_B=f_A$ and $G_B=\begin{pmatrix}P&(a_ic_j)\\(b_id_j)&Q^T\end{pmatrix}$ off
+the diagonal.
+\end{lemma}
+
+\begin{proof}
+\uses{thm:av22, lem:43-factored, thm:rayleigh-detpoly, lem:res-adjpoly}
+Check the hypotheses of Theorem~\ref{thm:av22} for the new off-diagonal entries.
+\end{proof}
+
+\begin{corollary}[Thm 4.1 ($\Rightarrow$), reducible case]
+\label{cor:reducible-not-trivial}
+\lean{Matrix.IsReducible.not_hasTrivialFiber}
+\leanok
+\uses{def:fiber, def:irred}
+A reducible matrix is not in $\mathcal D(n)$.
+\end{corollary}
+
+\begin{proof}
+\leanok
+\uses{thm:reducible-fiber}
+Theorem~\ref{thm:reducible-fiber}.
+\end{proof}
+
+\begin{lemma}[Al Ahmadieh Lemma 5.1]
+\label{lem:51}
+\lean{Matrix.isIrred_iff_irreducible_detpoly}
+\leanok
+\uses{def:irred, def:detpoly}
+For $n\ne\emptyset$, $A$ is irreducible iff $f_A$ is irreducible.
+\end{lemma}
+
+\begin{proof}
+\uses{lem:42, thm:rayleigh-detpoly, lem:22, lem:reducible-iff}
+$\Leftarrow$: a block triangular form factors $f_A$. $\Rightarrow$: by Lemma~\ref{lem:42} and
+Theorem~\ref{thm:rayleigh-detpoly}, $\Delta_{ij}(f_A)\ne0$, so by Lemma~\ref{lem:22} no
+factorization separates $x_i$ from $x_j$.
+\end{proof}
+
+\begin{lemma}[Al Ahmadieh Lemma 6.1]
+\label{lem:61}
+\lean{Matrix.IsSymmetrizable.hasTrivialFiber_iff}
+\leanok
+\uses{def:symmetrizable, def:fiber, def:irred}
+For $n\ge4$ and symmetrizable $A$, $A\in\mathcal D(n)$ iff $A$ is irreducible.
+\end{lemma}
+
+\begin{proof}
+\uses{cor:reducible-not-trivial, thm:rayleigh-detpoly, lem:res-adjpoly, lem:42}
+For $B$ in the fiber, $G_{ij}G_{ji}=H_{ij}H_{ji}$ with $G_{ij}\propto G_{ji}$, so
+$H_{ij}=\alpha_{ij}G_{ij}$; the resultant condition makes $\alpha$ a diagonal similarity.
+\end{proof}
+
+\begin{theorem}[Al Ahmadieh Thm 4.1, as printed]
+\label{thm:41}
+\lean{Matrix.hasTrivialFiber_iff}
+\leanok
+\uses{def:fiber, def:irred, def:symmetrizable, def:cut}
+For $n\ge4$, $A\in\mathcal D(n)$ iff $A$ is irreducible and either symmetrizable or without a
+cut.
+\end{theorem}
+
+\noindent\emph{Status: to be replaced by the cut-transpose
+characterization.}
+
+\chapter{Polynomial tools}
+
+\begin{lemma}[Al Ahmadieh Lemma 2.2; AV22 Prop 2.2]
+\label{lem:22}
+\lean{exists_eq_X_mul_X_add, rayleighDiff_mul_eq_zero, rayleighDiff_eq_zero_iff}
+\leanok
+\uses{def:rayleigh, def:multiaffine}
+Let $R$ be a UFD and $f$ affine in $x_i$ and $x_j$. Then $\Delta_{ij}(f)=0$ iff $f=gh$ with
+$g$ free of $x_i$ and $h$ free of $x_j$.
+\end{lemma}
+
+\begin{proof}
+\leanok
+Write $f=ax_ix_j+bx_i+cx_j+d$, so $\Delta_{ij}(f)=bc-ad$. If $a\ne0$, split $a=\gamma\alpha$
+with $\gamma\mid b$, $\alpha\mid c$.
+\end{proof}
+
+\begin{definition}[Polynomials as differential operators]
+\label{def:pderivOp}
+\lean{MvPolynomial.aevalOfCommute, MvPolynomial.pderivOp}
+\leanok
+$p\mapsto p(\partial)$, substituting $x_i\mapsto\partial_i$. Write
+$\partial_S=\prod_{i\in S}\partial_i$.
+\end{definition}
+
+\begin{lemma}[Coefficients of $\partial_S f$]
+\label{lem:pderivOp-coeff}
+\lean{MvPolynomial.coeff_pderivOp_prod_X, MvPolynomial.constantCoeff_pderivOp_prod_X,
+  MvPolynomial.pderivOp_injective, IsMultiaffine.pderivOp_prod_X}
+\leanok
+\uses{def:pderivOp, def:multiaffine}
+$(\partial_Sf)|_{x=0}=[x^S]f$. For multiaffine $f$, $\partial_Sf$ is multiaffine and free of
+$x_i$, $i\in S$.
+\end{lemma}
+
+\begin{proof}
+\leanok
+Compute on monomials.
+\end{proof}
+
+\begin{lemma}[Generalized Jacobi formula]
+\label{lem:pderivOp-detpoly}
+\lean{Matrix.pderivOp_detPoly, Matrix.constantCoeff_principalMinor_mvCharmatrix}
+\leanok
+\uses{def:pderivOp, def:detpoly}
+$\partial_Sf_A=\det M_A[S^c,S^c]$.
+\end{lemma}
+
+\begin{proof}
+\uses{lem:pderiv-detpoly}
+Induct on $S$ using the case $|S|=1$ of Lemma~\ref{lem:pderiv-detpoly}.
+\end{proof}

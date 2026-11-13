@@ -11,5 +11,6 @@ Useful links:
 * [Zulip chat for Lean](https://leanprover.zulipchat.com/) for coordination
 * [Blueprint]({{ site.url }}/blueprint/)
 * [Blueprint as pdf]({{ site.url }}/blueprint.pdf)
-* [Dependency graph]({{ site.url }}/blueprint/dep_graph_document.html)
+* [Dependency graph: DetPoly]({{ site.url }}/blueprint/dep_graph_part_1.html)
+* [Dependency graph: LEAN_Warmup]({{ site.url }}/blueprint/dep_graph_part_2.html)
 * [Doc pages for this repository]({{ site.url }}/docs/)
