@@ -362,19 +362,7 @@ noncomputable def Matrix.adjPoly (A : Matrix n n R) : Matrix n n (MvPolynomial n
 /-- The leading coefficient is `1`, the normalization in Theorem 2.1. -/
 theorem Matrix.coeff_univ_detpoly (A : Matrix n n R) :
     A.detpoly.coeff Finset.univ.exponent = 1 := by
-  sorry
-
-/-- **TODO**: same fiber iff same determinantal polynomial. -/
-theorem Matrix.detpoly_eq_iff {A B : Matrix n n R} :
-    B.detpoly = A.detpoly ↔ B ∈ A.pmFiber := by
-  sorry
-
-/-- **TODO**, **MISSING** (Jacobi's formula): `∂ᵢ f_A = G_ii`. Mathlib only has univariate
-versions (`Matrix.derivative_det_one_add_X_smul`). Hint: expand along row `i`
-(`det_eq_sum_mul_adjugate_row`); the cofactors along row `i` are free of `xᵢ`. -/
-theorem Matrix.pderiv_detpoly (A : Matrix n n R) (i : n) :
-    pderiv i A.detpoly = A.adjPoly i i := by
-  sorry
+  rw [Finset.exponent, coeff_detpoly, Finset.compl_univ, principalMinor_empty]
 
 /-- **TODO**: `G_ij ∈ R[x_k : k ≠ i, j]` for `i ≠ j`. -/
 theorem Matrix.adjPoly_mem_supported (A : Matrix n n R) {i j : n} (hij : i ≠ j) :
@@ -511,8 +499,9 @@ theorem Matrix.exists_adjPoly_eq_cutSwap (hn : 4 ≤ Fintype.card n) {A : Matrix
 /-- **Theorem 4.1** (`⇒`), reducible case: reducible matrices have nontrivial fibers. This
 needs no `n ≥ 4`. -/
 theorem Matrix.IsReducible.not_hasTrivialFiber {A : Matrix n n 𝔽} (hA : A.IsReducible) :
-    ¬ A.HasTrivialFiber := by
-  sorry
+    ¬ A.HasTrivialFiber := fun h ↦
+  have ⟨B, hAB, hB⟩ := hA.exists_principalMinor_eq_not_diagEquivalent
+  hB (h B hAB.symm).symm
 
 /-- **Lemma 5.1**. `[Nonempty n]` excludes the `0 × 0` matrix, which is irreducible while
 `f = 1` is not. -/
