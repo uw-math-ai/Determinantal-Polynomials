@@ -6,53 +6,48 @@ Authors: Shaoda Ji, Joe Rogge, Nhi Bach, David Javnozon, Anders Lewis, Liron Sha
 
 module
 
+public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib
 
 /-!
-# Determinantal Polynomials
+# Determinantal polynomials and cuts
 
-Lean 4 formalization of Theorem 4.1 from
-[arXiv:2309.00806](https://arxiv.org/abs/2309.00806) (Al Ahmadieh '23),
-characterizing the fiber of a point in the image of the principal minor map.
+Definitions used by Theorem 2.3 and Lemma 4.3 of Al Ahmadieh (2023).
 -/
-@[expose] public noncomputable section
+@[expose] public section
 open MvPolynomial Matrix
 
 variable {n R : Type*}
 
 /-- The submatrix of `A` with rows in `S` and columns in `T`. -/
-abbrev Matrix.finsetSubmatrix {m : Type*} (A : Matrix n m R) (S : Finset n) (T : Finset m)
+abbrev Matrix.setSubmatrix {m : Type*} (A : Matrix n m R) (S : Set n) (T : Set m)
     : Matrix S T R :=
   A.submatrix (↑) (↑)
 
-/-- The principal submatrix `A[S, S]`. -/
-abbrev Matrix.principalSubmatrix (A : Matrix n n R) (S : Finset n) : Matrix S S R :=
-  A.finsetSubmatrix S S
+variable [DecidableEq n] [Fintype n]
 
-theorem Matrix.principalSubmatrix_eq_toSquareBlockProp (A : Matrix n n R) (S : Finset n) :
-    A.principalSubmatrix S = A.toSquareBlockProp (· ∈ S) :=
-  rfl
-
-variable [CommRing R] [DecidableEq n] [Fintype n]
-
-/-- hack to work around different instances getting picked up:
-  `Subtype.fintype` vs. `Finset.Subtype.fintype` -/
-theorem Matrix.det_principalSubmatrix (A : Matrix n n R) (S : Finset n) :
-    (A.principalSubmatrix S).det =
-      @det _ _ (Subtype.fintype (· ∈ S)) _ _ (A.toSquareBlockProp (· ∈ S)) := by
-  convert rfl using 2
-  exact (A.principalSubmatrix_eq_toSquareBlockProp S).symm
+section CommRing
+variable [CommRing R]
 
 /-- The Rayleigh difference `Δᵢⱼ(f) = ∂ᵢf ∂ⱼf - f ∂ᵢ∂ⱼf`. -/
+noncomputable
 def rayleighDiff (i j : n) (f : MvPolynomial n R) : MvPolynomial n R :=
   pderiv i f * pderiv j f - f * pderiv i (pderiv j f)
 
 /-- `diag(x₁,…,xₙ) + A`. -/
+noncomputable
 abbrev Matrix.mvCharmatrix (A : Matrix n n R) : Matrix n n (MvPolynomial n R) :=
   diagonal X + A.map C
 
 /-- The determinantal polynomial `f_A = det(diag(x) + A)`. -/
+noncomputable
 abbrev Matrix.detpoly (A : Matrix n n R) : MvPolynomial n R :=
   A.mvCharmatrix.det
 
+/-- The principal minor `A_S`. -/
+abbrev Matrix.principalMinor (A : Matrix n n R) (S : Finset n) : R :=
+  (A.setSubmatrix S S).det
+end CommRing
 end

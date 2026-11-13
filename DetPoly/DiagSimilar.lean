@@ -6,7 +6,8 @@ Authors: Anders Lewis, Grant Yang
 
 module
 
-public import Mathlib
+public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import DetPoly.Basic
 
 /-! # Diagonal similarity and diagonal equivalence
 
@@ -17,7 +18,10 @@ following Al Ahmadieh, "The fiber of the principal minor map".
 @[expose] public section
 namespace Matrix
 
-variable {R n : Type*} [CommSemiring R] [Fintype n] [DecidableEq n]
+variable {R n : Type*} [Fintype n] [DecidableEq n]
+
+section CommSemiring
+variable [CommSemiring R]
 
 /-- Conjugacy by an invertible diagonal matrix. -/
 def DiagSimilar (M N : Matrix n n R) : Prop :=
@@ -108,6 +112,7 @@ theorem diagEquivalent_iff_diagSimilar_of_isSymm {M N : Matrix n n R} (hN : N.Is
     DiagEquivalent M N ↔ DiagSimilar M N := by
   simp [DiagEquivalent, hN.eq]
 
+end CommSemiring
 end Matrix
 
 end

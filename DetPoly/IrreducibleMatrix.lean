@@ -5,7 +5,9 @@ Authors: Grant Yang
 -/
 module
 
-public import Mathlib
+public import Mathlib.Combinatorics.Quiver.ConnectedComponent
+public import Mathlib.LinearAlgebra.Matrix.Block
+public import DetPoly.DiagSimilar
 
 /-!
 # Reducible and irreducible matrices
@@ -41,7 +43,11 @@ namespace Matrix
 
 open Quiver
 
-variable {R n : Type*} [Zero R]
+variable {R n : Type*}
+
+section Zero
+
+variable [Zero R]
 
 /-- The directed graph (quiver) associated with a matrix `A`, with an edge `i ⟶ j` iff
 `A i j ≠ 0`. This is `Matrix.toQuiver` with "positive" replaced by "nonzero". -/
@@ -121,6 +127,7 @@ theorem blockTriangular_of_subset (A : Matrix n n R) (S : Finset n)
   simp only [le_Prop_eq, not_imp, not_not] at h
   exact hS i h.1 j h.2
 
+end Zero
 end Matrix
 
 end

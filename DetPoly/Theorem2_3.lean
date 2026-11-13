@@ -6,6 +6,7 @@ Authors: Grant Yang
 module
 
 public import DetPoly.DesnanotJacobi
+public import DetPoly.Basic
 
 /-!
 # Theorem 2.3: Rayleigh differences of determinantal polynomials
@@ -20,11 +21,11 @@ open MvPolynomial Matrix
 variable {n R : Type*} [CommRing R] [DecidableEq n] [Fintype n]
 
 theorem pderiv_detPoly_eq (A : Matrix n n R) (i : n) :
-    (pderiv i A.detpoly) = (A.mvCharmatrix.principalSubmatrix {i}ᶜ).det := by
+    (pderiv i A.detpoly) = (A.mvCharmatrix.setSubmatrix {i}ᶜ {i}ᶜ).det := by
   sorry
 
 theorem pderiv_pderiv_detPoly_eq (A : Matrix n n R) {i j : n} (hneq : i ≠ j) :
-    (pderiv i (pderiv j A.detpoly)) = (A.mvCharmatrix.principalSubmatrix {i, j}ᶜ).det := by
+    (pderiv i (pderiv j A.detpoly)) = (A.mvCharmatrix.setSubmatrix {i, j}ᶜ {i, j}ᶜ).det := by
   sorry
 
 #check adjugate_mul_adjugate_sub_adjugate_mul_adjugate

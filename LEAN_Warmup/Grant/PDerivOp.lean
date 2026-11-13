@@ -34,8 +34,8 @@ A polynomial `p` acts on `MvPolynomial σ R` by substituting `xᵢ ↦ ∂ᵢ`. 
 * `pderivOp_injective`: `p ↦ p(∂)` is injective when `R` is a domain of characteristic `0`.
 * `pderivOp_prod_X_mem_supported`, `IsMultiaffine.pderivOp_prod_X`: for multiaffine `f`,
   `∂_S f` is multiaffine and free of the variables in `S`.
-* `Matrix.pderivOp_detPoly` (**TODO**): `∂_S f_A = det (diag(x) + A)[Sᶜ, Sᶜ]`. It implies
-  `Matrix.coeff_detPoly` (see `Matrix.coeff_detPoly_of_pderivOp`).
+* `Matrix.pderivOp_detPoly` (**TODO**): `∂_S f_A = det (diag(x) + A)[Sᶜ, Sᶜ]`. The cases
+  `|S| ≤ 2` are `pderiv_detpoly` and `pderiv_pderiv_detpoly`.
 
 ## What Mathlib has
 
@@ -278,30 +278,25 @@ theorem IsMultiaffine.pderivOp_prod_X {f : MvPolynomial n R} (hf : IsMultiaffine
   have := hf i
   omega
 
-/-- The coefficient of `∏_{i ∈ S} xᵢ` is `(∂_S f)|_{x = 0}`. -/
-theorem coeff_exponent_eq_constantCoeff_pderivOp (f : MvPolynomial n R) (S : Finset n) :
-    f.coeff S.exponent = constantCoeff (pderivOp (∏ i ∈ S, X i) f) :=
-  (constantCoeff_pderivOp_prod_X S f).symm
-
 variable [Fintype n] [DecidableEq n]
 
 /-- **TODO** (generalized Jacobi formula): `∂_S f_A` is the principal minor of `diag(x) + A` on
-`Sᶜ`. The case `S = {i}` is `Matrix.pderiv_detPoly`. Hint: induct on `S`; `xᵢ` appears only in
+`Sᶜ`. The case `S = {i}` is `pderiv_detpoly`. Hint: induct on `S`; `xᵢ` appears only in
 the `(i, i)` entry, so expanding along row `i` (`det_eq_sum_mul_adjugate_row`) gives
 `∂ᵢ det M = det M[{i}ᶜ, {i}ᶜ]`. -/
 theorem Matrix.pderivOp_detPoly (A : Matrix n n R) (S : Finset n) :
     pderivOp (∏ i ∈ S, X i) A.detpoly = A.mvCharmatrix.principalMinor Sᶜ := by
   induction S using Finset.induction with
-  | empty => 
+  | empty =>
     simp only [Finset.prod_empty, map_one, Module.End.one_apply, Finset.compl_empty]
     ext m
-    rw [Matrix.principalMinor, Matrix.principalSubmatrix]
+    rw [Matrix.principalMinor]
     sorry
-  | insert a S hS h => 
+  | insert a S hS h =>
     sorry
-    
-#check Matrix.detRowAlternating
-#check Finset.induction
+
+-- #check Matrix.detRowAlternating
+-- #check Finset.induction
 
 omit [Fintype n] in
 theorem Matrix.constantCoeff_principalMinor_mvCharmatrix (A : Matrix n n R) (S : Finset n) :
@@ -309,13 +304,7 @@ theorem Matrix.constantCoeff_principalMinor_mvCharmatrix (A : Matrix n n R) (S :
   rw [principalMinor, RingHom.map_det, principalMinor]
   congr 1
   ext i j
-  by_cases h : i = j <;> simp [mvCharmatrix, principalSubmatrix, h]
-
-/-- `Matrix.coeff_detPoly` follows from `Matrix.pderivOp_detPoly`. -/
-theorem Matrix.coeff_detPoly_of_pderivOp (A : Matrix n n R) (S : Finset n) :
-    A.detpoly.coeff S.exponent = A.principalMinor Sᶜ := by
-  rw [coeff_exponent_eq_constantCoeff_pderivOp, pderivOp_detPoly,
-    constantCoeff_principalMinor_mvCharmatrix]
+  by_cases h : i = j <;> simp [mvCharmatrix, h]
 
 end Multiaffine
 

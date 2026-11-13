@@ -19,8 +19,8 @@ use the factorization form `rank_le_one_iff_eq_vecMulVec`. The definition is sym
 `X ↔ Xᶜ` (`HasCut.compl`). -/
 def Matrix.HasCut [Field 𝔽] (A : Matrix n n 𝔽) (X : Finset n) : Prop :=
   2 ≤ X.card ∧ 2 ≤ Xᶜ.card ∧
-    (A.finsetSubmatrix X Xᶜ).rank ≤ 1 ∧
-    (A.finsetSubmatrix Xᶜ X).rank ≤ 1
+    (A.setSubmatrix X (Xᶜ : Finset n)).rank ≤ 1 ∧
+    (A.setSubmatrix (Xᶜ : Finset n) X).rank ≤ 1
 
 /-- The complement of a cut is a cut. -/
 theorem Matrix.HasCut.compl [Field 𝔽] {A : Matrix n n 𝔽} {X : Finset n} (h : A.HasCut X) :
